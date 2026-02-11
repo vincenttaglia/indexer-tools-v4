@@ -779,7 +779,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   width: 100%;
 }
 
-.filter-number :deep(.p-inputnumber) {
+.filter-number :deep(.p-inputnumber-input) {
   width: 120px;
 }
 
