@@ -5,6 +5,7 @@ import type {
   NetworkMetrics,
   DeploymentStatus,
   QueryFeeData,
+  AllocationRaw,
 } from '@/types'
 import {
   calculateApr,
@@ -40,6 +41,28 @@ interface ComputationInputs {
   targetApr: Ref<number>
   /** New allocation amount in GRT (as a string, NOT wei) for projected calculations */
   newAllocation: Ref<string>
+  /**
+   * Optional: allocations being closed (from wizard Step 1).
+   * When provided, the allocatedTokens of matching closing allocations are subtracted
+   * from stakedTokens to compute "future" APR/maxAllo projections.
+   */
+  closingAllocations?: Ref<Map<string, AllocationRaw>>
+}
+
+/**
+ * Build a lookup from deployment IPFS hash → total closing tokens (as wei string value).
+ * Multiple allocations on the same deployment are summed.
+ */
+function buildClosingTokensMap(
+  closingAllocations: Map<string, AllocationRaw>,
+): Map<string, number> {
+  const map = new Map<string, number>()
+  for (const alloc of closingAllocations.values()) {
+    const hash = alloc.subgraphDeployment.ipfsHash
+    const current = map.get(hash) ?? 0
+    map.set(hash, current + Number(alloc.allocatedTokens))
+  }
+  return map
 }
 
 /**
@@ -68,14 +91,29 @@ export function useSubgraphComputations(inputs: ComputationInputs) {
     const targetApr = inputs.targetApr.value
     const newAllocation = inputs.newAllocation.value
 
+    // Build closing tokens lookup if closing allocations are provided
+    const closingTokensMap = inputs.closingAllocations?.value
+      ? buildClosingTokensMap(inputs.closingAllocations.value)
+      : null
+
     // Single pass: compute all derived values per subgraph
     return subs.map((sg): SubgraphComputed => {
       const d = sg.deployment
 
+      // Calculate effective staked tokens (future state if closing allocations exist)
+      let effectiveStakedTokens = d.stakedTokens
+      if (closingTokensMap) {
+        const closingAmount = closingTokensMap.get(d.ipfsHash)
+        if (closingAmount) {
+          const futureStaked = Number(d.stakedTokens) - closingAmount
+          effectiveStakedTokens = String(Math.max(0, futureStaked))
+        }
+      }
+
       // APR calculation (current APR with no new allocation)
       const apr = calculateApr({
         signalledTokens: d.signalledTokens,
-        stakedTokens: d.stakedTokens,
+        stakedTokens: effectiveStakedTokens,
         totalTokensSignalled: metrics.totalTokensSignalled,
         networkGRTIssuancePerBlock: metrics.networkGRTIssuancePerBlock,
         blocksPerDay: bpd,
@@ -84,7 +122,7 @@ export function useSubgraphComputations(inputs: ComputationInputs) {
       // New APR (projected APR if a new allocation of `newAllocation` GRT is added)
       const newApr = calculateNewApr({
         signalledTokens: d.signalledTokens,
-        stakedTokens: d.stakedTokens,
+        stakedTokens: effectiveStakedTokens,
         totalTokensSignalled: metrics.totalTokensSignalled,
         networkGRTIssuancePerBlock: metrics.networkGRTIssuancePerBlock,
         blocksPerDay: bpd,
@@ -94,7 +132,7 @@ export function useSubgraphComputations(inputs: ComputationInputs) {
       // Daily rewards for a hypothetical new allocation
       const dailyRewards = calculateSubgraphDailyRewards({
         signalledTokens: d.signalledTokens,
-        stakedTokens: d.stakedTokens,
+        stakedTokens: effectiveStakedTokens,
         totalTokensSignalled: metrics.totalTokensSignalled,
         networkGRTIssuancePerBlock: metrics.networkGRTIssuancePerBlock,
         blocksPerDay: bpd,
@@ -108,7 +146,7 @@ export function useSubgraphComputations(inputs: ComputationInputs) {
       const maxAllo = calculateMaxAllocation({
         targetApr,
         signalledTokens: d.signalledTokens,
-        stakedTokens: d.stakedTokens,
+        stakedTokens: effectiveStakedTokens,
         totalTokensSignalled: metrics.totalTokensSignalled,
         networkGRTIssuancePerBlock: metrics.networkGRTIssuancePerBlock,
         blocksPerDay: bpd,
@@ -118,7 +156,7 @@ export function useSubgraphComputations(inputs: ComputationInputs) {
       const proportion = calculateProportion({
         signalledTokens: d.signalledTokens,
         totalTokensSignalled: metrics.totalTokensSignalled,
-        stakedTokens: d.stakedTokens,
+        stakedTokens: effectiveStakedTokens,
         totalTokensAllocated: metrics.totalTokensAllocated,
       })
 
