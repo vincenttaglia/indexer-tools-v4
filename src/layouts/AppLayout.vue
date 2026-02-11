@@ -156,7 +156,7 @@ watch(() => settingsStore.darkMode, (enabled) => {
   color: var(--p-text-color);
 }
 
-.nav-link.router-link-active {
+.nav-link.router-link-exact-active {
   color: var(--p-primary-color);
   background-color: color-mix(in srgb, var(--p-primary-color) 10%, transparent);
   border-left-color: var(--p-primary-color);
@@ -171,8 +171,7 @@ watch(() => settingsStore.darkMode, (enabled) => {
 
 .main-content {
   flex: 1;
-  overflow-y: auto;
-  padding: 1.5rem;
+  overflow: hidden;
   background-color: var(--p-surface-ground);
 }
 </style>
