@@ -325,23 +325,34 @@ const columns: ColumnDef<QueryDailyDataPoint, unknown>[] = [
     Menlo, Consolas, monospace;
   font-size: 0.8125rem;
   color: var(--p-text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 :deep(.chain-cell) {
   font-size: 0.8125rem;
   color: var(--p-text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 :deep(.metric-cell) {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 :deep(.token-value) {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   color: var(--p-text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* --- Color coding --- */

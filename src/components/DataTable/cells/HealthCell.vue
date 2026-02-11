@@ -37,6 +37,7 @@ const config = computed(() => {
   font-size: 0.8125em;
   font-weight: 500;
   white-space: nowrap;
+  max-width: 100%;
 }
 
 .health-dot {

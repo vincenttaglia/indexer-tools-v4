@@ -97,6 +97,9 @@ async function copyToClipboard() {
   font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono',
     Menlo, Consolas, monospace;
   font-size: 0.875em;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .address-link {

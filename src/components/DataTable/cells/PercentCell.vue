@@ -32,6 +32,9 @@ const colorClass = computed(() => {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .positive {

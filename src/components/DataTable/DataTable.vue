@@ -177,6 +177,7 @@ function handleRowClick(row: T) {
         <tr
           v-for="headerGroup in table.getHeaderGroups()"
           :key="headerGroup.id"
+          class="data-table-header-row"
         >
           <th
             v-for="header in headerGroup.headers"
@@ -189,14 +190,13 @@ function handleRowClick(row: T) {
             :style="{
               width: header.column.id === '_selection'
                 ? '48px'
-                : header.getSize() !== 150
-                  ? `${header.getSize()}px`
-                  : undefined,
+                : `${header.getSize()}px`,
               minWidth: header.column.id === '_selection'
                 ? '48px'
-                : header.getSize() !== 150
-                  ? `${header.getSize()}px`
-                  : undefined,
+                : `${header.getSize()}px`,
+              maxWidth: header.column.id === '_selection'
+                ? '48px'
+                : `${header.getSize()}px`,
             }"
             @click="header.column.getCanSort() ? header.column.getToggleSortingHandler()?.($event) : undefined"
           >
@@ -286,6 +286,17 @@ function handleRowClick(row: T) {
               v-for="header in table.getHeaderGroups()[0]?.headers ?? []"
               :key="`skeleton-cell-${header.id}-${i}`"
               class="data-table-td"
+              :style="{
+                width: header.column.id === '_selection'
+                  ? '48px'
+                  : `${header.getSize()}px`,
+                minWidth: header.column.id === '_selection'
+                  ? '48px'
+                  : `${header.getSize()}px`,
+                maxWidth: header.column.id === '_selection'
+                  ? '48px'
+                  : `${header.getSize()}px`,
+              }"
             >
               <div class="skeleton-bar" />
             </td>
@@ -295,7 +306,6 @@ function handleRowClick(row: T) {
         <!-- Empty state -->
         <tr v-else-if="rows.length === 0" class="empty-row">
           <td
-            :colspan="table.getHeaderGroups()[0]?.headers.length ?? 1"
             class="empty-cell"
           >
             <div class="empty-state">
@@ -339,6 +349,17 @@ function handleRowClick(row: T) {
               :class="{
                 'selection-col': cell.column.id === '_selection',
               }"
+              :style="{
+                width: cell.column.id === '_selection'
+                  ? '48px'
+                  : `${cell.column.getSize()}px`,
+                minWidth: cell.column.id === '_selection'
+                  ? '48px'
+                  : `${cell.column.getSize()}px`,
+                maxWidth: cell.column.id === '_selection'
+                  ? '48px'
+                  : `${cell.column.getSize()}px`,
+              }"
             >
               <!-- Selection checkbox in cell -->
               <template v-if="cell.column.id === '_selection'">
@@ -375,8 +396,8 @@ function handleRowClick(row: T) {
 
 .data-table {
   width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
+  display: block;
+  border-spacing: 0;
 }
 
 /* --- Header --- */
@@ -384,6 +405,13 @@ function handleRowClick(row: T) {
   position: sticky;
   top: 0;
   z-index: 2;
+  display: block;
+  overflow: hidden;
+}
+
+.data-table-header-row {
+  display: flex;
+  width: 100%;
 }
 
 .data-table-th {
@@ -401,6 +429,11 @@ function handleRowClick(row: T) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  flex-grow: 0;
 }
 
 .data-table-th.sortable {
@@ -443,6 +476,7 @@ function handleRowClick(row: T) {
 .data-table-body {
   position: relative;
   width: 100%;
+  display: block;
 }
 
 /* --- Rows --- */
@@ -451,7 +485,8 @@ function handleRowClick(row: T) {
   top: 0;
   left: 0;
   width: 100%;
-  display: table-row;
+  display: flex;
+  align-items: center;
   transition: background-color 0.1s ease;
   cursor: pointer;
 }
@@ -477,7 +512,12 @@ function handleRowClick(row: T) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  vertical-align: middle;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  flex-grow: 0;
+  min-width: 0;
 }
 
 .data-table-td.selection-col {
@@ -496,6 +536,9 @@ function handleRowClick(row: T) {
 /* --- Loading skeleton --- */
 .skeleton-row {
   cursor: default;
+  display: flex;
+  align-items: center;
+  width: 100%;
 }
 
 .skeleton-row:hover {
@@ -528,11 +571,14 @@ function handleRowClick(row: T) {
 /* --- Empty state --- */
 .empty-row {
   cursor: default;
+  display: flex;
+  width: 100%;
 }
 
 .empty-cell {
   padding: 48px 16px;
   text-align: center;
+  flex: 1;
 }
 
 .empty-state {

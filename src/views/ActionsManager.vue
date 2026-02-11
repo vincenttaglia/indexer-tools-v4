@@ -686,17 +686,25 @@ const columns: ColumnDef<Action, unknown>[] = [
     Menlo, Consolas, monospace;
   font-size: 0.8125rem;
   color: var(--p-text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 :deep(.text-muted) {
   color: var(--p-text-muted-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 :deep(.text-ellipsis) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 180px;
+  min-width: 0;
+  max-width: 100%;
   display: inline-block;
 }
 
@@ -704,10 +712,17 @@ const columns: ColumnDef<Action, unknown>[] = [
   font-size: 0.8125rem;
   text-transform: capitalize;
   color: var(--p-text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 :deep(.failure-text) {
   font-size: 0.8125rem;
   color: var(--p-red-400);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 </style>

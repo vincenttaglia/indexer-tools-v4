@@ -41,6 +41,9 @@ const formatted = computed(() => {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   color: var(--p-text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .token-symbol {

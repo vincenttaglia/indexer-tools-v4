@@ -839,6 +839,8 @@ const columns: ColumnDef<SubgraphComputed, unknown>[] = [
   flex-direction: column;
   gap: 2px;
   overflow: hidden;
+  min-width: 0;
+  max-width: 100%;
 }
 
 :deep(.name-primary),
@@ -856,20 +858,31 @@ const columns: ColumnDef<SubgraphComputed, unknown>[] = [
   color: var(--p-text-muted-color);
   font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono',
     Menlo, Consolas, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 :deep(.network-cell) {
   font-size: 0.8125rem;
   color: var(--p-text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 :deep(.token-value) {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   color: var(--p-text-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 :deep(.text-muted) {
   color: var(--p-text-muted-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

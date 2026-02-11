@@ -303,11 +303,14 @@ function getChainLabel(chainId: ChainId): string {
 <style scoped>
 .settings-page {
   max-width: 800px;
+  width: 100%;
   margin: 0 auto;
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .page-title {
