@@ -6,6 +6,9 @@ import { formatUnits } from 'viem'
 // PrimeVue components
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
+import Select from 'primevue/select'
+import MultiSelect from 'primevue/multiselect'
+import ToggleSwitch from 'primevue/toggleswitch'
 
 // Project components
 import {
@@ -24,8 +27,11 @@ import {
   useIndexerQuery,
   useEpochQuery,
   useRewardsQuery,
+  useQosDailyDataQuery,
+  useOtherIndexersQuery,
   useAllocationComputations,
 } from '@/composables'
+import { useAllocationFilters } from '@/composables/useAllocationFilters'
 import type { AllocationDescriptor } from '@/composables'
 
 // Stores
@@ -53,6 +59,8 @@ const networkQuery = useNetworkQuery()
 const statusQuery = useStatusQuery()
 const indexerQuery = useIndexerQuery()
 const epochQuery = useEpochQuery()
+const qosQuery = useQosDailyDataQuery()
+const otherIndexersQuery = useOtherIndexersQuery()
 
 // ---------------------------------------------------------------------------
 // Rewards query (on-demand)
@@ -73,6 +81,11 @@ const rewardsFetched = computed(
 )
 
 // ---------------------------------------------------------------------------
+// Is Arbitrum?
+// ---------------------------------------------------------------------------
+const isArbitrum = computed(() => chainStore.selectedChain === 'arbitrum-one')
+
+// ---------------------------------------------------------------------------
 // Computation
 // ---------------------------------------------------------------------------
 const { computed: computedAllocations } = useAllocationComputations({
@@ -86,29 +99,45 @@ const { computed: computedAllocations } = useAllocationComputations({
   pendingRewardsMap: computed(() => rewardsQuery.data.value),
   rewardsLoading: computed(() => rewardsQuery.isFetching.value),
   rewardsFetched,
-  qosData: computed(() => undefined),
+  qosData: computed(() => qosQuery.data.value),
   epochData: computed(() => epochQuery.data.value),
-  otherIndexersStatus: computed(() => undefined),
+  otherIndexersStatus: computed(() => otherIndexersQuery.data.value),
 })
 
 // ---------------------------------------------------------------------------
-// Filtering
+// Unique networks for filter dropdown
 // ---------------------------------------------------------------------------
-const filteredAllocations = computed(() => {
-  const all = computedAllocations.value
-  const search = filterStore.allocationFilters.search.toLowerCase().trim()
-  if (!search) return all
-
-  return all.filter((alloc) => {
-    const d = alloc.subgraphDeployment
-    const name = getDeploymentName(alloc)
-    return (
-      name.toLowerCase().includes(search) ||
-      d.ipfsHash.toLowerCase().includes(search) ||
-      alloc.id.toLowerCase().includes(search)
-    )
-  })
+const networkOptions = computed(() => {
+  const allocs = allocationsQuery.data.value ?? []
+  const networks = new Set<string>()
+  for (const a of allocs) {
+    const net = a.subgraphDeployment.manifest.network
+    if (net) networks.add(net)
+  }
+  return [...networks].sort()
 })
+
+// ---------------------------------------------------------------------------
+// Status filter options
+// ---------------------------------------------------------------------------
+const statusFilterOptions = [
+  { label: 'No Filter', value: 'none' },
+  { label: 'All Statuses', value: 'all' },
+  { label: 'Closable', value: 'closable' },
+  { label: 'Healthy', value: 'healthy' },
+  { label: 'Syncing', value: 'syncing' },
+  { label: 'Failed', value: 'failed' },
+  { label: 'Non-Deterministic', value: 'non-deterministic' },
+  { label: 'Deterministic', value: 'deterministic' },
+]
+
+// ---------------------------------------------------------------------------
+// Filtering (same composable as AllocationsDashboard)
+// ---------------------------------------------------------------------------
+const { filtered: filteredAllocations } = useAllocationFilters(
+  computedAllocations,
+  computed(() => statusQuery.data.value),
+)
 
 // ---------------------------------------------------------------------------
 // Loading state
@@ -167,6 +196,18 @@ const totals = computed(() => {
     pendingCutGrt,
   }
 })
+
+// ---------------------------------------------------------------------------
+// Refresh all queries
+// ---------------------------------------------------------------------------
+function refreshAll() {
+  allocationsQuery.refetch()
+  networkQuery.refetch()
+  statusQuery.refetch()
+  indexerQuery.refetch()
+  epochQuery.refetch()
+  if (isArbitrum.value) qosQuery.refetch()
+}
 
 // ---------------------------------------------------------------------------
 // Selection — sync with wizardStore.closingAllocations
@@ -285,7 +326,6 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     size: 160,
     cell: (info) => {
       const val = info.getValue() as number
-      // dailyRewardsCut is in wei, convert to GRT for display
       const grt = weiToGrt(String(val))
       return h(
         'span',
@@ -397,7 +437,7 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     },
   ),
 
-  // 8. Status checks (multi-indicator with colored dots)
+  // 10. Status checks (multi-indicator with colored dots)
   columnHelper.accessor(
     (row) => row.statusChecks,
     {
@@ -410,7 +450,6 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
 
         const indicators: ReturnType<typeof h>[] = []
 
-        // Synced indicator (EBO epoch check)
         if (sc.synced !== null) {
           indicators.push(
             h('span', {
@@ -423,7 +462,6 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
           )
         }
 
-        // Other indexers health comparison
         if (sc.healthyCount > 0 || sc.failedCount > 0) {
           indicators.push(
             h('span', {
@@ -436,7 +474,6 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
           )
         }
 
-        // Deterministic failure
         if (sc.deterministicFailure !== null && sc.deterministicFailure) {
           indicators.push(
             h('span', {
@@ -451,7 +488,6 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
           )
         }
 
-        // Closable composite indicator
         indicators.push(
           h('span', {
             class: 'status-check',
@@ -471,11 +507,66 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
       },
     },
   ),
+
+  // 11. Allocation ID
+  columnHelper.accessor('id', {
+    id: 'allocationId',
+    header: 'Allocation ID',
+    size: 160,
+    cell: (info) => {
+      const val = info.getValue() as string
+      const short = val.slice(0, 10) + '...'
+      return h('span', { class: 'token-value', title: val }, short)
+    },
+  }),
 ]
 </script>
 
 <template>
   <div class="wizard-step-close">
+    <!-- Header -->
+    <div class="step-header">
+      <div class="header-left">
+        <h2 class="step-title">Select Allocations to Close</h2>
+        <span class="row-count">
+          {{ filteredCount }} / {{ totalCount }} allocations
+        </span>
+        <span v-if="wizardStore.closingAllocations.size > 0" class="selection-count">
+          ({{ wizardStore.closingAllocations.size }} selected)
+        </span>
+      </div>
+      <div class="header-right">
+        <Button
+          label="Fetch Other Indexers"
+          icon="pi pi-users"
+          severity="secondary"
+          outlined
+          size="small"
+          :loading="otherIndexersQuery.loading.value"
+          :disabled="!otherIndexersQuery.enabled.value"
+          @click="otherIndexersQuery.fetch()"
+        />
+        <Button
+          label="Fetch Rewards"
+          icon="pi pi-download"
+          severity="info"
+          outlined
+          size="small"
+          :loading="rewardsQuery.isFetching.value"
+          @click="rewardsQuery.refetch()"
+        />
+        <Button
+          label="Refresh"
+          icon="pi pi-refresh"
+          severity="secondary"
+          outlined
+          size="small"
+          :loading="isLoading"
+          @click="refreshAll"
+        />
+      </div>
+    </div>
+
     <!-- Filter bar -->
     <div class="filter-bar">
       <div class="filter-item filter-search">
@@ -485,18 +576,42 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
           class="filter-input"
         />
       </div>
-      <Button
-        label="Fetch Rewards"
-        icon="pi pi-download"
-        severity="info"
-        outlined
-        size="small"
-        :loading="rewardsQuery.isFetching.value"
-        @click="rewardsQuery.refetch()"
-      />
-      <span class="row-count">
-        {{ filteredCount }} / {{ totalCount }} allocations
-      </span>
+
+      <div class="filter-item filter-status">
+        <Select
+          v-model="filterStore.allocationFilters.statusFilter"
+          :options="statusFilterOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Status Filter"
+          class="status-select"
+        />
+      </div>
+
+      <div class="filter-item filter-network">
+        <MultiSelect
+          v-model="filterStore.allocationFilters.networks"
+          :options="networkOptions"
+          placeholder="All Networks"
+          class="network-select"
+          :maxSelectedLabels="2"
+          selectedItemsLabel="{0} networks"
+        />
+      </div>
+
+      <div class="filter-item filter-toggle">
+        <label class="toggle-label">
+          <ToggleSwitch v-model="filterStore.allocationFilters.activateBlacklist" />
+          <span>Blacklist</span>
+        </label>
+      </div>
+
+      <div class="filter-item filter-toggle">
+        <label class="toggle-label">
+          <ToggleSwitch v-model="filterStore.allocationFilters.activateSynclist" />
+          <span>Synclist</span>
+        </label>
+      </div>
     </div>
 
     <!-- Data table -->
@@ -509,7 +624,7 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
         :selected-keys="selectedKeys"
         :get-row-id="getRowId"
         table-height="100%"
-        empty-message="No allocations found. Try adjusting your search filter."
+        empty-message="No allocations found. Try adjusting your filters."
         @selection-change="handleSelectionChange"
       />
       <div class="totals-bar">
@@ -551,6 +666,48 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
   overflow: hidden;
 }
 
+/* --- Header --- */
+.step-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.header-left {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.step-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--p-text-color);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.row-count {
+  font-size: 0.8125rem;
+  color: var(--p-text-muted-color);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.selection-count {
+  font-size: 0.8125rem;
+  color: var(--p-primary-color);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 /* --- Filter bar --- */
 .filter-bar {
   display: flex;
@@ -579,13 +736,34 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
   width: 100%;
 }
 
-.row-count {
-  font-size: 0.8125rem;
-  color: var(--p-text-muted-color);
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-  margin-left: auto;
+.filter-status {
+  min-width: 160px;
+}
+
+.status-select {
+  width: 100%;
+}
+
+.filter-network {
+  min-width: 160px;
+}
+
+.network-select {
+  width: 100%;
+}
+
+.filter-toggle {
   white-space: nowrap;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+  color: var(--p-text-color);
+  cursor: pointer;
+  user-select: none;
 }
 
 /* --- Table wrapper --- */

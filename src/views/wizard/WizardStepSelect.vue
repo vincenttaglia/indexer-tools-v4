@@ -4,6 +4,8 @@ import { createColumnHelper, type ColumnDef } from '@tanstack/vue-table'
 
 // PrimeVue components
 import InputText from 'primevue/inputtext'
+import Button from 'primevue/button'
+import Select from 'primevue/select'
 import MultiSelect from 'primevue/multiselect'
 import ToggleSwitch from 'primevue/toggleswitch'
 import InputNumber from 'primevue/inputnumber'
@@ -19,6 +21,8 @@ import {
   useStatusQuery,
   useIndexerQuery,
   useQueryFeesQuery,
+  useEpochQuery,
+  useOtherIndexersQuery,
   useSubgraphFilters,
   useSubgraphComputations,
 } from '@/composables'
@@ -49,6 +53,8 @@ const allocationsQuery = useAllocationsQuery()
 const statusQuery = useStatusQuery()
 const indexerQuery = useIndexerQuery()
 const queryFeesQuery = useQueryFeesQuery()
+const epochQuery = useEpochQuery()
+const otherIndexersQuery = useOtherIndexersQuery()
 
 // ---------------------------------------------------------------------------
 // Derived state
@@ -90,11 +96,35 @@ const queryFeesMap = computed<Map<string, QueryFeeData> | undefined>(() => {
 })
 
 // ---------------------------------------------------------------------------
+// Status filter options
+// ---------------------------------------------------------------------------
+const statusFilterOptions = [
+  { label: 'No Filter', value: 'none' },
+  { label: 'All Statuses', value: 'all' },
+  { label: 'Closable', value: 'closable' },
+  { label: 'Healthy', value: 'healthy' },
+  { label: 'Syncing', value: 'syncing' },
+  { label: 'Failed', value: 'failed' },
+  { label: 'Non-Deterministic', value: 'non-deterministic' },
+  { label: 'Deterministic', value: 'deterministic' },
+]
+
+// ---------------------------------------------------------------------------
+// Rewards filter options (3-way)
+// ---------------------------------------------------------------------------
+const rewardsFilterOptions = [
+  { label: 'Exclude Denied', value: 0 },
+  { label: 'Include Denied', value: 1 },
+  { label: 'Only Denied', value: 2 },
+]
+
+// ---------------------------------------------------------------------------
 // Filtering
 // ---------------------------------------------------------------------------
 const { filtered: filteredSubgraphs } = useSubgraphFilters(
   computed(() => subgraphsQuery.data.value),
   allocatedDeployments,
+  computed(() => statusQuery.data.value),
 )
 
 // ---------------------------------------------------------------------------
@@ -114,6 +144,17 @@ const { computed: computedSubgraphs } = useSubgraphComputations({
   targetApr,
   newAllocation,
   closingAllocations: computed(() => wizardStore.closingAllocations),
+  epochData: computed(() => epochQuery.data.value),
+  otherIndexersStatus: computed(() => otherIndexersQuery.data.value),
+})
+
+// ---------------------------------------------------------------------------
+// Post-computation filter: closable uses statusChecks.closable
+// ---------------------------------------------------------------------------
+const displaySubgraphs = computed(() => {
+  const statusFilter = filterStore.subgraphFilters.statusFilter
+  if (statusFilter !== 'closable') return computedSubgraphs.value
+  return computedSubgraphs.value.filter((sg) => sg.statusChecks.closable)
 })
 
 // ---------------------------------------------------------------------------
@@ -127,13 +168,18 @@ const isLoading = computed(
 // Counts
 // ---------------------------------------------------------------------------
 const totalCount = computed(() => subgraphsQuery.data.value?.length ?? 0)
-const filteredCount = computed(() => computedSubgraphs.value.length)
+const filteredCount = computed(() => displaySubgraphs.value.length)
+
+// ---------------------------------------------------------------------------
+// Is Arbitrum?
+// ---------------------------------------------------------------------------
+const isArbitrum = computed(() => chainStore.selectedChain === 'arbitrum-one')
 
 // ---------------------------------------------------------------------------
 // Totals row
 // ---------------------------------------------------------------------------
 const totals = computed(() => {
-  const subs = computedSubgraphs.value
+  const subs = displaySubgraphs.value
 
   let totalSignal = 0
   let totalStake = 0
@@ -171,6 +217,18 @@ const totals = computed(() => {
     totalMaxAllo,
   }
 })
+
+// ---------------------------------------------------------------------------
+// Refresh all queries
+// ---------------------------------------------------------------------------
+function refreshAll() {
+  subgraphsQuery.refetch()
+  networkQuery.refetch()
+  allocationsQuery.refetch()
+  statusQuery.refetch()
+  indexerQuery.refetch()
+  if (isArbitrum.value) queryFeesQuery.refetch()
+}
 
 // ---------------------------------------------------------------------------
 // Selection — sync with wizardStore.selectedDeployments
@@ -229,12 +287,40 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
       return h('span', { class: 'network-cell' }, val)
     },
   }),
+  columnHelper.accessor((row) => row.deployment.signalledTokens, {
+    id: 'signal',
+    header: 'Signal (GRT)',
+    size: 140,
+    cell: (info) =>
+      h(TokenCell, { value: info.getValue() as string, decimals: 0 }),
+  }),
+  columnHelper.accessor((row) => row.deployment.stakedTokens, {
+    id: 'stake',
+    header: 'Stake (GRT)',
+    size: 140,
+    cell: (info) =>
+      h(TokenCell, { value: info.getValue() as string, decimals: 0 }),
+  }),
   columnHelper.accessor('apr', {
     id: 'apr',
     header: 'APR (%)',
     size: 100,
     cell: (info) =>
       h(PercentCell, { value: info.getValue() as number, decimals: 2 }),
+  }),
+  columnHelper.accessor('dailyRewardsCut', {
+    id: 'dailyRewardsCut',
+    header: 'Daily Rewards (GRT)',
+    size: 160,
+    cell: (info) => {
+      const val = info.getValue() as number
+      const grt = weiToGrt(String(val))
+      return h(
+        'span',
+        { class: 'token-value' },
+        `${formatNumber(grt, 0)} GRT`,
+      )
+    },
   }),
   columnHelper.accessor('maxAllo', {
     id: 'maxAllo',
@@ -252,20 +338,6 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
       )
     },
   }),
-  columnHelper.accessor((row) => row.deployment.signalledTokens, {
-    id: 'signal',
-    header: 'Signal (GRT)',
-    size: 140,
-    cell: (info) =>
-      h(TokenCell, { value: info.getValue() as string, decimals: 0 }),
-  }),
-  columnHelper.accessor((row) => row.deployment.stakedTokens, {
-    id: 'stake',
-    header: 'Stake (GRT)',
-    size: 140,
-    cell: (info) =>
-      h(TokenCell, { value: info.getValue() as string, decimals: 0 }),
-  }),
   columnHelper.accessor('proportion', {
     id: 'proportion',
     header: 'Proportion',
@@ -273,6 +345,107 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
     cell: (info) => {
       const val = info.getValue() as number
       return h('span', { class: 'token-value' }, val.toFixed(4))
+    },
+  }),
+  columnHelper.accessor(
+    (row) =>
+      (row.deploymentStatus?.health ?? null) as HealthStatus | null,
+    {
+      id: 'health',
+      header: 'Health',
+      size: 120,
+      cell: (info) => {
+        const val = info.getValue() as HealthStatus | null
+        return h(HealthCell, { status: val })
+      },
+    },
+  ),
+  // Status checks (multi-indicator with colored dots)
+  columnHelper.accessor(
+    (row) => row.statusChecks,
+    {
+      id: 'statusChecks',
+      header: 'Status Checks',
+      size: 200,
+      cell: (info) => {
+        const row = info.row.original
+        const sc = row.statusChecks
+
+        const indicators: ReturnType<typeof h>[] = []
+
+        if (sc.synced !== null) {
+          indicators.push(
+            h('span', {
+              class: 'status-check',
+              title: sc.synced ? 'Synced to epoch' : 'Behind epoch',
+            }, [
+              h('span', { class: `dot ${sc.synced ? 'dot-green' : 'dot-red'}` }),
+              h('span', { class: 'check-label' }, 'Synced'),
+            ]),
+          )
+        }
+
+        if (sc.healthyCount > 0 || sc.failedCount > 0) {
+          indicators.push(
+            h('span', {
+              class: 'status-check',
+              title: `Other indexers: ${sc.healthyCount} healthy, ${sc.failedCount} failed`,
+            }, [
+              h('span', { class: `dot ${sc.healthComparison ? 'dot-green' : 'dot-red'}` }),
+              h('span', { class: 'check-label' }, `${sc.healthyCount}/${sc.failedCount}`),
+            ]),
+          )
+        }
+
+        if (sc.deterministicFailure !== null && sc.deterministicFailure) {
+          indicators.push(
+            h('span', {
+              class: 'status-check',
+              title: sc.closable
+                ? 'Deterministic failure - safe to close'
+                : 'Deterministic failure - not safe to close',
+            }, [
+              h('span', { class: `dot ${sc.closable ? 'dot-yellow' : 'dot-red'}` }),
+              h('span', { class: 'check-label' }, 'Det.'),
+            ]),
+          )
+        }
+
+        if (sc.synced !== null || sc.deterministicFailure !== null) {
+          indicators.push(
+            h('span', {
+              class: 'status-check',
+              title: sc.closable ? 'Safe to close' : 'Not safe to close',
+            }, [
+              h('span', { class: `dot ${sc.closable ? 'dot-green' : 'dot-red'}` }),
+              h('span', { class: 'check-label' }, 'Close'),
+            ]),
+          )
+        }
+
+        if (indicators.length === 0) {
+          return h('span', { class: 'text-muted' }, '-')
+        }
+
+        return h('div', { class: 'status-indicators' }, indicators)
+      },
+      sortingFn: (rowA, rowB) => {
+        const a = rowA.original.statusChecks.closable ? 1 : 0
+        const b = rowB.original.statusChecks.closable ? 1 : 0
+        return a - b
+      },
+    },
+  ),
+  columnHelper.accessor('entityCount', {
+    id: 'entityCount',
+    header: 'Entity Count',
+    size: 120,
+    cell: (info) => {
+      const val = info.getValue() as number | null
+      if (val === null || val === undefined) {
+        return h('span', { class: 'text-muted' }, '?')
+      }
+      return h('span', { class: 'token-value' }, formatNumber(val, 0))
     },
   }),
   columnHelper.accessor(
@@ -314,19 +487,6 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
       },
     },
   ),
-  columnHelper.accessor(
-    (row) =>
-      (row.deploymentStatus?.health ?? null) as HealthStatus | null,
-    {
-      id: 'status',
-      header: 'Status',
-      size: 120,
-      cell: (info) => {
-        const val = info.getValue() as HealthStatus | null
-        return h(HealthCell, { status: val })
-      },
-    },
-  ),
 ]
 </script>
 
@@ -343,6 +503,27 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
           ({{ wizardStore.selectedDeployments.size }} selected)
         </span>
       </div>
+      <div class="header-right">
+        <Button
+          label="Fetch Other Indexers"
+          icon="pi pi-users"
+          severity="secondary"
+          outlined
+          size="small"
+          :loading="otherIndexersQuery.loading.value"
+          :disabled="!otherIndexersQuery.enabled.value"
+          @click="otherIndexersQuery.fetch()"
+        />
+        <Button
+          label="Refresh"
+          icon="pi pi-refresh"
+          severity="secondary"
+          outlined
+          size="small"
+          :loading="isLoading"
+          @click="refreshAll"
+        />
+      </div>
     </div>
 
     <!-- Filter bar -->
@@ -355,20 +536,31 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
         />
       </div>
 
-      <div class="filter-item filter-toggle">
-        <label class="toggle-label">
-          <ToggleSwitch
-            :modelValue="filterStore.subgraphFilters.rewardsFilter === 0"
-            @update:modelValue="(val: boolean) => filterStore.subgraphFilters.rewardsFilter = val ? 0 : 1"
-          />
-          <span>Hide Denied</span>
-        </label>
+      <div class="filter-item filter-rewards">
+        <Select
+          v-model="filterStore.subgraphFilters.rewardsFilter"
+          :options="rewardsFilterOptions"
+          optionLabel="label"
+          optionValue="value"
+          class="rewards-select"
+        />
+      </div>
+
+      <div class="filter-item filter-status">
+        <Select
+          v-model="filterStore.subgraphFilters.statusFilter"
+          :options="statusFilterOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Status Filter"
+          class="status-select"
+        />
       </div>
 
       <div class="filter-item filter-toggle filter-signal-group">
         <label class="toggle-label">
           <ToggleSwitch v-model="filterStore.subgraphFilters.hideSmallSignal" />
-          <span>Hide Small Signal</span>
+          <span>Min Signal</span>
         </label>
         <InputNumber
           v-if="filterStore.subgraphFilters.hideSmallSignal"
@@ -380,11 +572,15 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
         />
       </div>
 
-      <div class="filter-item filter-toggle">
-        <label class="toggle-label">
-          <ToggleSwitch v-model="filterStore.subgraphFilters.onlyAllocated" />
-          <span>Only Allocated</span>
-        </label>
+      <div class="filter-item filter-number">
+        <label class="field-label-sm">Max Signal</label>
+        <InputNumber
+          v-model="filterStore.subgraphFilters.maxSignal"
+          placeholder="0 = off"
+          class="number-input"
+          :min="0"
+          suffix=" GRT"
+        />
       </div>
 
       <div class="filter-item filter-network">
@@ -397,12 +593,60 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
           selectedItemsLabel="{0} networks"
         />
       </div>
+
+      <div class="filter-item filter-toggle">
+        <label class="toggle-label">
+          <ToggleSwitch v-model="filterStore.subgraphFilters.onlyAllocated" />
+          <span>Only Allocated</span>
+        </label>
+      </div>
+
+      <div class="filter-item filter-toggle">
+        <label class="toggle-label">
+          <ToggleSwitch v-model="filterStore.subgraphFilters.hideCurrentlyAllocated" />
+          <span>Hide Allocated</span>
+        </label>
+      </div>
+
+      <div class="filter-item filter-toggle">
+        <label class="toggle-label">
+          <ToggleSwitch v-model="filterStore.subgraphFilters.activateBlacklist" />
+          <span>Blacklist</span>
+        </label>
+      </div>
+
+      <div class="filter-item filter-toggle">
+        <label class="toggle-label">
+          <ToggleSwitch v-model="filterStore.subgraphFilters.activateSynclist" />
+          <span>Synclist</span>
+        </label>
+      </div>
+
+      <div class="filter-item filter-number">
+        <label class="field-label-sm">Target APR</label>
+        <InputNumber
+          v-model="filterStore.subgraphFilters.targetApr"
+          class="number-input"
+          :min="0"
+          suffix="%"
+        />
+      </div>
+
+      <div class="filter-item filter-number">
+        <label class="field-label-sm">New Allo</label>
+        <InputNumber
+          v-model="filterStore.subgraphFilters.newAllocation"
+          class="number-input"
+          :min="0"
+          suffix=" GRT"
+        />
+      </div>
     </div>
 
     <!-- Data table -->
     <div class="table-wrapper">
       <DataTable
-        :data="computedSubgraphs"
+        :data="displaySubgraphs"
         :columns="columns"
         :loading="isLoading"
         :enable-selection="true"
@@ -463,6 +707,12 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   display: flex;
   align-items: baseline;
   gap: 12px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .step-title {
@@ -537,12 +787,46 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   width: 120px;
 }
 
+.filter-rewards {
+  min-width: 150px;
+}
+
+.rewards-select {
+  width: 100%;
+}
+
+.filter-status {
+  min-width: 160px;
+}
+
+.status-select {
+  width: 100%;
+}
+
 .filter-network {
   min-width: 160px;
 }
 
 .network-select {
   width: 100%;
+}
+
+.filter-number {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.field-label-sm {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--p-text-muted-color);
+  white-space: nowrap;
+}
+
+.number-input {
+  width: 120px;
 }
 
 /* --- Table wrapper --- */
@@ -644,5 +928,46 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* --- Status indicators with colored dots --- */
+:deep(.status-indicators) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  overflow: hidden;
+}
+
+:deep(.status-check) {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+:deep(.dot) {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+:deep(.dot-green) {
+  background-color: var(--p-green-400);
+}
+
+:deep(.dot-yellow) {
+  background-color: var(--p-yellow-400);
+}
+
+:deep(.dot-red) {
+  background-color: var(--p-red-400);
+}
+
+:deep(.check-label) {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--p-text-muted-color);
 }
 </style>
