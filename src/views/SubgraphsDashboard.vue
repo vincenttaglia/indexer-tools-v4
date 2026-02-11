@@ -277,8 +277,12 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
           versions?.[0]?.metadata?.subgraphVersion?.subgraph?.metadata
         const name = meta?.displayName ?? 'Unknown'
         const hash = ipfsHash.slice(0, 8)
+        const isDeployed = !!row.deploymentStatus
         const isAllocated = allocatedDeployments.value.has(ipfsHash) && !closingDeployments.value.has(ipfsHash)
         const nameChildren: ReturnType<typeof h>[] = [name as any]
+        if (isDeployed) {
+          nameChildren.push(h('span', { class: 'deployed-dot', title: 'Deployed on your node' }))
+        }
         if (isAllocated) {
           nameChildren.push(h('span', { class: 'allocated-dot', title: 'Currently allocated' }))
         }
@@ -625,6 +629,13 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
 
       <div class="filter-toggle">
         <label class="toggle-label">
+          <ToggleSwitch v-model="filterStore.subgraphFilters.onlyDeployed" />
+          <span>Only Deployed</span>
+        </label>
+      </div>
+
+      <div class="filter-toggle">
+        <label class="toggle-label">
           <ToggleSwitch v-model="filterStore.subgraphFilters.onlyAllocated" />
           <span>Only Allocated</span>
         </label>
@@ -885,6 +896,14 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+:deep(.deployed-dot) {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--p-green-400);
+  flex-shrink: 0;
 }
 
 :deep(.allocated-dot) {

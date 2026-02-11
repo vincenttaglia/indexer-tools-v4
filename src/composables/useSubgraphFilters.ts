@@ -85,6 +85,11 @@ export function useSubgraphFilters(
         if (allocatedDeployments.value.has(ipfsHash) && !closingDeployments?.value?.has(ipfsHash)) return false
       }
 
+      // Only show subgraphs the indexer has deployed on their graph-node
+      if (filters.onlyDeployed) {
+        if (!statuses?.value?.has(ipfsHash)) return false
+      }
+
       // Network filter (multi-select: empty = all networks)
       if (filters.networks.length > 0) {
         if (!deployment.manifest.network || !filters.networks.includes(deployment.manifest.network)) return false

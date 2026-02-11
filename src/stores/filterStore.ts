@@ -7,6 +7,7 @@ export interface SubgraphFilters {
   rewardsFilter: 0 | 1 | 2 // 0=Exclude Denied, 1=Include, 2=Only Denied
   onlyAllocated: boolean
   hideCurrentlyAllocated: boolean
+  onlyDeployed: boolean
   minSignal: number
   maxSignal: number // 0 = disabled
   networks: string[] // empty = all networks
@@ -46,6 +47,7 @@ export const useFilterStore = defineStore('filters', () => {
     rewardsFilter: 0,
     onlyAllocated: false,
     hideCurrentlyAllocated: false,
+    onlyDeployed: false,
     minSignal: 0,
     maxSignal: 0,
     networks: [],
