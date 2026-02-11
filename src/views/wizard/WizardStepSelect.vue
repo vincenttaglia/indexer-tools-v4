@@ -795,8 +795,14 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   width: 100%;
 }
 
-.filter-number :deep(.p-inputnumber-input) {
+.filter-number :deep(.p-inputnumber) {
+  display: inline-flex;
   width: 120px;
+}
+
+.filter-number :deep(.p-inputnumber-input) {
+  width: 100%;
+  min-width: 0;
 }
 
 .toggle-input {
