@@ -4,14 +4,25 @@ import { defineStore } from 'pinia'
 export interface SubgraphFilters {
   search: string
   hideSmallSignal: boolean
-  hideDenied: boolean
+  rewardsFilter: 0 | 1 | 2 // 0=Exclude Denied, 1=Include, 2=Only Denied
   onlyAllocated: boolean
+  hideCurrentlyAllocated: boolean
   minSignal: number
-  network: string | null
+  maxSignal: number // 0 = disabled
+  networks: string[] // empty = all networks
+  statusFilter: string // 'none' | 'all' | 'closable' | 'healthy-synced' | 'syncing' | 'failed' | 'non-deterministic' | 'deterministic'
+  activateBlacklist: boolean
+  activateSynclist: boolean
+  targetApr: number
+  newAllocation: number
 }
 
 export interface AllocationFilters {
   search: string
+  statusFilter: string
+  networks: string[]
+  activateBlacklist: boolean
+  activateSynclist: boolean
 }
 
 export interface QosFilters {
@@ -32,14 +43,25 @@ export const useFilterStore = defineStore('filters', () => {
   const subgraphFilters = ref<SubgraphFilters>({
     search: '',
     hideSmallSignal: false,
-    hideDenied: false,
+    rewardsFilter: 0,
     onlyAllocated: false,
+    hideCurrentlyAllocated: false,
     minSignal: 0,
-    network: null,
+    maxSignal: 0,
+    networks: [],
+    statusFilter: 'none',
+    activateBlacklist: false,
+    activateSynclist: false,
+    targetApr: 10,
+    newAllocation: 100000,
   })
 
   const allocationFilters = ref<AllocationFilters>({
     search: '',
+    statusFilter: 'none',
+    networks: [],
+    activateBlacklist: false,
+    activateSynclist: false,
   })
 
   const qosFilters = ref<QosFilters>({

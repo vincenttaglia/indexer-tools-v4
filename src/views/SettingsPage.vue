@@ -6,6 +6,7 @@ import Select from 'primevue/select'
 import Card from 'primevue/card'
 import ToggleSwitch from 'primevue/toggleswitch'
 import Password from 'primevue/password'
+import Textarea from 'primevue/textarea'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useChainStore } from '@/stores/chainStore'
 import { useAccountStore } from '@/stores/accountStore'
@@ -157,7 +158,41 @@ function getChainLabel(chainId: ChainId): string {
       </template>
     </Card>
 
-    <!-- Section 4: Indexer Accounts -->
+    <!-- Section 4: Subgraph Lists -->
+    <Card class="settings-section">
+      <template #title>Subgraph Lists</template>
+      <template #subtitle>Manage blacklist and synclist for subgraph filtering (comma or newline separated IPFS hashes)</template>
+      <template #content>
+        <div class="form-grid">
+          <div class="form-field form-field--full">
+            <label for="blacklist" class="field-label">Subgraph Blacklist</label>
+            <Textarea
+              id="blacklist"
+              v-model="settingsStore.subgraphBlacklist"
+              placeholder="QmHash1, QmHash2..."
+              rows="4"
+              class="field-input"
+              autoResize
+            />
+            <span class="field-hint">Subgraphs to exclude when the blacklist filter is active</span>
+          </div>
+          <div class="form-field form-field--full">
+            <label for="synclist" class="field-label">Subgraph Synclist</label>
+            <Textarea
+              id="synclist"
+              v-model="settingsStore.subgraphSynclist"
+              placeholder="QmHash1, QmHash2..."
+              rows="4"
+              class="field-input"
+              autoResize
+            />
+            <span class="field-hint">Only show these subgraphs when the synclist filter is active</span>
+          </div>
+        </div>
+      </template>
+    </Card>
+
+    <!-- Section 5: Indexer Accounts -->
     <Card class="settings-section">
       <template #title>Indexer Accounts</template>
       <template #subtitle>Manage your indexer accounts across different chains</template>
@@ -344,6 +379,10 @@ function getChainLabel(chainId: ChainId): string {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.form-field--full {
+  grid-column: 1 / -1;
 }
 
 .field-label {

@@ -18,7 +18,7 @@ import {
 } from '@/composables'
 
 // Stores
-import { useWizardStore, useChainStore } from '@/stores'
+import { useWizardStore, useChainStore, useFilterStore } from '@/stores'
 
 // Calculations & formatting
 import { calculateNewApr, weiToGrt } from '@/services/calculations'
@@ -32,6 +32,7 @@ import type { SubgraphComputed } from '@/types'
 // ---------------------------------------------------------------------------
 const wizardStore = useWizardStore()
 const chainStore = useChainStore()
+const filterStore = useFilterStore()
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -67,8 +68,8 @@ const { filtered: filteredSubgraphs } = useSubgraphFilters(
   allocatedDeployments,
 )
 
-const targetApr = ref(10)
-const newAllocation = ref('0')
+const targetApr = computed(() => filterStore.subgraphFilters.targetApr)
+const newAllocation = computed(() => String(filterStore.subgraphFilters.newAllocation))
 
 const { computed: computedSubgraphs } = useSubgraphComputations({
   subgraphs: filteredSubgraphs,

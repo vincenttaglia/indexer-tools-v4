@@ -43,7 +43,7 @@ const activeStep = ref<string>('1')
 
     <!-- Stepper -->
     <div class="stepper-wrapper">
-      <Stepper v-model:value="activeStep" linear>
+      <Stepper v-model:value="activeStep">
         <StepList>
           <Step value="1">Close Allocations</Step>
           <Step value="2">Set POIs</Step>

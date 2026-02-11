@@ -16,10 +16,18 @@ export const useSettingsStore = defineStore('settings', () => {
   /** Whether dark mode is enabled. Defaults to true. */
   const darkMode = ref(true)
 
+  /** Comma/newline-separated IPFS hashes of blacklisted subgraphs. */
+  const subgraphBlacklist = ref('')
+
+  /** Comma/newline-separated IPFS hashes of synclist subgraphs. */
+  const subgraphSynclist = ref('')
+
   return {
     theGraphApiKey,
     drpcApiKey,
     darkMode,
+    subgraphBlacklist,
+    subgraphSynclist,
   }
 }, {
   persist: true,

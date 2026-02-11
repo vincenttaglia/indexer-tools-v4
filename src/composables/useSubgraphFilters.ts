@@ -40,8 +40,11 @@ export function useSubgraphFilters(
         if (!matches) return false
       }
 
-      // Hide denied subgraphs (deniedAt > 0 means the subgraph has been denied rewards)
-      if (filters.hideDenied && deployment.deniedAt !== null && deployment.deniedAt > 0) {
+      // Rewards filter: 0 = Exclude Denied, 1 = Include all, 2 = Only Denied
+      if (filters.rewardsFilter === 0 && deployment.deniedAt !== null && deployment.deniedAt > 0) {
+        return false
+      }
+      if (filters.rewardsFilter === 2 && (deployment.deniedAt === null || deployment.deniedAt === 0)) {
         return false
       }
 
@@ -56,9 +59,9 @@ export function useSubgraphFilters(
         if (!allocatedDeployments.value.has(deployment.ipfsHash)) return false
       }
 
-      // Network filter (e.g., "mainnet", "gnosis", "arbitrum-one", etc.)
-      if (filters.network) {
-        if (deployment.manifest.network !== filters.network) return false
+      // Network filter (multi-select: empty = all networks)
+      if (filters.networks.length > 0) {
+        if (!deployment.manifest.network || !filters.networks.includes(deployment.manifest.network)) return false
       }
 
       return true

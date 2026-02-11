@@ -7,6 +7,7 @@ import { storeToRefs } from 'pinia'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
+import MultiSelect from 'primevue/multiselect'
 import ToggleSwitch from 'primevue/toggleswitch'
 import InputNumber from 'primevue/inputnumber'
 
@@ -69,11 +70,7 @@ const networkOptions = computed(() => {
     const net = sg.deployment.manifest.network
     if (net) networks.add(net)
   }
-  const sorted = [...networks].sort()
-  return [
-    { label: 'All Networks', value: null },
-    ...sorted.map((n) => ({ label: n, value: n })),
-  ]
+  return [...networks].sort()
 })
 
 // ---------------------------------------------------------------------------
@@ -87,8 +84,8 @@ const { filtered: filteredSubgraphs } = useSubgraphFilters(
 // ---------------------------------------------------------------------------
 // Computation inputs
 // ---------------------------------------------------------------------------
-const targetApr = ref(10)
-const newAllocation = ref('0')
+const targetApr = computed(() => filterStore.subgraphFilters.targetApr)
+const newAllocation = computed(() => String(filterStore.subgraphFilters.newAllocation))
 
 const { computed: computedSubgraphs } = useSubgraphComputations({
   subgraphs: filteredSubgraphs,
@@ -301,7 +298,10 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
 
       <div class="filter-item filter-toggle">
         <label class="toggle-label">
-          <ToggleSwitch v-model="filterStore.subgraphFilters.hideDenied" />
+          <ToggleSwitch
+            :modelValue="filterStore.subgraphFilters.rewardsFilter === 0"
+            @update:modelValue="(val: boolean) => filterStore.subgraphFilters.rewardsFilter = val ? 0 : 1"
+          />
           <span>Hide Denied</span>
         </label>
       </div>
@@ -329,13 +329,13 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
       </div>
 
       <div class="filter-item filter-network">
-        <Select
-          v-model="filterStore.subgraphFilters.network"
+        <MultiSelect
+          v-model="filterStore.subgraphFilters.networks"
           :options="networkOptions"
-          optionLabel="label"
-          optionValue="value"
           placeholder="All Networks"
           class="network-select"
+          :maxSelectedLabels="2"
+          selectedItemsLabel="{0} networks"
         />
       </div>
     </div>

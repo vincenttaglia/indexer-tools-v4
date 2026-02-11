@@ -259,7 +259,10 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
 
       <div class="filter-item filter-toggle">
         <label class="toggle-label">
-          <ToggleSwitch v-model="filterStore.subgraphFilters.hideDenied" />
+          <ToggleSwitch
+            :modelValue="filterStore.subgraphFilters.rewardsFilter === 0"
+            @update:modelValue="(val: boolean) => filterStore.subgraphFilters.rewardsFilter = val ? 0 : 1"
+          />
           <span>Hide Denied</span>
         </label>
       </div>
