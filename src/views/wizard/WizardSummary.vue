@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useWizardStore, useChainStore } from '@/stores'
+import { useWizardStore, useChainStore, useFilterStore } from '@/stores'
 import {
   useAllocationsQuery,
   useNetworkQuery,
@@ -14,6 +14,7 @@ import type { SubgraphRaw } from '@/types'
 
 const wizardStore = useWizardStore()
 const chainStore = useChainStore()
+const filterStore = useFilterStore()
 const allocationsQuery = useAllocationsQuery()
 const networkQuery = useNetworkQuery()
 const indexerQuery = useIndexerQuery()
@@ -247,7 +248,7 @@ const afterOverallApr = computed<number>(() => {
 
 // ---------------------------------------------------------------------------
 // Metric 6: Selected Max Allos
-// Sum of maxAllo for each selected deployment (target APR = 10%).
+// Sum of maxAllo for each selected deployment using the user's target APR.
 // ---------------------------------------------------------------------------
 const selectedMaxAllosTotal = computed<number>(() => {
   const metrics = networkQuery.data.value
@@ -255,6 +256,7 @@ const selectedMaxAllosTotal = computed<number>(() => {
   if (!metrics || wizardStore.selectedDeployments.size === 0) return 0
 
   const bpd = chainStore.chainConfig.blocksPerDay
+  const targetApr = filterStore.subgraphFilters.targetApr
   let total = 0
 
   for (const ipfsHash of wizardStore.selectedDeployments) {
@@ -268,7 +270,7 @@ const selectedMaxAllosTotal = computed<number>(() => {
     }
 
     const maxAllo = calculateMaxAllocation({
-      targetApr: 10,
+      targetApr,
       signalledTokens: dep.signalledTokens,
       stakedTokens: effectiveStaked,
       totalTokensSignalled: metrics.totalTokensSignalled,
