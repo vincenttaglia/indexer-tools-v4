@@ -380,16 +380,18 @@ const columns: ColumnDef<SubgraphComputed, unknown>[] = [
 }
 
 .page-title {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 600;
   color: var(--p-text-color);
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .row-count {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--p-text-muted-color);
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
 .header-right {
@@ -402,13 +404,13 @@ const columns: ColumnDef<SubgraphComputed, unknown>[] = [
 .filter-bar {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
   flex-shrink: 0;
   padding: 12px 16px;
   background-color: var(--p-surface-50);
   border: 1px solid var(--p-surface-200);
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .filter-item {
@@ -434,7 +436,7 @@ const columns: ColumnDef<SubgraphComputed, unknown>[] = [
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--p-text-color);
   cursor: pointer;
   user-select: none;
@@ -467,7 +469,7 @@ const columns: ColumnDef<SubgraphComputed, unknown>[] = [
 :deep(.name-cell) {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   overflow: hidden;
   min-width: 0;
   max-width: 100%;
@@ -475,6 +477,7 @@ const columns: ColumnDef<SubgraphComputed, unknown>[] = [
 
 :deep(.name-primary) {
   font-weight: 500;
+  font-size: 0.8125rem;
   color: var(--p-text-color);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -482,7 +485,7 @@ const columns: ColumnDef<SubgraphComputed, unknown>[] = [
 }
 
 :deep(.name-hash) {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   color: var(--p-text-muted-color);
   font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono',
     Menlo, Consolas, monospace;
@@ -501,6 +504,7 @@ const columns: ColumnDef<SubgraphComputed, unknown>[] = [
 
 :deep(.token-value) {
   font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
   white-space: nowrap;
   color: var(--p-text-color);
   overflow: hidden;
@@ -509,6 +513,7 @@ const columns: ColumnDef<SubgraphComputed, unknown>[] = [
 
 :deep(.text-muted) {
   color: var(--p-text-muted-color);
+  font-size: 0.8125rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

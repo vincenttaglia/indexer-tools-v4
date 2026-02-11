@@ -1,6 +1,9 @@
 /* PrimeIcons */
 @import 'primeicons/primeicons.css';
 
+/* Inter font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 /* ===== CSS Reset / Normalize ===== */
 *,
 *::before,
@@ -18,12 +21,14 @@ body,
 }
 
 body {
-  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--p-surface-ground);
   color: var(--p-text-color);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 a {
@@ -31,9 +36,17 @@ a {
   color: inherit;
 }
 
-/* ===== Dark mode ===== */
-.app-dark body {
-  background-color: var(--p-surface-ground);
+/* ===== Selection highlight ===== */
+::selection {
+  background-color: color-mix(in srgb, var(--p-primary-color) 30%, transparent);
+  color: var(--p-text-color);
+}
+
+/* ===== Focus ring ===== */
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--p-primary-color) 50%, transparent);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 /* ===== Scrollbar styling ===== */
@@ -59,4 +72,13 @@ a {
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--p-surface-300) transparent;
+}
+
+/* ===== Transitions for theme switching ===== */
+.sidebar,
+.main-content,
+.data-table-container,
+.filter-bar,
+.settings-section {
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }

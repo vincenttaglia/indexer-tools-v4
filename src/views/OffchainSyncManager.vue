@@ -288,20 +288,21 @@ const columns: ColumnDef<DeploymentStatus, unknown>[] = [
 
 .no-endpoint-card h2 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 600;
   color: var(--p-text-color);
 }
 
 .no-endpoint-card p {
   margin: 0;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   max-width: 400px;
   line-height: 1.5;
 }
 
 .no-endpoint-card svg {
-  opacity: 0.4;
+  opacity: 0.3;
+  color: var(--p-surface-400);
 }
 
 /* --- Header --- */
@@ -319,16 +320,18 @@ const columns: ColumnDef<DeploymentStatus, unknown>[] = [
 }
 
 .page-title {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 600;
   color: var(--p-text-color);
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .row-count {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--p-text-muted-color);
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
 .header-right {
@@ -347,6 +350,7 @@ const columns: ColumnDef<DeploymentStatus, unknown>[] = [
 /* --- Cell styles --- */
 :deep(.text-muted) {
   color: var(--p-text-muted-color);
+  font-size: 0.8125rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -362,18 +366,21 @@ const columns: ColumnDef<DeploymentStatus, unknown>[] = [
 
 :deep(.synced-yes) {
   font-weight: 500;
+  font-size: 0.8125rem;
   color: var(--p-green-400);
   white-space: nowrap;
 }
 
 :deep(.synced-no) {
   font-weight: 500;
+  font-size: 0.8125rem;
   color: var(--p-red-400);
   white-space: nowrap;
 }
 
 :deep(.block-number) {
   font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
   white-space: nowrap;
   color: var(--p-text-color);
   overflow: hidden;
@@ -382,6 +389,7 @@ const columns: ColumnDef<DeploymentStatus, unknown>[] = [
 
 :deep(.blocks-behind) {
   font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;

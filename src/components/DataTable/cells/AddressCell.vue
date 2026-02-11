@@ -96,7 +96,7 @@ async function copyToClipboard() {
   gap: 6px;
   font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono',
     Menlo, Consolas, monospace;
-  font-size: 0.875em;
+  font-size: 0.8125rem;
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
@@ -105,10 +105,12 @@ async function copyToClipboard() {
 .address-link {
   color: var(--p-primary-color);
   text-decoration: none;
+  transition: opacity 150ms ease-out;
 }
 
 .address-link:hover {
   text-decoration: underline;
+  opacity: 0.85;
 }
 
 .address-text {
@@ -122,18 +124,25 @@ async function copyToClipboard() {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 2px;
+  padding: 4px;
   border-radius: 4px;
   color: var(--p-text-muted-color);
-  transition: color 0.15s ease, background-color 0.15s ease;
+  opacity: 0.5;
+  transition: all 150ms ease-out;
+  flex-shrink: 0;
+}
+
+.address-cell:hover .copy-btn {
+  opacity: 1;
 }
 
 .copy-btn:hover {
   color: var(--p-text-color);
-  background-color: var(--p-surface-100);
+  background-color: var(--p-surface-200);
 }
 
 .copy-btn.copied {
   color: var(--p-green-400);
+  opacity: 1;
 }
 </style>

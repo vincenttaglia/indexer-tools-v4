@@ -305,24 +305,25 @@ function getChainLabel(chainId: ChainId): string {
   max-width: 800px;
   width: 100%;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 24px;
   height: 100%;
   overflow-y: auto;
 }
 
 .page-title {
-  font-size: 1.75rem;
+  font-size: 1.25rem;
   font-weight: 600;
   color: var(--p-text-color);
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .settings-section {
   background: var(--p-surface-0);
-  border: 1px solid var(--p-surface-100);
+  border: 1px solid var(--p-surface-200);
   border-radius: 12px;
 }
 
@@ -330,7 +331,7 @@ function getChainLabel(chainId: ChainId): string {
 .form-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1.25rem;
+  gap: 20px;
 }
 
 @media (min-width: 640px) {
@@ -342,17 +343,17 @@ function getChainLabel(chainId: ChainId): string {
 .form-field {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .field-label {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   color: var(--p-text-color);
 }
 
 .field-hint {
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   color: var(--p-text-muted-color);
 }
 
@@ -373,78 +374,84 @@ function getChainLabel(chainId: ChainId): string {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 16px;
 }
 
 .toggle-info {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 4px;
 }
 
 /* Account list */
 .account-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .account-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem;
+  gap: 16px;
+  padding: 16px;
   background: var(--p-surface-50);
-  border: 1px solid var(--p-surface-100);
+  border: 1px solid var(--p-surface-200);
   border-radius: 8px;
   flex-wrap: wrap;
+  transition: border-color 150ms ease-out;
+}
+
+.account-row:hover {
+  border-color: var(--p-surface-300);
 }
 
 .account-row--active {
-  border-color: var(--p-primary-color);
-  background: color-mix(in srgb, var(--p-primary-color) 5%, var(--p-surface-50));
+  border-color: color-mix(in srgb, var(--p-primary-color) 40%, var(--p-surface-200));
+  background: color-mix(in srgb, var(--p-primary-color) 4%, var(--p-surface-50));
 }
 
 .account-info {
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
+  gap: 4px;
   min-width: 0;
   flex: 1;
 }
 
 .account-label {
   font-weight: 600;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   color: var(--p-text-color);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .active-badge {
-  font-size: 0.6875rem;
+  font-size: 0.625rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--p-primary-color);
-  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
-  padding: 0.125rem 0.5rem;
-  border-radius: 4px;
+  background: color-mix(in srgb, var(--p-primary-color) 10%, transparent);
+  padding: 2px 8px;
+  border-radius: 9999px;
 }
 
 .account-details {
   display: flex;
-  gap: 0.75rem;
-  font-size: 0.8125rem;
+  gap: 12px;
+  font-size: 0.75rem;
   color: var(--p-text-muted-color);
   flex-wrap: wrap;
 }
 
 .account-address {
-  font-family: monospace;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono',
+    Menlo, Consolas, monospace;
   word-break: break-all;
 }
 
@@ -454,48 +461,50 @@ function getChainLabel(chainId: ChainId): string {
 
 .account-actions {
   display: flex;
-  gap: 0.5rem;
+  gap: 8px;
   flex-shrink: 0;
 }
 
 /* Empty state */
 .empty-state {
   text-align: center;
-  padding: 2rem 1rem;
+  padding: 32px 16px;
   color: var(--p-text-muted-color);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
 }
 
 /* Add button */
 .add-button-row {
-  margin-top: 0.5rem;
+  margin-top: 8px;
 }
 
 /* Add account form */
 .add-account-form {
-  margin-top: 1.25rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--p-surface-100);
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--p-surface-200);
 }
 
 .form-heading {
-  font-size: 1rem;
+  font-size: 0.6875rem;
   font-weight: 600;
-  color: var(--p-text-color);
-  margin: 0 0 1rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--p-text-muted-color);
+  margin: 0 0 16px 0;
 }
 
 .form-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: 12px;
   justify-content: flex-end;
-  margin-top: 1.25rem;
+  margin-top: 20px;
 }
 
 /* Responsive stacking */
 @media (max-width: 480px) {
   .settings-page {
-    padding: 1rem;
+    padding: 16px;
   }
 
   .account-row {

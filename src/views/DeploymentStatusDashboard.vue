@@ -334,16 +334,18 @@ const columns: ColumnDef<DeploymentStatus, unknown>[] = [
 }
 
 .page-title {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 600;
   color: var(--p-text-color);
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .row-count {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--p-text-muted-color);
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
 .header-right {
@@ -356,13 +358,13 @@ const columns: ColumnDef<DeploymentStatus, unknown>[] = [
 .filter-bar {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
   flex-shrink: 0;
   padding: 12px 16px;
   background-color: var(--p-surface-50);
   border: 1px solid var(--p-surface-200);
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .filter-item {
@@ -384,7 +386,7 @@ const columns: ColumnDef<DeploymentStatus, unknown>[] = [
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--p-text-color);
   cursor: pointer;
   user-select: none;
@@ -400,6 +402,7 @@ const columns: ColumnDef<DeploymentStatus, unknown>[] = [
 /* --- Cell styles --- */
 :deep(.text-muted) {
   color: var(--p-text-muted-color);
+  font-size: 0.8125rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -423,18 +426,21 @@ const columns: ColumnDef<DeploymentStatus, unknown>[] = [
 
 :deep(.synced-yes) {
   font-weight: 500;
+  font-size: 0.8125rem;
   color: var(--p-green-400);
   white-space: nowrap;
 }
 
 :deep(.synced-no) {
   font-weight: 500;
+  font-size: 0.8125rem;
   color: var(--p-red-400);
   white-space: nowrap;
 }
 
 :deep(.block-number) {
   font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
   white-space: nowrap;
   color: var(--p-text-color);
   overflow: hidden;
@@ -443,6 +449,7 @@ const columns: ColumnDef<DeploymentStatus, unknown>[] = [
 
 :deep(.blocks-behind) {
   font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -462,7 +469,7 @@ const columns: ColumnDef<DeploymentStatus, unknown>[] = [
 }
 
 :deep(.fatal-error) {
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   color: var(--p-red-400);
   cursor: help;
   overflow: hidden;

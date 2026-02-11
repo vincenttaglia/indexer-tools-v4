@@ -308,16 +308,18 @@ const columns: ColumnDef<AllocationDailyDataPoint, unknown>[] = [
 }
 
 .page-title {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 600;
   color: var(--p-text-color);
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .row-count {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--p-text-muted-color);
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
 .header-right {
@@ -330,13 +332,13 @@ const columns: ColumnDef<AllocationDailyDataPoint, unknown>[] = [
 .filter-bar {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
   flex-shrink: 0;
   padding: 12px 16px;
   background-color: var(--p-surface-50);
   border: 1px solid var(--p-surface-200);
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .filter-item {
@@ -365,7 +367,7 @@ const columns: ColumnDef<AllocationDailyDataPoint, unknown>[] = [
 :deep(.hash-cell) {
   font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono',
     Menlo, Consolas, monospace;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   color: var(--p-text-color);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -383,6 +385,7 @@ const columns: ColumnDef<AllocationDailyDataPoint, unknown>[] = [
 
 :deep(.metric-cell) {
   font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
   white-space: nowrap;
   font-weight: 500;
   overflow: hidden;
@@ -391,6 +394,7 @@ const columns: ColumnDef<AllocationDailyDataPoint, unknown>[] = [
 
 :deep(.token-value) {
   font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
   white-space: nowrap;
   color: var(--p-text-color);
   overflow: hidden;

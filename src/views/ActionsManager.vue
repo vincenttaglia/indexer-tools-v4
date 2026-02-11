@@ -583,20 +583,21 @@ const columns: ColumnDef<Action, unknown>[] = [
 
 .no-agent-card h2 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 600;
   color: var(--p-text-color);
 }
 
 .no-agent-card p {
   margin: 0;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
   max-width: 400px;
   line-height: 1.5;
 }
 
 .no-agent-card svg {
-  opacity: 0.4;
+  opacity: 0.3;
+  color: var(--p-surface-400);
 }
 
 /* --- Header --- */
@@ -614,16 +615,18 @@ const columns: ColumnDef<Action, unknown>[] = [
 }
 
 .page-title {
-  font-size: 1.5rem;
-  font-weight: 700;
+  font-size: 1.25rem;
+  font-weight: 600;
   color: var(--p-text-color);
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .row-count {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--p-text-muted-color);
   font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
 .header-right {
@@ -652,8 +655,9 @@ const columns: ColumnDef<Action, unknown>[] = [
 }
 
 .status-tab-count {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   color: var(--p-text-muted-color);
+  font-variant-numeric: tabular-nums;
 }
 
 /* --- Toolbar --- */
@@ -666,7 +670,7 @@ const columns: ColumnDef<Action, unknown>[] = [
   padding: 8px 12px;
   background-color: var(--p-surface-50);
   border: 1px solid var(--p-surface-200);
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .toolbar-spacer {
@@ -684,7 +688,7 @@ const columns: ColumnDef<Action, unknown>[] = [
 :deep(.mono-text) {
   font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono',
     Menlo, Consolas, monospace;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   color: var(--p-text-color);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -694,6 +698,7 @@ const columns: ColumnDef<Action, unknown>[] = [
 
 :deep(.text-muted) {
   color: var(--p-text-muted-color);
+  font-size: 0.8125rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -706,6 +711,7 @@ const columns: ColumnDef<Action, unknown>[] = [
   min-width: 0;
   max-width: 100%;
   display: inline-block;
+  font-size: 0.8125rem;
 }
 
 :deep(.priority-cell) {
@@ -718,7 +724,7 @@ const columns: ColumnDef<Action, unknown>[] = [
 }
 
 :deep(.failure-text) {
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   color: var(--p-red-400);
   overflow: hidden;
   text-overflow: ellipsis;

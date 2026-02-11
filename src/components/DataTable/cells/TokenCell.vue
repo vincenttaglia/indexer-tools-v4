@@ -39,6 +39,7 @@ const formatted = computed(() => {
 <style scoped>
 .token-cell {
   font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
   white-space: nowrap;
   color: var(--p-text-color);
   overflow: hidden;
@@ -47,8 +48,10 @@ const formatted = computed(() => {
 }
 
 .token-symbol {
-  font-size: 0.75em;
+  font-size: 0.6875rem;
+  font-weight: 500;
   color: var(--p-text-muted-color);
-  margin-left: 4px;
+  margin-left: 3px;
+  letter-spacing: 0.02em;
 }
 </style>

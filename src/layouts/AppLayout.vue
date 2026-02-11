@@ -98,22 +98,23 @@ watch(() => settingsStore.darkMode, (enabled) => {
 .sidebar-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 1.25rem 1rem;
+  gap: 8px;
+  padding: 20px 16px;
   border-bottom: 1px solid var(--p-surface-200);
 }
 
 .sidebar-title {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--p-text-color);
+  letter-spacing: -0.01em;
 }
 
 .sidebar-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.1rem 0.4rem;
+  padding: 2px 6px;
   font-size: 0.625rem;
   font-weight: 600;
   line-height: 1;
@@ -126,29 +127,29 @@ watch(() => settingsStore.darkMode, (enabled) => {
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
-  padding: 0.75rem 0.5rem;
+  gap: 2px;
+  padding: 12px 8px;
   flex: 1;
 }
 
 .sidebar-footer {
   margin-top: auto;
-  padding: 0.5rem;
+  padding: 8px;
   border-top: 1px solid var(--p-surface-200);
 }
 
 .nav-link {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.625rem 0.75rem;
-  border-radius: 6px;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--p-text-muted-color);
   text-decoration: none;
-  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
-  border-left: 3px solid transparent;
+  transition: all 150ms ease-out;
+  position: relative;
 }
 
 .nav-link:hover {
@@ -159,14 +160,25 @@ watch(() => settingsStore.darkMode, (enabled) => {
 .nav-link.router-link-exact-active {
   color: var(--p-primary-color);
   background-color: color-mix(in srgb, var(--p-primary-color) 10%, transparent);
-  border-left-color: var(--p-primary-color);
   font-weight: 600;
+}
+
+.nav-link.router-link-exact-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background-color: var(--p-primary-color);
 }
 
 .nav-link i {
   font-size: 1rem;
-  width: 1.25rem;
+  width: 20px;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .main-content {

@@ -30,6 +30,7 @@ const colorClass = computed(() => {
 <style scoped>
 .percent-cell {
   font-variant-numeric: tabular-nums;
+  font-size: 0.8125rem;
   white-space: nowrap;
   font-weight: 500;
   overflow: hidden;

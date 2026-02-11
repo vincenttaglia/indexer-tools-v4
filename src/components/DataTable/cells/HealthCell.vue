@@ -33,22 +33,23 @@ const config = computed(() => {
   align-items: center;
   gap: 6px;
   padding: 2px 10px;
-  border-radius: 12px;
-  font-size: 0.8125em;
+  border-radius: 9999px;
+  font-size: 0.75rem;
   font-weight: 500;
   white-space: nowrap;
   max-width: 100%;
+  letter-spacing: 0.01em;
 }
 
 .health-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
 .healthy {
-  background-color: color-mix(in srgb, var(--p-green-400) 15%, transparent);
+  background-color: color-mix(in srgb, var(--p-green-400) 12%, transparent);
   color: var(--p-green-400);
 }
 
@@ -57,7 +58,7 @@ const config = computed(() => {
 }
 
 .unhealthy {
-  background-color: color-mix(in srgb, var(--p-yellow-400) 15%, transparent);
+  background-color: color-mix(in srgb, var(--p-yellow-400) 12%, transparent);
   color: var(--p-yellow-400);
 }
 
@@ -66,7 +67,7 @@ const config = computed(() => {
 }
 
 .failed {
-  background-color: color-mix(in srgb, var(--p-red-400) 15%, transparent);
+  background-color: color-mix(in srgb, var(--p-red-400) 12%, transparent);
   color: var(--p-red-400);
 }
 
@@ -75,7 +76,7 @@ const config = computed(() => {
 }
 
 .unknown {
-  background-color: color-mix(in srgb, var(--p-surface-400) 15%, transparent);
+  background-color: color-mix(in srgb, var(--p-surface-400) 10%, transparent);
   color: var(--p-text-muted-color);
 }
 

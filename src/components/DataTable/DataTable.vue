@@ -390,7 +390,7 @@ function handleRowClick(row: T) {
   overflow: auto;
   position: relative;
   border: 1px solid var(--p-surface-200);
-  border-radius: 8px;
+  border-radius: 12px;
   background-color: var(--p-surface-0);
 }
 
@@ -416,9 +416,9 @@ function handleRowClick(row: T) {
 
 .data-table-th {
   padding: 0 16px;
-  height: 44px;
+  height: 40px;
   text-align: left;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -434,6 +434,7 @@ function handleRowClick(row: T) {
   box-sizing: border-box;
   flex-shrink: 0;
   flex-grow: 0;
+  transition: background-color 150ms ease-out, color 150ms ease-out;
 }
 
 .data-table-th.sortable {
@@ -448,6 +449,7 @@ function handleRowClick(row: T) {
 .data-table-th.selection-col {
   text-align: center;
   padding: 0;
+  justify-content: center;
 }
 
 .th-content {
@@ -465,7 +467,7 @@ function handleRowClick(row: T) {
 
 .sort-icon {
   color: var(--p-surface-400);
-  transition: color 0.15s ease;
+  transition: color 150ms ease-out;
 }
 
 .sort-icon.active {
@@ -487,26 +489,26 @@ function handleRowClick(row: T) {
   width: 100%;
   display: flex;
   align-items: center;
-  transition: background-color 0.1s ease;
+  transition: background-color 150ms ease-out;
   cursor: pointer;
 }
 
 .data-table-row:hover {
-  background-color: var(--p-surface-100);
+  background-color: var(--p-surface-50);
 }
 
 .data-table-row.selected {
-  background-color: color-mix(in srgb, var(--p-primary-color) 8%, var(--p-surface-0));
+  background-color: color-mix(in srgb, var(--p-primary-color) 6%, var(--p-surface-0));
 }
 
 .data-table-row.selected:hover {
-  background-color: color-mix(in srgb, var(--p-primary-color) 12%, var(--p-surface-0));
+  background-color: color-mix(in srgb, var(--p-primary-color) 10%, var(--p-surface-0));
 }
 
 /* --- Cells --- */
 .data-table-td {
   padding: 0 16px;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--p-text-color);
   border-bottom: 1px solid var(--p-surface-100);
   white-space: nowrap;
@@ -523,6 +525,7 @@ function handleRowClick(row: T) {
 .data-table-td.selection-col {
   text-align: center;
   padding: 0;
+  justify-content: center;
 }
 
 /* --- Checkbox --- */
@@ -542,11 +545,11 @@ function handleRowClick(row: T) {
 }
 
 .skeleton-row:hover {
-  background-color: transparent;
+  background-color: transparent !important;
 }
 
 .skeleton-bar {
-  height: 14px;
+  height: 12px;
   width: 70%;
   border-radius: 4px;
   background: linear-gradient(
@@ -556,7 +559,7 @@ function handleRowClick(row: T) {
     var(--p-surface-100) 75%
   );
   background-size: 200% 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
+  animation: shimmer 1.8s ease-in-out infinite;
 }
 
 @keyframes shimmer {
@@ -576,7 +579,7 @@ function handleRowClick(row: T) {
 }
 
 .empty-cell {
-  padding: 48px 16px;
+  padding: 64px 16px;
   text-align: center;
   flex: 1;
 }
@@ -590,10 +593,13 @@ function handleRowClick(row: T) {
 }
 
 .empty-state svg {
-  opacity: 0.4;
+  opacity: 0.3;
+  color: var(--p-surface-400);
 }
 
 .empty-state span {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
+  max-width: 320px;
+  line-height: 1.5;
 }
 </style>
