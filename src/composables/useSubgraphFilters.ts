@@ -29,6 +29,7 @@ export function useSubgraphFilters(
   subgraphs: Ref<SubgraphRaw[] | undefined>,
   allocatedDeployments: Ref<Set<string>>,
   statuses?: Ref<Map<string, DeploymentStatus> | undefined>,
+  closingDeployments?: Ref<Set<string>>,
 ) {
   const filterStore = useFilterStore()
   const settingsStore = useSettingsStore()
@@ -79,9 +80,9 @@ export function useSubgraphFilters(
         if (!allocatedDeployments.value.has(ipfsHash)) return false
       }
 
-      // Hide currently allocated subgraphs
+      // Hide currently allocated subgraphs (except those being closed in wizard)
       if (filters.hideCurrentlyAllocated) {
-        if (allocatedDeployments.value.has(ipfsHash)) return false
+        if (allocatedDeployments.value.has(ipfsHash) && !closingDeployments?.value?.has(ipfsHash)) return false
       }
 
       // Network filter (multi-select: empty = all networks)

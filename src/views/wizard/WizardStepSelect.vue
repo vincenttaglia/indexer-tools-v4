@@ -67,6 +67,15 @@ const allocatedDeployments = computed(() => {
   return new Set(allocations.map((a) => a.subgraphDeployment.ipfsHash))
 })
 
+/** IPFS hashes of deployments being closed in wizard Step 1 */
+const closingDeployments = computed(() => {
+  const set = new Set<string>()
+  for (const alloc of wizardStore.closingAllocations.values()) {
+    set.add(alloc.subgraphDeployment.ipfsHash)
+  }
+  return set
+})
+
 /** Unique networks from the raw subgraph data, for the network filter dropdown */
 const networkOptions = computed(() => {
   const raw = subgraphsQuery.data.value ?? []
@@ -125,6 +134,7 @@ const { filtered: filteredSubgraphs } = useSubgraphFilters(
   computed(() => subgraphsQuery.data.value),
   allocatedDeployments,
   computed(() => statusQuery.data.value),
+  closingDeployments,
 )
 
 // ---------------------------------------------------------------------------
@@ -266,13 +276,19 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
       size: 250,
       cell: (info) => {
         const row = info.row.original
+        const ipfsHash = row.deployment.ipfsHash
         const versions = row.deployment.versions
         const meta =
           versions?.[0]?.metadata?.subgraphVersion?.subgraph?.metadata
         const name = meta?.displayName ?? 'Unknown'
-        const hash = row.deployment.ipfsHash.slice(0, 8)
+        const hash = ipfsHash.slice(0, 8)
+        const isAllocated = allocatedDeployments.value.has(ipfsHash) && !closingDeployments.value.has(ipfsHash)
+        const nameChildren: ReturnType<typeof h>[] = [name as any]
+        if (isAllocated) {
+          nameChildren.push(h('span', { class: 'allocated-dot', title: 'Currently allocated' }))
+        }
         return h('div', { class: 'name-cell' }, [
-          h('span', { class: 'name-primary' }, name),
+          h('span', { class: 'name-primary' }, nameChildren),
           h('span', { class: 'name-hash' }, hash),
         ])
       },
@@ -869,6 +885,17 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+:deep(.allocated-dot) {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--p-primary-400);
+  flex-shrink: 0;
 }
 
 :deep(.name-hash) {
