@@ -327,15 +327,18 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
   }),
 
   // 6. Duration (live counter from allocation createdAt timestamp)
-  columnHelper.accessor('createdAt', {
-    id: 'duration',
-    header: 'Duration',
-    size: 180,
-    cell: (info) => {
-      const createdAt = info.getValue() as number
-      return h(DurationCell, { createdAt })
+  columnHelper.accessor(
+    (row) => Math.floor(Date.now() / 1000) - row.createdAt,
+    {
+      id: 'duration',
+      header: 'Duration',
+      size: 180,
+      cell: (info) => {
+        const row = info.row.original
+        return h(DurationCell, { createdAt: row.createdAt })
+      },
     },
-  }),
+  ),
 
   // 7. Pending Rewards (GRT)
   columnHelper.accessor(
