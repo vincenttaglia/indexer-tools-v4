@@ -130,15 +130,15 @@ const selectedActionsList = computed(() =>
   allActions.value.filter((a) => selectedActions.value.has(String(a.id))),
 )
 
-const selectedQueuedIds = computed(() =>
+const selectedApprovableIds = computed(() =>
   selectedActionsList.value
-    .filter((a) => a.status === 'queued')
+    .filter((a) => a.status !== 'success')
     .map((a) => String(a.id)),
 )
 
 const selectedCancelableIds = computed(() =>
   selectedActionsList.value
-    .filter((a) => a.status === 'queued' || a.status === 'approved')
+    .filter((a) => a.status !== 'success')
     .map((a) => String(a.id)),
 )
 
@@ -203,8 +203,8 @@ const executeMutation = useMutation({
 // Mutation handlers
 // ---------------------------------------------------------------------------
 function handleApprove() {
-  if (selectedQueuedIds.value.length === 0) return
-  approveMutation.mutate(selectedQueuedIds.value)
+  if (selectedApprovableIds.value.length === 0) return
+  approveMutation.mutate(selectedApprovableIds.value)
 }
 
 function handleCancel() {
@@ -492,7 +492,7 @@ const columns: ColumnDef<Action, any>[] = [
           severity="success"
           outlined
           size="small"
-          :disabled="selectedQueuedIds.length === 0 || isMutating"
+          :disabled="selectedApprovableIds.length === 0 || isMutating"
           :loading="approveMutation.isPending.value"
           @click="handleApprove"
         />
