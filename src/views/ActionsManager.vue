@@ -340,6 +340,17 @@ const columns: ColumnDef<Action, any>[] = [
       return h('span', { class: 'mono-text', title: val }, short)
     },
   }),
+  columnHelper.accessor('poi', {
+    id: 'poi',
+    header: 'POI',
+    size: 140,
+    cell: (info) => {
+      const val = info.getValue() as string | null
+      if (!val) return h('span', { class: 'text-muted' }, '-')
+      const short = `${val.slice(0, 10)}...${val.slice(-4)}`
+      return h('span', { class: 'mono-text', title: val }, short)
+    },
+  }),
   columnHelper.accessor('amount', {
     id: 'amount',
     header: 'Amount (GRT)',
