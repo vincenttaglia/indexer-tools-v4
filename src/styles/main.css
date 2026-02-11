@@ -84,8 +84,8 @@ a {
   --app-surface-50: var(--p-surface-50);
   --app-surface-100: var(--p-surface-100);
   --app-surface-200: var(--p-surface-200);
-  --app-surface-300: var(--app-surface-300);
-  --app-surface-400: var(--app-surface-400);
+  --app-surface-300: var(--p-surface-300);
+  --app-surface-400: var(--p-surface-400);
   --app-surface-ground: var(--p-surface-ground, #f8fafc);
 }
 

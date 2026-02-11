@@ -17,6 +17,7 @@ import {
   PercentCell,
   HealthCell,
   DurationCell,
+  AddressCell,
 } from '@/components/DataTable'
 
 // Composables
@@ -422,7 +423,89 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     },
   ),
 
-  // 9. Health (from graph-node status endpoint)
+  // 9. QoS: Query Count
+  columnHelper.accessor(
+    (row) => row.qosData?.queryCount ?? null,
+    {
+      id: 'queryCount',
+      header: 'Queries',
+      size: 100,
+      cell: (info) => {
+        const val = info.getValue() as number | null
+        if (val === null) return h('span', { class: 'text-muted' }, '-')
+        return h('span', { class: 'token-value' }, formatNumber(val, 0))
+      },
+    },
+  ),
+
+  // 10. QoS: Total Query Fees (GRT)
+  columnHelper.accessor(
+    (row) => row.qosData?.totalQueryFees ?? null,
+    {
+      id: 'totalQueryFees',
+      header: 'Query Fees (GRT)',
+      size: 130,
+      cell: (info) => {
+        const val = info.getValue() as number | null
+        if (val === null) return h('span', { class: 'text-muted' }, '-')
+        return h('span', { class: 'token-value' }, `${formatNumber(val, 4)} GRT`)
+      },
+    },
+  ),
+
+  // 11. QoS: Avg Latency (ms)
+  columnHelper.accessor(
+    (row) => row.qosData?.avgLatencyMs ?? null,
+    {
+      id: 'avgLatency',
+      header: 'Latency (ms)',
+      size: 110,
+      cell: (info) => {
+        const val = info.getValue() as number | null
+        if (val === null) return h('span', { class: 'text-muted' }, '-')
+        return h('span', { class: 'token-value' }, `${formatNumber(val, 0)}ms`)
+      },
+    },
+  ),
+
+  // 12. QoS: Avg Blocks Behind (color-coded)
+  columnHelper.accessor(
+    (row) => row.qosData?.avgBlocksBehind ?? null,
+    {
+      id: 'blocksBehind',
+      header: 'Blocks Behind',
+      size: 120,
+      cell: (info) => {
+        const val = info.getValue() as number | null
+        if (val === null) return h('span', { class: 'text-muted' }, '-')
+        let colorClass = 'status-green'
+        if (val > 100) colorClass = 'status-red'
+        else if (val > 10) colorClass = 'status-yellow'
+        return h('span', { class: `token-value ${colorClass}` }, formatNumber(val, 0))
+      },
+    },
+  ),
+
+  // 13. QoS: Success Rate (%, color-coded)
+  columnHelper.accessor(
+    (row) => row.qosData?.successRate ?? null,
+    {
+      id: 'successRate',
+      header: 'Success %',
+      size: 100,
+      cell: (info) => {
+        const val = info.getValue() as number | null
+        if (val === null) return h('span', { class: 'text-muted' }, '-')
+        const pct = val * 100
+        let colorClass = 'status-green'
+        if (pct < 90) colorClass = 'status-red'
+        else if (pct < 95) colorClass = 'status-yellow'
+        return h('span', { class: `token-value ${colorClass}` }, `${formatNumber(pct, 1)}%`)
+      },
+    },
+  ),
+
+  // 14. Health (from graph-node status endpoint)
   columnHelper.accessor(
     (row) =>
       (row.deploymentStatus?.health ?? null) as HealthStatus | null,
@@ -437,7 +520,7 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     },
   ),
 
-  // 10. Status checks (multi-indicator with colored dots)
+  // 15. Status checks (multi-indicator with colored dots)
   columnHelper.accessor(
     (row) => row.statusChecks,
     {
@@ -508,15 +591,13 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     },
   ),
 
-  // 11. Allocation ID
+  // 16. Allocation ID
   columnHelper.accessor('id', {
     id: 'allocationId',
     header: 'Allocation ID',
     size: 160,
     cell: (info) => {
-      const val = info.getValue() as string
-      const short = val.slice(0, 10) + '...'
-      return h('span', { class: 'token-value', title: val }, short)
+      return h(AddressCell, { address: info.getValue() as string })
     },
   }),
 ]
@@ -715,10 +796,10 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
   gap: 12px;
   flex-wrap: wrap;
   flex-shrink: 0;
-  padding: 10px 14px;
+  padding: 12px 16px;
   background-color: var(--app-surface-50);
   border: 1px solid var(--app-surface-200);
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 .filter-item {
@@ -865,6 +946,19 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* --- Status color coding --- */
+:deep(.status-green) {
+  color: var(--p-green-400);
+}
+
+:deep(.status-yellow) {
+  color: var(--p-yellow-400);
+}
+
+:deep(.status-red) {
+  color: var(--p-red-400);
 }
 
 /* --- Status indicators with colored dots --- */

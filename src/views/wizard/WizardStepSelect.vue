@@ -744,10 +744,10 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   gap: 12px;
   flex-wrap: wrap;
   flex-shrink: 0;
-  padding: 10px 14px;
+  padding: 12px 16px;
   background-color: var(--app-surface-50);
   border: 1px solid var(--app-surface-200);
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 .filter-item {
