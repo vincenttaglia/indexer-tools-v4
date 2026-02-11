@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, h } from 'vue'
+import { computed, h } from 'vue'
 import { createColumnHelper, type ColumnDef } from '@tanstack/vue-table'
 import { storeToRefs } from 'pinia'
 
@@ -21,6 +21,7 @@ import {
   useAllocationsQuery,
   useStatusQuery,
   useIndexerQuery,
+  useQueryFeesQuery,
   useSubgraphFilters,
   useSubgraphComputations,
 } from '@/composables'
@@ -29,7 +30,7 @@ import {
 import { useFilterStore, useSelectionStore, useChainStore } from '@/stores'
 
 // Types
-import type { SubgraphComputed, HealthStatus } from '@/types'
+import type { SubgraphComputed, QueryFeeData, HealthStatus } from '@/types'
 
 // Formatting
 import { formatNumber } from '@/services/formatting/numbers'
@@ -50,6 +51,7 @@ const networkQuery = useNetworkQuery()
 const allocationsQuery = useAllocationsQuery()
 const statusQuery = useStatusQuery()
 const indexerQuery = useIndexerQuery()
+const queryFeesQuery = useQueryFeesQuery()
 
 // ---------------------------------------------------------------------------
 // Derived state
@@ -73,12 +75,53 @@ const networkOptions = computed(() => {
   return [...networks].sort()
 })
 
+/** Transform QueryDailyDataPoint[] into Map<string, QueryFeeData> */
+const queryFeesMap = computed<Map<string, QueryFeeData> | undefined>(() => {
+  const points = queryFeesQuery.data.value
+  if (!points) return undefined
+  const map = new Map<string, QueryFeeData>()
+  for (const p of points) {
+    map.set(p.subgraphDeployment.id, {
+      avgQueryFee: Number(p.avg_query_fee),
+      totalQueryFees: weiToGrt(p.total_query_fees),
+      queryCount: p.query_count,
+      avgGatewayLatencyMs: p.avg_gateway_latency_ms,
+      successRate: p.gateway_query_success_rate,
+    })
+  }
+  return map
+})
+
+// ---------------------------------------------------------------------------
+// Status filter options
+// ---------------------------------------------------------------------------
+const statusFilterOptions = [
+  { label: 'No Filter', value: 'none' },
+  { label: 'All Statuses', value: 'all' },
+  { label: 'Closable', value: 'closable' },
+  { label: 'Healthy & Synced', value: 'healthy-synced' },
+  { label: 'Syncing', value: 'syncing' },
+  { label: 'Failed', value: 'failed' },
+  { label: 'Non-Deterministic', value: 'non-deterministic' },
+  { label: 'Deterministic', value: 'deterministic' },
+]
+
+// ---------------------------------------------------------------------------
+// Rewards filter options (3-way)
+// ---------------------------------------------------------------------------
+const rewardsFilterOptions = [
+  { label: 'Exclude Denied', value: 0 },
+  { label: 'Include Denied', value: 1 },
+  { label: 'Only Denied', value: 2 },
+]
+
 // ---------------------------------------------------------------------------
 // Filtering
 // ---------------------------------------------------------------------------
 const { filtered: filteredSubgraphs } = useSubgraphFilters(
   computed(() => subgraphsQuery.data.value),
   allocatedDeployments,
+  computed(() => statusQuery.data.value),
 )
 
 // ---------------------------------------------------------------------------
@@ -91,7 +134,7 @@ const { computed: computedSubgraphs } = useSubgraphComputations({
   subgraphs: filteredSubgraphs,
   networkMetrics: computed(() => networkQuery.data.value),
   statuses: computed(() => statusQuery.data.value),
-  queryFees: computed(() => undefined),
+  queryFees: queryFeesMap,
   allocatedDeployments,
   indexingRewardCut: computed(() => indexerQuery.data.value?.indexingRewardCut ?? 0),
   blocksPerDay: computed(() => chainStore.chainConfig.blocksPerDay),
@@ -115,12 +158,15 @@ const filteredCount = computed(() => computedSubgraphs.value.length)
 // ---------------------------------------------------------------------------
 // Refresh all queries
 // ---------------------------------------------------------------------------
+const isArbitrum = computed(() => chainStore.selectedChain === 'arbitrum-one')
+
 function refreshAll() {
   subgraphsQuery.refetch()
   networkQuery.refetch()
   allocationsQuery.refetch()
   statusQuery.refetch()
   indexerQuery.refetch()
+  if (isArbitrum.value) queryFeesQuery.refetch()
 }
 
 // ---------------------------------------------------------------------------
@@ -261,6 +307,48 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
       return h('span', { class: 'token-value' }, formatNumber(val, 0))
     },
   }),
+  // QueryFees: Query Count
+  columnHelper.accessor(
+    (row) => row.queryFees?.queryCount ?? null,
+    {
+      id: 'queryCount',
+      header: 'Queries',
+      size: 100,
+      cell: (info) => {
+        const val = info.getValue() as number | null
+        if (val === null) return h('span', { class: 'text-muted' }, '-')
+        return h('span', { class: 'token-value' }, formatNumber(val, 0))
+      },
+    },
+  ),
+  // QueryFees: Total Fees (GRT)
+  columnHelper.accessor(
+    (row) => row.queryFees?.totalQueryFees ?? null,
+    {
+      id: 'totalQueryFees',
+      header: 'Query Fees (GRT)',
+      size: 130,
+      cell: (info) => {
+        const val = info.getValue() as number | null
+        if (val === null) return h('span', { class: 'text-muted' }, '-')
+        return h('span', { class: 'token-value' }, `${formatNumber(val, 4)} GRT`)
+      },
+    },
+  ),
+  // QueryFees: Avg Gateway Latency (ms)
+  columnHelper.accessor(
+    (row) => row.queryFees?.avgGatewayLatencyMs ?? null,
+    {
+      id: 'avgGatewayLatency',
+      header: 'Gw Latency (ms)',
+      size: 120,
+      cell: (info) => {
+        const val = info.getValue() as number | null
+        if (val === null) return h('span', { class: 'text-muted' }, '-')
+        return h('span', { class: 'token-value' }, `${formatNumber(val, 0)}ms`)
+      },
+    },
+  ),
 ]
 </script>
 
@@ -296,20 +384,31 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
         />
       </div>
 
-      <div class="filter-item filter-toggle">
-        <label class="toggle-label">
-          <ToggleSwitch
-            :modelValue="filterStore.subgraphFilters.rewardsFilter === 0"
-            @update:modelValue="(val: boolean) => filterStore.subgraphFilters.rewardsFilter = val ? 0 : 1"
-          />
-          <span>Hide Denied</span>
-        </label>
+      <div class="filter-item filter-rewards">
+        <Select
+          v-model="filterStore.subgraphFilters.rewardsFilter"
+          :options="rewardsFilterOptions"
+          optionLabel="label"
+          optionValue="value"
+          class="rewards-select"
+        />
+      </div>
+
+      <div class="filter-item filter-status">
+        <Select
+          v-model="filterStore.subgraphFilters.statusFilter"
+          :options="statusFilterOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Status Filter"
+          class="status-select"
+        />
       </div>
 
       <div class="filter-item filter-toggle filter-signal-group">
         <label class="toggle-label">
           <ToggleSwitch v-model="filterStore.subgraphFilters.hideSmallSignal" />
-          <span>Hide Small Signal</span>
+          <span>Min Signal</span>
         </label>
         <InputNumber
           v-if="filterStore.subgraphFilters.hideSmallSignal"
@@ -321,11 +420,15 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
         />
       </div>
 
-      <div class="filter-item filter-toggle">
-        <label class="toggle-label">
-          <ToggleSwitch v-model="filterStore.subgraphFilters.onlyAllocated" />
-          <span>Only Allocated</span>
-        </label>
+      <div class="filter-item filter-number">
+        <label class="field-label-sm">Max Signal</label>
+        <InputNumber
+          v-model="filterStore.subgraphFilters.maxSignal"
+          placeholder="0 = off"
+          class="number-input"
+          :min="0"
+          suffix=" GRT"
+        />
       </div>
 
       <div class="filter-item filter-network">
@@ -336,6 +439,54 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
           class="network-select"
           :maxSelectedLabels="2"
           selectedItemsLabel="{0} networks"
+        />
+      </div>
+
+      <div class="filter-item filter-toggle">
+        <label class="toggle-label">
+          <ToggleSwitch v-model="filterStore.subgraphFilters.onlyAllocated" />
+          <span>Only Allocated</span>
+        </label>
+      </div>
+
+      <div class="filter-item filter-toggle">
+        <label class="toggle-label">
+          <ToggleSwitch v-model="filterStore.subgraphFilters.hideCurrentlyAllocated" />
+          <span>Hide Allocated</span>
+        </label>
+      </div>
+
+      <div class="filter-item filter-toggle">
+        <label class="toggle-label">
+          <ToggleSwitch v-model="filterStore.subgraphFilters.activateBlacklist" />
+          <span>Blacklist</span>
+        </label>
+      </div>
+
+      <div class="filter-item filter-toggle">
+        <label class="toggle-label">
+          <ToggleSwitch v-model="filterStore.subgraphFilters.activateSynclist" />
+          <span>Synclist</span>
+        </label>
+      </div>
+
+      <div class="filter-item filter-number">
+        <label class="field-label-sm">Target APR</label>
+        <InputNumber
+          v-model="filterStore.subgraphFilters.targetApr"
+          class="number-input"
+          :min="0"
+          suffix="%"
+        />
+      </div>
+
+      <div class="filter-item filter-number">
+        <label class="field-label-sm">New Allo</label>
+        <InputNumber
+          v-model="filterStore.subgraphFilters.newAllocation"
+          class="number-input"
+          :min="0"
+          suffix=" GRT"
         />
       </div>
     </div>
@@ -452,12 +603,46 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   width: 120px;
 }
 
+.filter-rewards {
+  min-width: 150px;
+}
+
+.rewards-select {
+  width: 100%;
+}
+
+.filter-status {
+  min-width: 160px;
+}
+
+.status-select {
+  width: 100%;
+}
+
 .filter-network {
   min-width: 160px;
 }
 
 .network-select {
   width: 100%;
+}
+
+.filter-number {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.field-label-sm {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--p-text-muted-color);
+  white-space: nowrap;
+}
+
+.number-input {
+  width: 120px;
 }
 
 /* --- Table wrapper --- */

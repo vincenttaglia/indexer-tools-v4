@@ -10,6 +10,8 @@ export type {
   AllocationSubgraphDeployment,
   AllocationRaw,
   AllocationComputed,
+  AllocationQosData,
+  AllocationStatusChecks,
   PendingReward,
 } from './allocation'
 export type { IndexerAccount, IndexerOnChainData } from './account'

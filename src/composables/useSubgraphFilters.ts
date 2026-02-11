@@ -1,24 +1,37 @@
 import { computed, type Ref } from 'vue'
-import type { SubgraphRaw } from '@/types'
-import { useFilterStore } from '@/stores'
+import type { SubgraphRaw, DeploymentStatus } from '@/types'
+import { useFilterStore, useSettingsStore } from '@/stores'
 import { weiToGrt } from '@/services/calculations'
+
+/**
+ * Parses a comma/newline-separated string of IPFS hashes into a Set.
+ */
+function parseHashList(raw: string): Set<string> {
+  const set = new Set<string>()
+  if (!raw.trim()) return set
+  for (const entry of raw.split(/[,\n]/)) {
+    const hash = entry.trim()
+    if (hash) set.add(hash)
+  }
+  return set
+}
 
 /**
  * Applies pre-computation filters to raw subgraph data.
  * These filters operate on raw data fields (no calculation needed).
  *
- * Replaces v3's cascading filter chains in the subgraphs store getFilteredSubgraphs
- * getter with a single computed that runs BEFORE the expensive computation pass.
- *
  * @param subgraphs - Reactive ref to raw subgraph data from TanStack Query
  * @param allocatedDeployments - Set of deployment IPFS hashes the indexer has allocated to
+ * @param statuses - Deployment statuses from the graph-node status endpoint
  * @returns Filtered SubgraphRaw[]
  */
 export function useSubgraphFilters(
   subgraphs: Ref<SubgraphRaw[] | undefined>,
   allocatedDeployments: Ref<Set<string>>,
+  statuses?: Ref<Map<string, DeploymentStatus> | undefined>,
 ) {
   const filterStore = useFilterStore()
+  const settingsStore = useSettingsStore()
 
   const filtered = computed<SubgraphRaw[]>(() => {
     const raw = subgraphs.value ?? []
@@ -26,6 +39,7 @@ export function useSubgraphFilters(
 
     return raw.filter((sg) => {
       const deployment = sg.deployment
+      const ipfsHash = deployment.ipfsHash
 
       // Search filter: match against display name, IPFS hash, or subgraph ID
       if (filters.search) {
@@ -35,7 +49,7 @@ export function useSubgraphFilters(
             ?.metadata?.displayName ?? ''
         const matches =
           name.toLowerCase().includes(search) ||
-          deployment.ipfsHash.toLowerCase().includes(search) ||
+          ipfsHash.toLowerCase().includes(search) ||
           sg.id.toLowerCase().includes(search)
         if (!matches) return false
       }
@@ -54,9 +68,20 @@ export function useSubgraphFilters(
         if (signalGrt < filters.minSignal) return false
       }
 
+      // Max signal: filter out subgraphs above a certain signal threshold
+      if (filters.maxSignal > 0) {
+        const signalGrt = weiToGrt(deployment.signalledTokens)
+        if (signalGrt > filters.maxSignal) return false
+      }
+
       // Only show subgraphs the indexer is currently allocated to
       if (filters.onlyAllocated) {
-        if (!allocatedDeployments.value.has(deployment.ipfsHash)) return false
+        if (!allocatedDeployments.value.has(ipfsHash)) return false
+      }
+
+      // Hide currently allocated subgraphs
+      if (filters.hideCurrentlyAllocated) {
+        if (allocatedDeployments.value.has(ipfsHash)) return false
       }
 
       // Network filter (multi-select: empty = all networks)
@@ -64,9 +89,56 @@ export function useSubgraphFilters(
         if (!deployment.manifest.network || !filters.networks.includes(deployment.manifest.network)) return false
       }
 
+      // Status filter
+      if (filters.statusFilter !== 'none') {
+        const status = statuses?.value?.get(ipfsHash)
+        if (!applyStatusFilter(filters.statusFilter, status)) return false
+      }
+
+      // Blacklist
+      if (filters.activateBlacklist) {
+        const blacklist = parseHashList(settingsStore.subgraphBlacklist)
+        if (blacklist.has(ipfsHash)) return false
+      }
+
+      // Synclist
+      if (filters.activateSynclist) {
+        const synclist = parseHashList(settingsStore.subgraphSynclist)
+        if (!synclist.has(ipfsHash)) return false
+      }
+
       return true
     })
   })
 
   return { filtered }
+}
+
+function applyStatusFilter(
+  filter: string,
+  status: DeploymentStatus | undefined,
+): boolean {
+  if (filter === 'all') return !!status
+  if (!status) return false
+
+  switch (filter) {
+    case 'closable':
+      // For subgraphs, closable = synced AND (no fatal error OR deterministic)
+      if (status.synced) {
+        if (!status.fatalError || status.fatalError.deterministic) return true
+      }
+      return false
+    case 'healthy-synced':
+      return status.health === 'healthy' && status.synced
+    case 'syncing':
+      return status.health === 'healthy' && !status.synced
+    case 'failed':
+      return status.health === 'failed'
+    case 'non-deterministic':
+      return status.health === 'failed' && status.fatalError !== null && !status.fatalError.deterministic
+    case 'deterministic':
+      return status.health === 'failed' && status.fatalError !== null && status.fatalError.deterministic
+    default:
+      return true
+  }
 }

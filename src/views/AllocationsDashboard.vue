@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h } from 'vue'
+import { computed, ref, h } from 'vue'
 import { createColumnHelper, type ColumnDef } from '@tanstack/vue-table'
 import { storeToRefs } from 'pinia'
 import { formatUnits } from 'viem'
@@ -7,6 +7,9 @@ import { formatUnits } from 'viem'
 // PrimeVue components
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
+import Select from 'primevue/select'
+import MultiSelect from 'primevue/multiselect'
+import ToggleSwitch from 'primevue/toggleswitch'
 
 // Project components
 import {
@@ -24,8 +27,11 @@ import {
   useStatusQuery,
   useIndexerQuery,
   useRewardsQuery,
+  useQosDailyDataQuery,
+  useEpochQuery,
   useAllocationComputations,
 } from '@/composables'
+import { useAllocationFilters } from '@/composables/useAllocationFilters'
 import type { AllocationDescriptor } from '@/composables'
 
 // Stores
@@ -52,6 +58,14 @@ const allocationsQuery = useAllocationsQuery()
 const networkQuery = useNetworkQuery()
 const statusQuery = useStatusQuery()
 const indexerQuery = useIndexerQuery()
+const qosQuery = useQosDailyDataQuery()
+const epochQuery = useEpochQuery()
+
+// ---------------------------------------------------------------------------
+// Other indexers status (manually triggered)
+// ---------------------------------------------------------------------------
+const otherIndexersStatus = ref<Map<string, { healthyCount: number; failedCount: number }>>()
+const otherIndexersLoading = ref(false)
 
 // ---------------------------------------------------------------------------
 // Rewards query (on-demand, disabled by default)
@@ -75,6 +89,11 @@ const rewardsFetched = computed(
 )
 
 // ---------------------------------------------------------------------------
+// Is Arbitrum?
+// ---------------------------------------------------------------------------
+const isArbitrum = computed(() => chainStore.selectedChain === 'arbitrum-one')
+
+// ---------------------------------------------------------------------------
 // Computation
 // ---------------------------------------------------------------------------
 const { computed: computedAllocations } = useAllocationComputations({
@@ -88,26 +107,45 @@ const { computed: computedAllocations } = useAllocationComputations({
   pendingRewardsMap: computed(() => rewardsQuery.data.value),
   rewardsLoading: computed(() => rewardsQuery.isFetching.value),
   rewardsFetched,
+  qosData: computed(() => qosQuery.data.value),
+  epochData: computed(() => epochQuery.data.value),
+  otherIndexersStatus: computed(() => otherIndexersStatus.value),
 })
+
+// ---------------------------------------------------------------------------
+// Unique networks for filter dropdown
+// ---------------------------------------------------------------------------
+const networkOptions = computed(() => {
+  const allocs = allocationsQuery.data.value ?? []
+  const networks = new Set<string>()
+  for (const a of allocs) {
+    const net = a.subgraphDeployment.manifest.network
+    if (net) networks.add(net)
+  }
+  return [...networks].sort()
+})
+
+// ---------------------------------------------------------------------------
+// Status filter options
+// ---------------------------------------------------------------------------
+const statusFilterOptions = [
+  { label: 'No Filter', value: 'none' },
+  { label: 'All Statuses', value: 'all' },
+  { label: 'Closable', value: 'closable' },
+  { label: 'Healthy & Synced', value: 'healthy-synced' },
+  { label: 'Syncing', value: 'syncing' },
+  { label: 'Failed', value: 'failed' },
+  { label: 'Non-Deterministic', value: 'non-deterministic' },
+  { label: 'Deterministic', value: 'deterministic' },
+]
 
 // ---------------------------------------------------------------------------
 // Filtering
 // ---------------------------------------------------------------------------
-const filteredAllocations = computed(() => {
-  const all = computedAllocations.value
-  const search = filterStore.allocationFilters.search.toLowerCase().trim()
-  if (!search) return all
-
-  return all.filter((alloc) => {
-    const d = alloc.subgraphDeployment
-    const name = getDeploymentName(alloc)
-    return (
-      name.toLowerCase().includes(search) ||
-      d.ipfsHash.toLowerCase().includes(search) ||
-      alloc.id.toLowerCase().includes(search)
-    )
-  })
-})
+const { filtered: filteredAllocations } = useAllocationFilters(
+  computedAllocations,
+  computed(() => statusQuery.data.value),
+)
 
 // ---------------------------------------------------------------------------
 // Loading state
@@ -130,6 +168,8 @@ function refreshAll() {
   networkQuery.refetch()
   statusQuery.refetch()
   indexerQuery.refetch()
+  epochQuery.refetch()
+  if (isArbitrum.value) qosQuery.refetch()
 }
 
 // ---------------------------------------------------------------------------
@@ -230,7 +270,6 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     size: 160,
     cell: (info) => {
       const val = info.getValue() as number
-      // dailyRewardsCut is in wei, convert to GRT for display
       const grt = weiToGrt(String(val))
       return h(
         'span',
@@ -300,22 +339,154 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     },
   ),
 
-  // 8. Status
+  // 8. QoS: Query Count
   columnHelper.accessor(
-    (row) =>
-      (row.deploymentStatus?.health ?? null) as HealthStatus | null,
+    (row) => row.qosData?.queryCount ?? null,
     {
-      id: 'status',
-      header: 'Status',
-      size: 120,
+      id: 'queryCount',
+      header: 'Queries',
+      size: 100,
       cell: (info) => {
-        const val = info.getValue() as HealthStatus | null
-        return h(HealthCell, { status: val })
+        const val = info.getValue() as number | null
+        if (val === null) return h('span', { class: 'text-muted' }, '-')
+        return h('span', { class: 'token-value' }, formatNumber(val, 0))
       },
     },
   ),
 
-  // 9. Allocation ID
+  // 9. QoS: Total Query Fees (GRT)
+  columnHelper.accessor(
+    (row) => row.qosData?.totalQueryFees ?? null,
+    {
+      id: 'totalQueryFees',
+      header: 'Query Fees (GRT)',
+      size: 130,
+      cell: (info) => {
+        const val = info.getValue() as number | null
+        if (val === null) return h('span', { class: 'text-muted' }, '-')
+        return h('span', { class: 'token-value' }, `${formatNumber(val, 4)} GRT`)
+      },
+    },
+  ),
+
+  // 10. QoS: Avg Latency (ms)
+  columnHelper.accessor(
+    (row) => row.qosData?.avgLatencyMs ?? null,
+    {
+      id: 'avgLatency',
+      header: 'Latency (ms)',
+      size: 110,
+      cell: (info) => {
+        const val = info.getValue() as number | null
+        if (val === null) return h('span', { class: 'text-muted' }, '-')
+        return h('span', { class: 'token-value' }, `${formatNumber(val, 0)}ms`)
+      },
+    },
+  ),
+
+  // 11. QoS: Avg Blocks Behind (color-coded)
+  columnHelper.accessor(
+    (row) => row.qosData?.avgBlocksBehind ?? null,
+    {
+      id: 'blocksBehind',
+      header: 'Blocks Behind',
+      size: 120,
+      cell: (info) => {
+        const val = info.getValue() as number | null
+        if (val === null) return h('span', { class: 'text-muted' }, '-')
+        let colorClass = 'status-green'
+        if (val > 100) colorClass = 'status-red'
+        else if (val > 10) colorClass = 'status-yellow'
+        return h('span', { class: `token-value ${colorClass}` }, formatNumber(val, 0))
+      },
+    },
+  ),
+
+  // 12. QoS: Success Rate (%, color-coded)
+  columnHelper.accessor(
+    (row) => row.qosData?.successRate ?? null,
+    {
+      id: 'successRate',
+      header: 'Success %',
+      size: 100,
+      cell: (info) => {
+        const val = info.getValue() as number | null
+        if (val === null) return h('span', { class: 'text-muted' }, '-')
+        const pct = val * 100
+        let colorClass = 'status-green'
+        if (pct < 90) colorClass = 'status-red'
+        else if (pct < 95) colorClass = 'status-yellow'
+        return h('span', { class: `token-value ${colorClass}` }, `${formatNumber(pct, 1)}%`)
+      },
+    },
+  ),
+
+  // 13. Status checks (multi-indicator)
+  columnHelper.accessor(
+    (row) => row.statusChecks,
+    {
+      id: 'status',
+      header: 'Status',
+      size: 180,
+      cell: (info) => {
+        const row = info.row.original
+        const sc = row.statusChecks
+        const health = row.deploymentStatus?.health ?? null
+
+        const indicators: ReturnType<typeof h>[] = []
+
+        // Health indicator
+        if (health) {
+          indicators.push(h(HealthCell, { status: health as HealthStatus }))
+        }
+
+        // Synced indicator
+        if (sc.synced !== null) {
+          indicators.push(
+            h('span', {
+              class: `status-dot ${sc.synced ? 'status-green' : 'status-red'}`,
+              title: sc.synced ? 'Synced to epoch' : 'Not synced to epoch',
+            }, sc.synced ? 'Synced' : 'Behind'),
+          )
+        }
+
+        // Other indexers
+        if (sc.healthyCount > 0 || sc.failedCount > 0) {
+          indicators.push(
+            h('span', {
+              class: `status-dot ${sc.healthComparison ? 'status-green' : 'status-red'}`,
+              title: `Other indexers: ${sc.healthyCount} healthy, ${sc.failedCount} failed`,
+            }, `${sc.healthyCount}H/${sc.failedCount}F`),
+          )
+        }
+
+        // Deterministic failure
+        if (sc.deterministicFailure !== null) {
+          if (sc.deterministicFailure) {
+            indicators.push(
+              h('span', {
+                class: sc.closable ? 'status-dot status-yellow' : 'status-dot status-red',
+                title: sc.closable ? 'Deterministic failure - safe to close' : 'Deterministic failure',
+              }, 'Det.'),
+            )
+          }
+        }
+
+        if (indicators.length === 0) {
+          return h('span', { class: 'text-muted' }, '-')
+        }
+
+        return h('div', { class: 'status-indicators' }, indicators)
+      },
+      sortingFn: (rowA, rowB) => {
+        const a = rowA.original.statusChecks.closable ? 1 : 0
+        const b = rowB.original.statusChecks.closable ? 1 : 0
+        return a - b
+      },
+    },
+  ),
+
+  // 14. Allocation ID
   columnHelper.accessor('id', {
     id: 'allocationId',
     header: 'Allocation ID',
@@ -365,6 +536,42 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
           placeholder="Search name, IPFS hash, or allocation ID..."
           class="filter-input"
         />
+      </div>
+
+      <div class="filter-item filter-status">
+        <Select
+          v-model="filterStore.allocationFilters.statusFilter"
+          :options="statusFilterOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Status Filter"
+          class="status-select"
+        />
+      </div>
+
+      <div class="filter-item filter-network">
+        <MultiSelect
+          v-model="filterStore.allocationFilters.networks"
+          :options="networkOptions"
+          placeholder="All Networks"
+          class="network-select"
+          :maxSelectedLabels="2"
+          selectedItemsLabel="{0} networks"
+        />
+      </div>
+
+      <div class="filter-item filter-toggle">
+        <label class="toggle-label">
+          <ToggleSwitch v-model="filterStore.allocationFilters.activateBlacklist" />
+          <span>Blacklist</span>
+        </label>
+      </div>
+
+      <div class="filter-item filter-toggle">
+        <label class="toggle-label">
+          <ToggleSwitch v-model="filterStore.allocationFilters.activateSynclist" />
+          <span>Synclist</span>
+        </label>
       </div>
     </div>
 
@@ -458,6 +665,36 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
   width: 100%;
 }
 
+.filter-status {
+  min-width: 160px;
+}
+
+.status-select {
+  width: 100%;
+}
+
+.filter-network {
+  min-width: 160px;
+}
+
+.network-select {
+  width: 100%;
+}
+
+.filter-toggle {
+  white-space: nowrap;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+  color: var(--p-text-color);
+  cursor: pointer;
+  user-select: none;
+}
+
 /* --- Table wrapper --- */
 .table-wrapper {
   flex: 1;
@@ -539,6 +776,34 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
 
 :deep(.duration-red) {
   color: var(--p-red-400);
+}
+
+/* --- Status color coding --- */
+:deep(.status-green) {
+  color: var(--p-green-400);
+}
+
+:deep(.status-yellow) {
+  color: var(--p-yellow-400);
+}
+
+:deep(.status-red) {
+  color: var(--p-red-400);
+}
+
+/* --- Status indicators --- */
+:deep(.status-indicators) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  overflow: hidden;
+}
+
+:deep(.status-dot) {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 /* --- Pending rewards loading spinner --- */

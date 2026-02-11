@@ -21,7 +21,13 @@ import {
 import { useWizardStore, useChainStore, useFilterStore } from '@/stores'
 
 // Calculations & formatting
-import { calculateNewApr, weiToGrt } from '@/services/calculations'
+import {
+  calculateNewApr,
+  calculateSubgraphDailyRewards,
+  calculateDailyRewardsCut,
+  calculateProportion,
+  weiToGrt,
+} from '@/services/calculations'
 import { formatNumber, formatPercent } from '@/services/formatting/numbers'
 
 // Types
@@ -158,6 +164,52 @@ function getNewAprForDeployment(sg: SubgraphComputed, amountGrt: string): number
 }
 
 // ---------------------------------------------------------------------------
+// Richer per-row computed helpers
+// ---------------------------------------------------------------------------
+
+/** Daily rewards (after cut) for the entered allocation amount */
+function getDailyRewardsCut(sg: SubgraphComputed, amountGrt: string): number {
+  const metrics = networkQuery.data.value
+  if (!metrics) return 0
+  const rewardCut = indexerQuery.data.value?.indexingRewardCut ?? 0
+  const dailyRewards = calculateSubgraphDailyRewards({
+    signalledTokens: sg.deployment.signalledTokens,
+    stakedTokens: getEffectiveStakedTokens(sg),
+    totalTokensSignalled: metrics.totalTokensSignalled,
+    networkGRTIssuancePerBlock: metrics.networkGRTIssuancePerBlock,
+    blocksPerDay: chainStore.chainConfig.blocksPerDay,
+    newAllocation: amountGrt,
+  })
+  return calculateDailyRewardsCut(dailyRewards, rewardCut)
+}
+
+/** Current proportion (signal-to-stake ratio) */
+function getCurrentProportion(sg: SubgraphComputed): number {
+  const metrics = networkQuery.data.value
+  if (!metrics) return 0
+  return calculateProportion({
+    signalledTokens: sg.deployment.signalledTokens,
+    totalTokensSignalled: metrics.totalTokensSignalled,
+    stakedTokens: getEffectiveStakedTokens(sg),
+    totalTokensAllocated: metrics.totalTokensAllocated,
+  })
+}
+
+/** New proportion after adding the entered allocation */
+function getNewProportion(sg: SubgraphComputed, amountGrt: string): number {
+  const metrics = networkQuery.data.value
+  if (!metrics) return 0
+  const effectiveStaked = getEffectiveStakedTokens(sg)
+  const newStaked = Number(effectiveStaked) + Number(amountGrt) * 1e18
+  return calculateProportion({
+    signalledTokens: sg.deployment.signalledTokens,
+    totalTokensSignalled: metrics.totalTokensSignalled,
+    stakedTokens: String(newStaked),
+    totalTokensAllocated: metrics.totalTokensAllocated,
+  })
+}
+
+// ---------------------------------------------------------------------------
 // Summary bar
 // ---------------------------------------------------------------------------
 
@@ -273,6 +325,18 @@ const remainingStake = computed<number>(() => {
                   }}
                 </span>
               </span>
+              <span class="metric">
+                <span class="metric-label">Signal:</span>
+                <span class="metric-value">{{ formatNumber(weiToGrt(sg.deployment.signalledTokens), 0) }} GRT</span>
+              </span>
+              <span class="metric">
+                <span class="metric-label">Cur. Allocations:</span>
+                <span class="metric-value">{{ formatNumber(weiToGrt(sg.deployment.stakedTokens), 0) }} GRT</span>
+              </span>
+              <span class="metric">
+                <span class="metric-label">Proportion:</span>
+                <span class="metric-value">{{ getCurrentProportion(sg).toFixed(4) }}</span>
+              </span>
             </div>
           </div>
 
@@ -290,17 +354,39 @@ const remainingStake = computed<number>(() => {
             />
           </div>
 
-          <!-- Right: New APR preview -->
+          <!-- Right: New APR preview + extras -->
           <div class="card-preview">
-            <span class="metric-label">New APR:</span>
-            <span class="metric-value apr-preview">
-              {{ formatPercent(
-                getNewAprForDeployment(
+            <div class="preview-row">
+              <span class="metric-label">New APR:</span>
+              <span class="metric-value apr-preview">
+                {{ formatPercent(
+                  getNewAprForDeployment(
+                    sg,
+                    wizardStore.allocationAmounts.get(sg.deployment.ipfsHash) ?? '0',
+                  )
+                ) }}
+              </span>
+            </div>
+            <div class="preview-row">
+              <span class="metric-label">Daily (Cut):</span>
+              <span class="metric-value">
+                {{ formatNumber(
+                  weiToGrt(String(getDailyRewardsCut(
+                    sg,
+                    wizardStore.allocationAmounts.get(sg.deployment.ipfsHash) ?? '0',
+                  ))), 2
+                ) }} GRT
+              </span>
+            </div>
+            <div class="preview-row">
+              <span class="metric-label">New Prop:</span>
+              <span class="metric-value">
+                {{ getNewProportion(
                   sg,
                   wizardStore.allocationAmounts.get(sg.deployment.ipfsHash) ?? '0',
-                )
-              ) }}
-            </span>
+                ).toFixed(4) }}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -504,8 +590,14 @@ const remainingStake = computed<number>(() => {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 2px;
-  min-width: 100px;
+  gap: 4px;
+  min-width: 120px;
+}
+
+.preview-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
 }
 
 /* --- Summary bar --- */

@@ -47,6 +47,25 @@ export interface PendingReward {
   loaded: boolean
 }
 
+/** QoS data merged into an allocation from the QoS subgraph */
+export interface AllocationQosData {
+  queryCount: number
+  totalQueryFees: number
+  avgLatencyMs: number
+  avgBlocksBehind: number
+  successRate: number // 0-1
+}
+
+/** Status checks for an allocation (EBO synced, other indexers, deterministic failure) */
+export interface AllocationStatusChecks {
+  synced: boolean | null
+  healthComparison: boolean | null
+  healthyCount: number
+  failedCount: number
+  deterministicFailure: boolean | null
+  closable: boolean
+}
+
 /** Computed fields added by the allocation computation composable */
 export interface AllocationComputed extends AllocationRaw {
   apr: number
@@ -55,4 +74,6 @@ export interface AllocationComputed extends AllocationRaw {
   duration: number
   pendingRewards: PendingReward
   deploymentStatus: import('./status').DeploymentStatus | null
+  qosData: AllocationQosData | null
+  statusChecks: AllocationStatusChecks
 }

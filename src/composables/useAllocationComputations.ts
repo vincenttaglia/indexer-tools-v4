@@ -2,15 +2,20 @@ import { computed, type Ref } from 'vue'
 import type {
   AllocationRaw,
   AllocationComputed,
+  AllocationQosData,
+  AllocationStatusChecks,
   NetworkMetrics,
   DeploymentStatus,
   PendingReward,
+  AllocationDailyDataPoint,
+  Epoch,
 } from '@/types'
 import {
   calculateApr,
   calculateAllocationDailyRewards,
   calculateDailyRewardsCut,
 } from '@/services/calculations'
+import { weiToGrt } from '@/services/calculations/tokenMath'
 
 /**
  * Inputs for the single-pass allocation computation composable.
@@ -35,25 +40,21 @@ interface AllocationComputationInputs {
   rewardsLoading: Ref<boolean>
   /** Whether the rewards query has been fetched at least once */
   rewardsFetched: Ref<boolean>
+  /** QoS daily data points from the QoS subgraph */
+  qosData: Ref<AllocationDailyDataPoint[] | undefined>
+  /** Epoch data from EBO subgraph for synced check */
+  epochData: Ref<Epoch | null | undefined>
+  /** Other indexers status aggregation: Map<ipfsHash, {healthyCount, failedCount}> */
+  otherIndexersStatus: Ref<Map<string, { healthyCount: number; failedCount: number }> | undefined>
 }
 
 /**
  * Single-pass computation that transforms AllocationRaw[] into AllocationComputed[].
  *
- * This is the allocation equivalent of useSubgraphComputations — it replaces
- * cascading getter loops with ONE loop that computes all derived values per
- * allocation in a single pass.
- *
  * Computed per allocation:
- *   - apr: based on allocatedTokens, deployment signal/stake
- *   - dailyRewards: from calculateAllocationDailyRewards
- *   - dailyRewardsCut: after indexer cut
- *   - duration: (Date.now()/1000 - createdAt) in days
- *   - pendingRewards: from pendingRewardsMap or loading state
- *   - deploymentStatus: from status map
- *
- * @param inputs - Reactive inputs from TanStack Query caches and stores
- * @returns A computed ref of AllocationComputed[]
+ *   - apr, dailyRewards, dailyRewardsCut, duration, pendingRewards, deploymentStatus
+ *   - qosData: merged from QoS subgraph data
+ *   - statusChecks: EBO synced, other indexers health comparison, deterministic failure, closable
  */
 export function useAllocationComputations(inputs: AllocationComputationInputs) {
   const computed_ = computed<AllocationComputed[]>(() => {
@@ -67,6 +68,21 @@ export function useAllocationComputations(inputs: AllocationComputationInputs) {
     const pendingMap = inputs.pendingRewardsMap.value
     const isRewardsLoading = inputs.rewardsLoading.value
     const isRewardsFetched = inputs.rewardsFetched.value
+
+    // Build QoS lookup by deployment IPFS hash
+    const qosLookup = new Map<string, AllocationDailyDataPoint>()
+    const qosDataPoints = inputs.qosData.value
+    if (qosDataPoints) {
+      for (const dp of qosDataPoints) {
+        qosLookup.set(dp.subgraph_deployment_ipfs_hash, dp)
+      }
+    }
+
+    // Epoch data for EBO-based synced check
+    const epoch = inputs.epochData.value
+
+    // Other indexers status
+    const otherIndexers = inputs.otherIndexersStatus.value
 
     // Single pass: compute all derived values per allocation
     return allocations.map((alloc): AllocationComputed => {
@@ -100,13 +116,10 @@ export function useAllocationComputations(inputs: AllocationComputationInputs) {
       // Pending rewards from the rewards map
       let pendingRewards: PendingReward
       if (!isRewardsFetched && !isRewardsLoading) {
-        // Not yet fetched
         pendingRewards = { value: 0n, loading: false, loaded: false }
       } else if (isRewardsLoading) {
-        // Currently fetching
         pendingRewards = { value: 0n, loading: true, loaded: false }
       } else if (pendingMap) {
-        // Fetched — look up value
         const val = pendingMap.get(alloc.id)
         pendingRewards = { value: val ?? 0n, loading: false, loaded: true }
       } else {
@@ -116,6 +129,27 @@ export function useAllocationComputations(inputs: AllocationComputationInputs) {
       // Deployment status from the graph-node status endpoint
       const deploymentStatus = statuses.get(d.ipfsHash) ?? null
 
+      // QoS data from the QoS subgraph
+      const qosPoint = qosLookup.get(d.ipfsHash)
+      let qosData: AllocationQosData | null = null
+      if (qosPoint) {
+        qosData = {
+          queryCount: qosPoint.query_count,
+          totalQueryFees: weiToGrt(qosPoint.total_query_fees),
+          avgLatencyMs: qosPoint.avg_indexer_latency_ms,
+          avgBlocksBehind: qosPoint.avg_indexer_blocks_behind,
+          successRate: qosPoint.proportion_indexer_200_responses,
+        }
+      }
+
+      // Status checks: EBO synced, other indexers, deterministic failure, closable
+      const statusChecks = computeStatusChecks(
+        alloc,
+        deploymentStatus,
+        epoch,
+        otherIndexers,
+      )
+
       return {
         ...alloc,
         apr,
@@ -124,9 +158,83 @@ export function useAllocationComputations(inputs: AllocationComputationInputs) {
         duration,
         pendingRewards,
         deploymentStatus,
+        qosData,
+        statusChecks,
       }
     })
   })
 
   return { computed: computed_ }
+}
+
+/**
+ * Compute status checks for a single allocation.
+ */
+function computeStatusChecks(
+  alloc: AllocationRaw,
+  deploymentStatus: DeploymentStatus | null,
+  epoch: Epoch | null | undefined,
+  otherIndexers: Map<string, { healthyCount: number; failedCount: number }> | undefined,
+): AllocationStatusChecks {
+  const ipfsHash = alloc.subgraphDeployment.ipfsHash
+  const network = alloc.subgraphDeployment.manifest.network
+
+  // EBO-based synced check
+  let synced: boolean | null = null
+  if (epoch && deploymentStatus && network) {
+    const eboBlock = epoch.blockNumbers.find(b => b.network.alias === network)
+    const latestBlock = deploymentStatus.chains?.[0]?.latestBlock?.number
+    if (eboBlock && latestBlock != null) {
+      synced = latestBlock >= eboBlock.blockNumber
+    }
+  }
+
+  // Other indexers health comparison
+  let healthComparison: boolean | null = null
+  let healthyCount = 0
+  let failedCount = 0
+  if (otherIndexers) {
+    const otherStatus = otherIndexers.get(ipfsHash)
+    if (otherStatus) {
+      healthyCount = otherStatus.healthyCount
+      failedCount = otherStatus.failedCount
+      healthComparison = healthyCount > failedCount
+    }
+  }
+
+  // Deterministic failure check
+  let deterministicFailure: boolean | null = null
+  if (deploymentStatus?.fatalError) {
+    deterministicFailure = deploymentStatus.fatalError.deterministic
+  }
+
+  // Closable logic:
+  // Standard: synced AND (no fatal error OR fatal error is deterministic)
+  // Enhanced: deterministic failure AND majority also failed AND not synced → closable
+  let closable = false
+  if (synced === true) {
+    if (deploymentStatus?.fatalError === null || deploymentStatus?.fatalError === undefined) {
+      closable = true
+    } else if (deploymentStatus.fatalError.deterministic) {
+      closable = true
+    }
+  }
+  // Enhanced: deterministically failed, majority of network also failed, and not synced
+  if (
+    !closable &&
+    deterministicFailure === true &&
+    healthComparison === false &&
+    synced !== true
+  ) {
+    closable = true
+  }
+
+  return {
+    synced,
+    healthComparison,
+    healthyCount,
+    failedCount,
+    deterministicFailure,
+    closable,
+  }
 }
