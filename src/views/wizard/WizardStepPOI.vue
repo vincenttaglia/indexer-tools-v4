@@ -86,7 +86,7 @@ interface POIFormFields {
 
 const formState = reactive<Record<string, POIFormFields>>({})
 
-/** Ensure form state exists for a given deployment */
+/** Ensure form state exists for a given deployment and return it */
 function ensureFormState(ipfsHash: string): POIFormFields {
   if (!formState[ipfsHash]) {
     // Initialize from store if values already exist (e.g., navigating back)
@@ -96,7 +96,12 @@ function ensureFormState(ipfsHash: string): POIFormFields {
       publicPOI: wizardStore.customPublicPOIs.get(ipfsHash) ?? '',
     }
   }
-  return formState[ipfsHash]
+  return formState[ipfsHash]!
+}
+
+/** Get form fields for a deployment (guaranteed initialized by the watch) */
+function getForm(ipfsHash: string): POIFormFields {
+  return ensureFormState(ipfsHash)
 }
 
 // Initialize form state for all deployment groups on load
@@ -217,7 +222,7 @@ function hasCustomData(ipfsHash: string): boolean {
               <label :for="'poi-' + group.ipfsHash" class="field-label">Manual POI</label>
               <InputText
                 :id="'poi-' + group.ipfsHash"
-                v-model="formState[group.ipfsHash].poi"
+                v-model="getForm(group.ipfsHash).poi"
                 placeholder="0x..."
                 class="field-input mono-input"
                 @update:modelValue="handleFieldChange(group.ipfsHash)"
@@ -228,7 +233,7 @@ function hasCustomData(ipfsHash: string): boolean {
               <label :for="'block-' + group.ipfsHash" class="field-label">Block Height</label>
               <InputNumber
                 :id="'block-' + group.ipfsHash"
-                v-model="formState[group.ipfsHash].blockHeight"
+                v-model="getForm(group.ipfsHash).blockHeight"
                 placeholder="Block number"
                 class="field-input"
                 :min="0"
@@ -241,7 +246,7 @@ function hasCustomData(ipfsHash: string): boolean {
               <label :for="'ppoi-' + group.ipfsHash" class="field-label">Public POI</label>
               <InputText
                 :id="'ppoi-' + group.ipfsHash"
-                v-model="formState[group.ipfsHash].publicPOI"
+                v-model="getForm(group.ipfsHash).publicPOI"
                 placeholder="0x..."
                 class="field-input mono-input"
                 @update:modelValue="handleFieldChange(group.ipfsHash)"

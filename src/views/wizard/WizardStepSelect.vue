@@ -135,7 +135,7 @@ function getRowId(row: SubgraphComputed) {
 // ---------------------------------------------------------------------------
 const columnHelper = createColumnHelper<SubgraphComputed>()
 
-const columns: ColumnDef<SubgraphComputed, unknown>[] = [
+const columns: ColumnDef<SubgraphComputed, any>[] = [
   columnHelper.accessor(
     (row) => {
       const versions = row.deployment.versions

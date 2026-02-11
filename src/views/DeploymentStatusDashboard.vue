@@ -118,7 +118,7 @@ function getRowId(row: DeploymentStatus) {
 // ---------------------------------------------------------------------------
 const columnHelper = createColumnHelper<DeploymentStatus>()
 
-const columns: ColumnDef<DeploymentStatus, unknown>[] = [
+const columns: ColumnDef<DeploymentStatus, any>[] = [
   // 1. Deployment (IPFS hash, shortened with copy)
   columnHelper.accessor('subgraph', {
     id: 'deployment',

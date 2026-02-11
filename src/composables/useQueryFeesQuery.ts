@@ -41,6 +41,9 @@ export function useQueryFeesQuery() {
       const client = createGraphQLClient(getQosSubgraphUrl(theGraphApiKey.value))
       return fetchQueryFeesDailyDataLatest(client)
     },
-    enabled: computed(() => !!theGraphApiKey.value),
+    enabled: computed(() =>
+      !!theGraphApiKey.value &&
+      selectedChain.value === 'arbitrum-one',
+    ),
   })
 }

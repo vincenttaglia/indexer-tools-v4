@@ -180,7 +180,7 @@ const deleteMutation = useMutation({
     const client = createGraphQLClient(agentEndpoint.value)
     return deleteActions(client, ids)
   },
-  onSuccess: (count: number) => {
+  onSuccess: (_count: number) => {
     queryClient.invalidateQueries({ queryKey: ['actions'] })
     selectionStore.clearAllActions()
     confirmingDelete.value = false
@@ -296,7 +296,7 @@ function typeSeverity(type: string): TagSeverity {
 // ---------------------------------------------------------------------------
 const columnHelper = createColumnHelper<Action>()
 
-const columns: ColumnDef<Action, unknown>[] = [
+const columns: ColumnDef<Action, any>[] = [
   columnHelper.accessor('id', {
     id: 'id',
     header: 'ID',

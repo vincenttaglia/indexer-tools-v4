@@ -130,7 +130,7 @@ function getRowId(row: IndexingRule) {
 // ---------------------------------------------------------------------------
 const columnHelper = createColumnHelper<IndexingRule>()
 
-const columns: ColumnDef<IndexingRule, unknown>[] = [
+const columns: ColumnDef<IndexingRule, any>[] = [
   columnHelper.accessor('identifier', {
     id: 'deployment',
     header: 'Deployment',

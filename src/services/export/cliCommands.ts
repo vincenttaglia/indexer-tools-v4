@@ -15,12 +15,6 @@ interface NewAllocation {
   amountGrt: number
 }
 
-interface PoiData {
-  poi: string
-  blockHeight: number
-  publicPOI: string
-}
-
 interface CommandParams {
   closingAllocations: ClosingAllocation[]
   newAllocations: NewAllocation[]

@@ -154,7 +154,7 @@ function getDeploymentName(alloc: AllocationComputed): string {
 // ---------------------------------------------------------------------------
 const columnHelper = createColumnHelper<AllocationComputed>()
 
-const columns: ColumnDef<AllocationComputed, unknown>[] = [
+const columns: ColumnDef<AllocationComputed, any>[] = [
   // 1. Deployment Name
   columnHelper.accessor(
     (row) => getDeploymentName(row),

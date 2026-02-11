@@ -13,7 +13,7 @@ import { DataTable } from '@/components/DataTable'
 import { useQueryFeesQuery } from '@/composables'
 
 // Stores
-import { useFilterStore } from '@/stores'
+import { useFilterStore, useChainStore } from '@/stores'
 
 // Types
 import type { QueryDailyDataPoint } from '@/types'
@@ -26,6 +26,8 @@ import { weiToGrt } from '@/services/calculations/tokenMath'
 // Stores
 // ---------------------------------------------------------------------------
 const filterStore = useFilterStore()
+const chainStore = useChainStore()
+const isArbitrum = computed(() => chainStore.selectedChain === 'arbitrum-one')
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -86,7 +88,7 @@ function successRateColorClass(rate: number): string {
 // ---------------------------------------------------------------------------
 const columnHelper = createColumnHelper<QueryDailyDataPoint>()
 
-const columns: ColumnDef<QueryDailyDataPoint, unknown>[] = [
+const columns: ColumnDef<QueryDailyDataPoint, any>[] = [
   // 1. Deployment (IPFS hash)
   columnHelper.accessor(
     (row) => row.subgraphDeployment.id,
@@ -197,6 +199,20 @@ const columns: ColumnDef<QueryDailyDataPoint, unknown>[] = [
 
 <template>
   <div class="query-dashboard">
+    <!-- Non-Arbitrum notice -->
+    <div v-if="!isArbitrum" class="chain-notice">
+      <div class="chain-notice-card">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <line x1="12" y1="8" x2="12" y2="12" />
+          <line x1="12" y1="16" x2="12.01" y2="16" />
+        </svg>
+        <h2>Query Fee Data Not Available</h2>
+        <p>Query fee data is only available for <strong>Arbitrum One</strong>. Switch to Arbitrum in settings to view query fee data.</p>
+      </div>
+    </div>
+
+    <template v-else>
     <!-- Header -->
     <div class="dashboard-header">
       <div class="header-left">
@@ -238,6 +254,7 @@ const columns: ColumnDef<QueryDailyDataPoint, unknown>[] = [
         empty-message="No query fee data found. Ensure you have an API key configured."
       />
     </div>
+    </template>
   </div>
 </template>
 
@@ -249,6 +266,43 @@ const columns: ColumnDef<QueryDailyDataPoint, unknown>[] = [
   gap: 16px;
   padding: 24px;
   overflow: hidden;
+}
+
+/* --- Chain notice --- */
+.chain-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.chain-notice-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px;
+  text-align: center;
+  color: var(--p-text-muted-color);
+}
+
+.chain-notice-card h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--p-text-color);
+}
+
+.chain-notice-card p {
+  margin: 0;
+  font-size: 0.875rem;
+  max-width: 400px;
+  line-height: 1.5;
+}
+
+.chain-notice-card svg {
+  opacity: 0.3;
+  color: var(--app-surface-400);
 }
 
 /* --- Header --- */

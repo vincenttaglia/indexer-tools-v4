@@ -152,6 +152,11 @@ const virtualizer = useVirtualizer(
 )
 
 const virtualRows = computed(() => virtualizer.value.getVirtualItems())
+
+/** Get a row by virtual index — guaranteed valid for rendered virtual items */
+function getRow(index: number) {
+  return rows.value[index]!
+}
 const totalSize = computed(() => virtualizer.value.getTotalSize())
 
 // --- Skeleton rows for loading state ---
@@ -331,19 +336,19 @@ function handleRowClick(row: T) {
         <template v-else>
           <tr
             v-for="virtualRow in virtualRows"
-            :key="rows[virtualRow.index].id"
+            :key="getRow(virtualRow.index).id"
             class="data-table-row"
             :class="{
-              selected: rows[virtualRow.index].getIsSelected(),
+              selected: getRow(virtualRow.index).getIsSelected(),
             }"
             :style="{
               height: `${virtualRow.size}px`,
               transform: `translateY(${virtualRow.start}px)`,
             }"
-            @click="handleRowClick(rows[virtualRow.index].original)"
+            @click="handleRowClick(getRow(virtualRow.index).original)"
           >
             <td
-              v-for="cell in rows[virtualRow.index].getVisibleCells()"
+              v-for="cell in getRow(virtualRow.index).getVisibleCells()"
               :key="cell.id"
               class="data-table-td"
               :class="{
@@ -366,8 +371,8 @@ function handleRowClick(row: T) {
                 <input
                   type="checkbox"
                   class="row-checkbox"
-                  :checked="rows[virtualRow.index].getIsSelected()"
-                  @change="rows[virtualRow.index].getToggleSelectedHandler()($event)"
+                  :checked="getRow(virtualRow.index).getIsSelected()"
+                  @change="getRow(virtualRow.index).getToggleSelectedHandler()($event)"
                   @click.stop
                 />
               </template>

@@ -7,7 +7,10 @@ import { storeToRefs } from 'pinia'
 import Button from 'primevue/button'
 import Textarea from 'primevue/textarea'
 import Message from 'primevue/message'
-import TabView from 'primevue/tabview'
+import Tabs from 'primevue/tabs'
+import TabList from 'primevue/tablist'
+import Tab from 'primevue/tab'
+import TabPanels from 'primevue/tabpanels'
 import TabPanel from 'primevue/tabpanel'
 
 // Stores
@@ -295,48 +298,54 @@ function formatAmount(amount: string): string {
       <!-- CLI Commands -->
       <div class="cli-section">
         <h2 class="section-title">CLI Commands</h2>
-        <TabView>
-          <TabPanel header="Action Queue Commands">
-            <div class="cli-panel">
-              <Textarea
-                :modelValue="actionQueueCommands"
-                readonly
-                autoResize
-                class="cli-textarea"
-                rows="6"
-              />
-              <Button
-                :label="copied === 'actionQueue' ? 'Copied!' : 'Copy'"
-                :icon="copied === 'actionQueue' ? 'pi pi-check' : 'pi pi-copy'"
-                severity="secondary"
-                outlined
-                size="small"
-                class="copy-btn"
-                @click="copyToClipboard(actionQueueCommands, 'actionQueue')"
-              />
-            </div>
-          </TabPanel>
-          <TabPanel header="Indexing Rule Commands">
-            <div class="cli-panel">
-              <Textarea
-                :modelValue="indexingRuleCommands"
-                readonly
-                autoResize
-                class="cli-textarea"
-                rows="6"
-              />
-              <Button
-                :label="copied === 'indexingRule' ? 'Copied!' : 'Copy'"
-                :icon="copied === 'indexingRule' ? 'pi pi-check' : 'pi pi-copy'"
-                severity="secondary"
-                outlined
-                size="small"
-                class="copy-btn"
-                @click="copyToClipboard(indexingRuleCommands, 'indexingRule')"
-              />
-            </div>
-          </TabPanel>
-        </TabView>
+        <Tabs value="actionQueue">
+          <TabList>
+            <Tab value="actionQueue">Action Queue Commands</Tab>
+            <Tab value="indexingRule">Indexing Rule Commands</Tab>
+          </TabList>
+          <TabPanels>
+            <TabPanel value="actionQueue">
+              <div class="cli-panel">
+                <Textarea
+                  :modelValue="actionQueueCommands"
+                  readonly
+                  autoResize
+                  class="cli-textarea"
+                  rows="6"
+                />
+                <Button
+                  :label="copied === 'actionQueue' ? 'Copied!' : 'Copy'"
+                  :icon="copied === 'actionQueue' ? 'pi pi-check' : 'pi pi-copy'"
+                  severity="secondary"
+                  outlined
+                  size="small"
+                  class="copy-btn"
+                  @click="copyToClipboard(actionQueueCommands, 'actionQueue')"
+                />
+              </div>
+            </TabPanel>
+            <TabPanel value="indexingRule">
+              <div class="cli-panel">
+                <Textarea
+                  :modelValue="indexingRuleCommands"
+                  readonly
+                  autoResize
+                  class="cli-textarea"
+                  rows="6"
+                />
+                <Button
+                  :label="copied === 'indexingRule' ? 'Copied!' : 'Copy'"
+                  :icon="copied === 'indexingRule' ? 'pi pi-check' : 'pi pi-copy'"
+                  severity="secondary"
+                  outlined
+                  size="small"
+                  class="copy-btn"
+                  @click="copyToClipboard(indexingRuleCommands, 'indexingRule')"
+                />
+              </div>
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
       </div>
     </template>
   </div>

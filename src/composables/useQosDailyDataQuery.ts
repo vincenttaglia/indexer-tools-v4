@@ -52,6 +52,10 @@ export function useQosDailyDataQuery() {
       const client = createGraphQLClient(getQosSubgraphUrl(theGraphApiKey.value))
       return fetchQosDailyDataLatest(client, account.address)
     },
-    enabled: computed(() => !!theGraphApiKey.value && !!activeAccount.value),
+    enabled: computed(() =>
+      !!theGraphApiKey.value &&
+      !!activeAccount.value &&
+      selectedChain.value === 'arbitrum-one',
+    ),
   })
 }
