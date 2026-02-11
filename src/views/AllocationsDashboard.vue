@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, h } from 'vue'
+import { computed, h } from 'vue'
 import { createColumnHelper, type ColumnDef } from '@tanstack/vue-table'
 import { storeToRefs } from 'pinia'
 import { formatUnits } from 'viem'
@@ -30,6 +30,7 @@ import {
   useQosDailyDataQuery,
   useEpochQuery,
   useAllocationComputations,
+  useOtherIndexersQuery,
 } from '@/composables'
 import { useAllocationFilters } from '@/composables/useAllocationFilters'
 import type { AllocationDescriptor } from '@/composables'
@@ -64,8 +65,7 @@ const epochQuery = useEpochQuery()
 // ---------------------------------------------------------------------------
 // Other indexers status (manually triggered)
 // ---------------------------------------------------------------------------
-const otherIndexersStatus = ref<Map<string, { healthyCount: number; failedCount: number }>>()
-const otherIndexersLoading = ref(false)
+const otherIndexersQuery = useOtherIndexersQuery()
 
 // ---------------------------------------------------------------------------
 // Rewards query (on-demand, disabled by default)
@@ -109,7 +109,7 @@ const { computed: computedAllocations } = useAllocationComputations({
   rewardsFetched,
   qosData: computed(() => qosQuery.data.value),
   epochData: computed(() => epochQuery.data.value),
-  otherIndexersStatus: computed(() => otherIndexersStatus.value),
+  otherIndexersStatus: computed(() => otherIndexersQuery.data.value),
 })
 
 // ---------------------------------------------------------------------------
@@ -509,6 +509,15 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
         </span>
       </div>
       <div class="header-right">
+        <Button
+          label="Fetch Other Indexers"
+          icon="pi pi-users"
+          severity="secondary"
+          outlined
+          :loading="otherIndexersQuery.loading.value"
+          :disabled="!otherIndexersQuery.enabled.value"
+          @click="otherIndexersQuery.fetch()"
+        />
         <Button
           label="Fetch Rewards"
           icon="pi pi-download"

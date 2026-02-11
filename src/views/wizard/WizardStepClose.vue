@@ -62,6 +62,9 @@ const { computed: computedAllocations } = useAllocationComputations({
   pendingRewardsMap: computed(() => undefined),
   rewardsLoading: computed(() => false),
   rewardsFetched: computed(() => false),
+  qosData: computed(() => undefined),
+  epochData: computed(() => undefined),
+  otherIndexersStatus: computed(() => undefined),
 })
 
 // ---------------------------------------------------------------------------

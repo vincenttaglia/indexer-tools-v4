@@ -68,6 +68,12 @@ export {
   deleteIndexingRule,
 } from './graphql/mutations/indexingRules'
 
+// GraphQL queries - Indexer URLs (other indexers discovery)
+export {
+  INDEXER_URLS_QUERY,
+  fetchIndexerUrls,
+} from './graphql/queries/indexers'
+
 // RPC client factory
 export { createRpcClient } from './rpc/client'
 

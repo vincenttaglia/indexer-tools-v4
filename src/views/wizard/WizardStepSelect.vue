@@ -4,7 +4,7 @@ import { createColumnHelper, type ColumnDef } from '@tanstack/vue-table'
 
 // PrimeVue components
 import InputText from 'primevue/inputtext'
-import Select from 'primevue/select'
+import MultiSelect from 'primevue/multiselect'
 import ToggleSwitch from 'primevue/toggleswitch'
 import InputNumber from 'primevue/inputnumber'
 
@@ -66,11 +66,7 @@ const networkOptions = computed(() => {
     const net = sg.deployment.manifest.network
     if (net) networks.add(net)
   }
-  const sorted = [...networks].sort()
-  return [
-    { label: 'All Networks', value: null },
-    ...sorted.map((n) => ({ label: n, value: n })),
-  ]
+  return [...networks].sort()
 })
 
 // ---------------------------------------------------------------------------
@@ -290,13 +286,13 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
       </div>
 
       <div class="filter-item filter-network">
-        <Select
-          v-model="filterStore.subgraphFilters.network"
+        <MultiSelect
+          v-model="filterStore.subgraphFilters.networks"
           :options="networkOptions"
-          optionLabel="label"
-          optionValue="value"
           placeholder="All Networks"
           class="network-select"
+          :maxSelectedLabels="2"
+          selectedItemsLabel="{0} networks"
         />
       </div>
     </div>
