@@ -26,7 +26,7 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--p-surface-ground);
+  background-color: var(--app-surface-ground);
   color: var(--p-text-color);
   transition: background-color 0.2s ease, color 0.2s ease;
 }
@@ -60,35 +60,43 @@ a {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--p-surface-300);
+  background: var(--app-surface-300);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--p-surface-400);
+  background: var(--app-surface-400);
 }
 
 /* Firefox thin scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--p-surface-300) transparent;
+  scrollbar-color: var(--app-surface-300) transparent;
 }
 
-/* ===== Dark mode surface overrides ===== */
-/* PrimeVue Aura keeps --p-surface-0 as white in dark mode (its semantic
-   tokens reference high surface values for dark backgrounds). Our custom
-   CSS uses low surface values (0, 50, 100) for backgrounds, so we remap
-   them to the zinc dark palette. PrimeVue's own component tokens
-   (--p-text-color, --p-content-background, etc.) are resolved to hex
-   values at generation time and are NOT affected by these overrides. */
+/* ===== App surface tokens ===== */
+/* PrimeVue chains --p-text-color from --p-surface-0 via CSS vars, so we
+   cannot override --p-surface-N without breaking text. Instead we define
+   our own --app-surface-N tokens for backgrounds/borders in custom CSS
+   and leave PrimeVue's tokens untouched for its own components. */
+:root {
+  --app-surface-0: var(--p-surface-0);
+  --app-surface-50: var(--p-surface-50);
+  --app-surface-100: var(--p-surface-100);
+  --app-surface-200: var(--p-surface-200);
+  --app-surface-300: var(--app-surface-300);
+  --app-surface-400: var(--app-surface-400);
+  --app-surface-ground: var(--p-surface-ground, #f8fafc);
+}
+
 html.app-dark {
-  --p-surface-0: #09090b;
-  --p-surface-50: #18181b;
-  --p-surface-100: #27272a;
-  --p-surface-200: #3f3f46;
-  --p-surface-300: #52525b;
-  --p-surface-400: #71717a;
-  --p-surface-ground: #09090b;
+  --app-surface-0: #111114;
+  --app-surface-50: #18181b;
+  --app-surface-100: #27272a;
+  --app-surface-200: #3f3f46;
+  --app-surface-300: #52525b;
+  --app-surface-400: #a1a1aa;
+  --app-surface-ground: #09090b;
 }
 
 /* ===== Transitions for theme switching ===== */

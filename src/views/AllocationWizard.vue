@@ -646,8 +646,8 @@ const columns: ColumnDef<SubgraphComputed, unknown>[] = [
   flex-wrap: wrap;
   flex-shrink: 0;
   padding: 12px 16px;
-  background-color: var(--p-surface-50);
-  border: 1px solid var(--p-surface-200);
+  background-color: var(--app-surface-50);
+  border: 1px solid var(--app-surface-200);
   border-radius: 12px;
 }
 
@@ -711,8 +711,8 @@ const columns: ColumnDef<SubgraphComputed, unknown>[] = [
   flex-direction: column;
   gap: 12px;
   padding: 20px;
-  background-color: var(--p-surface-0);
-  border: 1px solid var(--p-surface-200);
+  background-color: var(--app-surface-0);
+  border: 1px solid var(--app-surface-200);
   border-radius: 12px;
   overflow: hidden;
 }
@@ -741,14 +741,14 @@ const columns: ColumnDef<SubgraphComputed, unknown>[] = [
   align-items: center;
   gap: 16px;
   padding: 12px 16px;
-  background-color: var(--p-surface-50);
-  border: 1px solid var(--p-surface-100);
+  background-color: var(--app-surface-50);
+  border: 1px solid var(--app-surface-100);
   border-radius: 8px;
   transition: border-color 150ms ease-out;
 }
 
 .selected-item:hover {
-  border-color: var(--p-surface-200);
+  border-color: var(--app-surface-200);
 }
 
 .selected-item-info {
@@ -807,7 +807,7 @@ const columns: ColumnDef<SubgraphComputed, unknown>[] = [
   align-items: center;
   gap: 24px;
   padding: 12px 16px;
-  background-color: var(--p-surface-100);
+  background-color: var(--app-surface-100);
   border-radius: 8px;
   flex-shrink: 0;
   flex-wrap: wrap;

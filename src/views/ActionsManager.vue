@@ -597,7 +597,7 @@ const columns: ColumnDef<Action, unknown>[] = [
 
 .no-agent-card svg {
   opacity: 0.3;
-  color: var(--p-surface-400);
+  color: var(--app-surface-400);
 }
 
 /* --- Header --- */
@@ -668,8 +668,8 @@ const columns: ColumnDef<Action, unknown>[] = [
   flex-shrink: 0;
   flex-wrap: wrap;
   padding: 8px 12px;
-  background-color: var(--p-surface-50);
-  border: 1px solid var(--p-surface-200);
+  background-color: var(--app-surface-50);
+  border: 1px solid var(--app-surface-200);
   border-radius: 12px;
 }
 

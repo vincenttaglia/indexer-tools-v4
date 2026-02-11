@@ -90,8 +90,8 @@ watch(() => settingsStore.darkMode, (enabled) => {
   flex-direction: column;
   width: 240px;
   min-width: 240px;
-  background-color: var(--p-surface-0);
-  border-right: 1px solid var(--p-surface-200);
+  background-color: var(--app-surface-0);
+  border-right: 1px solid var(--app-surface-200);
   overflow-y: auto;
 }
 
@@ -100,7 +100,7 @@ watch(() => settingsStore.darkMode, (enabled) => {
   align-items: center;
   gap: 8px;
   padding: 20px 16px;
-  border-bottom: 1px solid var(--p-surface-200);
+  border-bottom: 1px solid var(--app-surface-200);
 }
 
 .sidebar-title {
@@ -135,7 +135,7 @@ watch(() => settingsStore.darkMode, (enabled) => {
 .sidebar-footer {
   margin-top: auto;
   padding: 8px;
-  border-top: 1px solid var(--p-surface-200);
+  border-top: 1px solid var(--app-surface-200);
 }
 
 .nav-link {
@@ -153,7 +153,7 @@ watch(() => settingsStore.darkMode, (enabled) => {
 }
 
 .nav-link:hover {
-  background-color: var(--p-surface-100);
+  background-color: var(--app-surface-100);
   color: var(--p-text-color);
 }
 
@@ -184,6 +184,6 @@ watch(() => settingsStore.darkMode, (enabled) => {
 .main-content {
   flex: 1;
   overflow: hidden;
-  background-color: var(--p-surface-ground);
+  background-color: var(--app-surface-ground);
 }
 </style>

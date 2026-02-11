@@ -302,7 +302,7 @@ const columns: ColumnDef<DeploymentStatus, unknown>[] = [
 
 .no-endpoint-card svg {
   opacity: 0.3;
-  color: var(--p-surface-400);
+  color: var(--app-surface-400);
 }
 
 /* --- Header --- */

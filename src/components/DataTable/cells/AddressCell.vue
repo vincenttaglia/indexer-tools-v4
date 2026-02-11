@@ -138,7 +138,7 @@ async function copyToClipboard() {
 
 .copy-btn:hover {
   color: var(--p-text-color);
-  background-color: var(--p-surface-200);
+  background-color: var(--app-surface-200);
 }
 
 .copy-btn.copied {

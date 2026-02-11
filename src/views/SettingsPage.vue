@@ -322,8 +322,8 @@ function getChainLabel(chainId: ChainId): string {
 }
 
 .settings-section {
-  background: var(--p-surface-0);
-  border: 1px solid var(--p-surface-200);
+  background: var(--app-surface-0);
+  border: 1px solid var(--app-surface-200);
   border-radius: 12px;
 }
 
@@ -397,20 +397,20 @@ function getChainLabel(chainId: ChainId): string {
   justify-content: space-between;
   gap: 16px;
   padding: 16px;
-  background: var(--p-surface-50);
-  border: 1px solid var(--p-surface-200);
+  background: var(--app-surface-50);
+  border: 1px solid var(--app-surface-200);
   border-radius: 8px;
   flex-wrap: wrap;
   transition: border-color 150ms ease-out;
 }
 
 .account-row:hover {
-  border-color: var(--p-surface-300);
+  border-color: var(--app-surface-300);
 }
 
 .account-row--active {
-  border-color: color-mix(in srgb, var(--p-primary-color) 40%, var(--p-surface-200));
-  background: color-mix(in srgb, var(--p-primary-color) 4%, var(--p-surface-50));
+  border-color: color-mix(in srgb, var(--p-primary-color) 40%, var(--app-surface-200));
+  background: color-mix(in srgb, var(--p-primary-color) 4%, var(--app-surface-50));
 }
 
 .account-info {
@@ -482,7 +482,7 @@ function getChainLabel(chainId: ChainId): string {
 .add-account-form {
   margin-top: 20px;
   padding-top: 20px;
-  border-top: 1px solid var(--p-surface-200);
+  border-top: 1px solid var(--app-surface-200);
 }
 
 .form-heading {

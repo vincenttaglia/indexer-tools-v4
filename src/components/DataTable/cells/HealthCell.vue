@@ -76,11 +76,11 @@ const config = computed(() => {
 }
 
 .unknown {
-  background-color: color-mix(in srgb, var(--p-surface-400) 10%, transparent);
+  background-color: color-mix(in srgb, var(--app-surface-400) 10%, transparent);
   color: var(--p-text-muted-color);
 }
 
 .unknown .health-dot {
-  background-color: var(--p-surface-400);
+  background-color: var(--app-surface-400);
 }
 </style>

@@ -294,8 +294,8 @@ const columns: ColumnDef<QueryDailyDataPoint, unknown>[] = [
   flex-wrap: wrap;
   flex-shrink: 0;
   padding: 12px 16px;
-  background-color: var(--p-surface-50);
-  border: 1px solid var(--p-surface-200);
+  background-color: var(--app-surface-50);
+  border: 1px solid var(--app-surface-200);
   border-radius: 12px;
 }
 

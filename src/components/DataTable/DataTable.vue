@@ -389,9 +389,9 @@ function handleRowClick(row: T) {
 .data-table-container {
   overflow: auto;
   position: relative;
-  border: 1px solid var(--p-surface-200);
+  border: 1px solid var(--app-surface-200);
   border-radius: 12px;
-  background-color: var(--p-surface-0);
+  background-color: var(--app-surface-0);
 }
 
 .data-table {
@@ -423,8 +423,8 @@ function handleRowClick(row: T) {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--p-text-muted-color);
-  background-color: var(--p-surface-50);
-  border-bottom: 1px solid var(--p-surface-200);
+  background-color: var(--app-surface-50);
+  border-bottom: 1px solid var(--app-surface-200);
   user-select: none;
   white-space: nowrap;
   overflow: hidden;
@@ -443,7 +443,7 @@ function handleRowClick(row: T) {
 
 .data-table-th.sortable:hover {
   color: var(--p-text-color);
-  background-color: var(--p-surface-100);
+  background-color: var(--app-surface-100);
 }
 
 .data-table-th.selection-col {
@@ -466,7 +466,7 @@ function handleRowClick(row: T) {
 }
 
 .sort-icon {
-  color: var(--p-surface-400);
+  color: var(--app-surface-400);
   transition: color 150ms ease-out;
 }
 
@@ -494,15 +494,15 @@ function handleRowClick(row: T) {
 }
 
 .data-table-row:hover {
-  background-color: var(--p-surface-50);
+  background-color: var(--app-surface-50);
 }
 
 .data-table-row.selected {
-  background-color: color-mix(in srgb, var(--p-primary-color) 6%, var(--p-surface-0));
+  background-color: color-mix(in srgb, var(--p-primary-color) 6%, var(--app-surface-0));
 }
 
 .data-table-row.selected:hover {
-  background-color: color-mix(in srgb, var(--p-primary-color) 10%, var(--p-surface-0));
+  background-color: color-mix(in srgb, var(--p-primary-color) 10%, var(--app-surface-0));
 }
 
 /* --- Cells --- */
@@ -510,7 +510,7 @@ function handleRowClick(row: T) {
   padding: 0 16px;
   font-size: 0.8125rem;
   color: var(--p-text-color);
-  border-bottom: 1px solid var(--p-surface-100);
+  border-bottom: 1px solid var(--app-surface-100);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -554,9 +554,9 @@ function handleRowClick(row: T) {
   border-radius: 4px;
   background: linear-gradient(
     90deg,
-    var(--p-surface-100) 25%,
-    var(--p-surface-200) 50%,
-    var(--p-surface-100) 75%
+    var(--app-surface-100) 25%,
+    var(--app-surface-200) 50%,
+    var(--app-surface-100) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.8s ease-in-out infinite;
@@ -594,7 +594,7 @@ function handleRowClick(row: T) {
 
 .empty-state svg {
   opacity: 0.3;
-  color: var(--p-surface-400);
+  color: var(--app-surface-400);
 }
 
 .empty-state span {

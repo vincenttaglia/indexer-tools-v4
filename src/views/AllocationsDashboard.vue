@@ -438,8 +438,8 @@ const columns: ColumnDef<AllocationComputed, unknown>[] = [
   flex-wrap: wrap;
   flex-shrink: 0;
   padding: 12px 16px;
-  background-color: var(--p-surface-50);
-  border: 1px solid var(--p-surface-200);
+  background-color: var(--app-surface-50);
+  border: 1px solid var(--app-surface-200);
   border-radius: 12px;
 }
 
@@ -556,7 +556,7 @@ const columns: ColumnDef<AllocationComputed, unknown>[] = [
   display: inline-block;
   width: 14px;
   height: 14px;
-  border: 2px solid var(--p-surface-300);
+  border: 2px solid var(--app-surface-300);
   border-top-color: var(--p-primary-color);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
