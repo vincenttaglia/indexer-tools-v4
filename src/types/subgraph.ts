@@ -48,4 +48,5 @@ export interface SubgraphComputed extends SubgraphRaw {
   deploymentStatus: import('./status').DeploymentStatus | null
   entityCount: number | null
   queryFees: import('./qos').QueryFeeData | null
+  statusChecks: import('./allocation').DeploymentStatusChecks
 }

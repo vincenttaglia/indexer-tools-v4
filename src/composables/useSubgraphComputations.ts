@@ -4,8 +4,10 @@ import type {
   SubgraphComputed,
   NetworkMetrics,
   DeploymentStatus,
+  DeploymentStatusChecks,
   QueryFeeData,
   AllocationRaw,
+  Epoch,
 } from '@/types'
 import {
   calculateApr,
@@ -47,6 +49,10 @@ interface ComputationInputs {
    * from stakedTokens to compute "future" APR/maxAllo projections.
    */
   closingAllocations?: Ref<Map<string, AllocationRaw>>
+  /** Optional: Epoch data from EBO subgraph for synced check */
+  epochData?: Ref<Epoch | null | undefined>
+  /** Optional: Other indexers status aggregation: Map<ipfsHash, {healthyCount, failedCount}> */
+  otherIndexersStatus?: Ref<Map<string, { healthyCount: number; failedCount: number }> | undefined>
 }
 
 /**
@@ -95,6 +101,12 @@ export function useSubgraphComputations(inputs: ComputationInputs) {
     const closingTokensMap = inputs.closingAllocations?.value
       ? buildClosingTokensMap(inputs.closingAllocations.value)
       : null
+
+    // Epoch data for EBO-based synced check
+    const epoch = inputs.epochData?.value ?? null
+
+    // Other indexers status
+    const otherIndexers = inputs.otherIndexersStatus?.value
 
     // Single pass: compute all derived values per subgraph
     return subs.map((sg): SubgraphComputed => {
@@ -175,6 +187,15 @@ export function useSubgraphComputations(inputs: ComputationInputs) {
       // Is this subgraph currently allocated by the indexer?
       const currentlyAllocated = allocated.has(d.ipfsHash)
 
+      // Status checks: EBO synced, other indexers, deterministic failure, closable
+      const statusChecks = computeDeploymentStatusChecks(
+        d.ipfsHash,
+        d.manifest.network,
+        deploymentStatus,
+        epoch,
+        otherIndexers,
+      )
+
       return {
         ...sg,
         apr,
@@ -187,9 +208,78 @@ export function useSubgraphComputations(inputs: ComputationInputs) {
         deploymentStatus,
         entityCount,
         queryFees: queryFeeData,
+        statusChecks,
       }
     })
   })
 
   return { computed: computed_ }
+}
+
+/**
+ * Compute status checks for a deployment (shared logic for subgraphs and allocations).
+ */
+function computeDeploymentStatusChecks(
+  ipfsHash: string,
+  network: string | null,
+  deploymentStatus: DeploymentStatus | null,
+  epoch: Epoch | null,
+  otherIndexers: Map<string, { healthyCount: number; failedCount: number }> | undefined,
+): DeploymentStatusChecks {
+  // EBO-based synced check
+  let synced: boolean | null = null
+  if (epoch && deploymentStatus && network) {
+    const eboBlock = epoch.blockNumbers.find(b => b.network.alias === network)
+    const latestBlock = deploymentStatus.chains?.[0]?.latestBlock?.number
+    if (eboBlock && latestBlock != null) {
+      synced = latestBlock >= eboBlock.blockNumber
+    }
+  }
+
+  // Other indexers health comparison
+  let healthComparison: boolean | null = null
+  let healthyCount = 0
+  let failedCount = 0
+  if (otherIndexers) {
+    const otherStatus = otherIndexers.get(ipfsHash)
+    if (otherStatus) {
+      healthyCount = otherStatus.healthyCount
+      failedCount = otherStatus.failedCount
+      healthComparison = healthyCount > failedCount
+    }
+  }
+
+  // Deterministic failure check
+  let deterministicFailure: boolean | null = null
+  if (deploymentStatus?.fatalError) {
+    deterministicFailure = deploymentStatus.fatalError.deterministic
+  }
+
+  // Closable logic
+  let closable = false
+  if (synced === true) {
+    if (!deploymentStatus?.fatalError) {
+      closable = true
+    } else if (deploymentStatus.fatalError.deterministic) {
+      closable = true
+    }
+  }
+  // Enhanced: deterministically failed, majority of network also failed, and not synced
+  if (
+    !closable &&
+    deterministicFailure === true &&
+    healthComparison === false &&
+    synced !== true
+  ) {
+    closable = true
+  }
+
+  return {
+    synced,
+    healthComparison,
+    healthyCount,
+    failedCount,
+    deterministicFailure,
+    closable,
+  }
 }

@@ -56,8 +56,8 @@ export interface AllocationQosData {
   successRate: number // 0-1
 }
 
-/** Status checks for an allocation (EBO synced, other indexers, deterministic failure) */
-export interface AllocationStatusChecks {
+/** Status checks for a deployment (EBO synced, other indexers, deterministic failure) */
+export interface DeploymentStatusChecks {
   synced: boolean | null
   healthComparison: boolean | null
   healthyCount: number
@@ -65,6 +65,9 @@ export interface AllocationStatusChecks {
   deterministicFailure: boolean | null
   closable: boolean
 }
+
+/** @deprecated Use DeploymentStatusChecks instead */
+export type AllocationStatusChecks = DeploymentStatusChecks
 
 /** Computed fields added by the allocation computation composable */
 export interface AllocationComputed extends AllocationRaw {
@@ -75,5 +78,5 @@ export interface AllocationComputed extends AllocationRaw {
   pendingRewards: PendingReward
   deploymentStatus: import('./status').DeploymentStatus | null
   qosData: AllocationQosData | null
-  statusChecks: AllocationStatusChecks
+  statusChecks: DeploymentStatusChecks
 }

@@ -11,6 +11,7 @@ export type {
   AllocationRaw,
   AllocationComputed,
   AllocationQosData,
+  DeploymentStatusChecks,
   AllocationStatusChecks,
   PendingReward,
 } from './allocation'
