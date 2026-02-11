@@ -650,44 +650,46 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
 
     <!-- Filter bar -->
     <div class="filter-bar">
-      <div class="filter-item filter-search">
+      <div class="filter-group filter-search">
+        <label class="filter-label">Search</label>
         <InputText
           v-model="filterStore.allocationFilters.search"
-          placeholder="Search name, IPFS hash, or allocation ID..."
+          placeholder="Name, IPFS hash, or allocation ID..."
           class="filter-input"
         />
       </div>
 
-      <div class="filter-item filter-status">
+      <div class="filter-group filter-select">
+        <label class="filter-label">Status</label>
         <Select
           v-model="filterStore.allocationFilters.statusFilter"
           :options="statusFilterOptions"
           optionLabel="label"
           optionValue="value"
-          placeholder="Status Filter"
-          class="status-select"
+          class="filter-control"
         />
       </div>
 
-      <div class="filter-item filter-network">
+      <div class="filter-group filter-select">
+        <label class="filter-label">Network</label>
         <MultiSelect
           v-model="filterStore.allocationFilters.networks"
           :options="networkOptions"
-          placeholder="All Networks"
-          class="network-select"
+          placeholder="All"
+          class="filter-control"
           :maxSelectedLabels="2"
           selectedItemsLabel="{0} networks"
         />
       </div>
 
-      <div class="filter-item filter-toggle">
+      <div class="filter-toggle">
         <label class="toggle-label">
           <ToggleSwitch v-model="filterStore.allocationFilters.activateBlacklist" />
           <span>Blacklist</span>
         </label>
       </div>
 
-      <div class="filter-item filter-toggle">
+      <div class="filter-toggle">
         <label class="toggle-label">
           <ToggleSwitch v-model="filterStore.allocationFilters.activateSynclist" />
           <span>Synclist</span>
@@ -792,8 +794,8 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
 /* --- Filter bar --- */
 .filter-bar {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: flex-end;
+  gap: 16px;
   flex-wrap: wrap;
   flex-shrink: 0;
   padding: 12px 16px;
@@ -802,10 +804,19 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
   border-radius: 12px;
 }
 
-.filter-item {
+.filter-group {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filter-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--p-text-muted-color);
+  white-space: nowrap;
 }
 
 .filter-search {
@@ -817,24 +828,17 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
   width: 100%;
 }
 
-.filter-status {
-  min-width: 160px;
+.filter-select {
+  min-width: 150px;
 }
 
-.status-select {
-  width: 100%;
-}
-
-.filter-network {
-  min-width: 160px;
-}
-
-.network-select {
+.filter-control {
   width: 100%;
 }
 
 .filter-toggle {
   white-space: nowrap;
+  padding-bottom: 2px;
 }
 
 .toggle-label {

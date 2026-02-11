@@ -524,52 +524,66 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
 
     <!-- Filter bar -->
     <div class="filter-bar">
-      <div class="filter-item filter-search">
+      <div class="filter-group filter-search">
+        <label class="filter-label">Search</label>
         <InputText
           v-model="filterStore.subgraphFilters.search"
-          placeholder="Search name or IPFS hash..."
+          placeholder="Name or IPFS hash..."
           class="filter-input"
         />
       </div>
 
-      <div class="filter-item filter-rewards">
+      <div class="filter-group filter-select">
+        <label class="filter-label">Rewards</label>
         <Select
           v-model="filterStore.subgraphFilters.rewardsFilter"
           :options="rewardsFilterOptions"
           optionLabel="label"
           optionValue="value"
-          class="rewards-select"
+          class="filter-control"
         />
       </div>
 
-      <div class="filter-item filter-status">
+      <div class="filter-group filter-select">
+        <label class="filter-label">Status</label>
         <Select
           v-model="filterStore.subgraphFilters.statusFilter"
           :options="statusFilterOptions"
           optionLabel="label"
           optionValue="value"
-          placeholder="Status Filter"
-          class="status-select"
+          class="filter-control"
         />
       </div>
 
-      <div class="filter-item filter-toggle filter-signal-group">
-        <label class="toggle-label">
+      <div class="filter-group filter-select">
+        <label class="filter-label">Network</label>
+        <MultiSelect
+          v-model="filterStore.subgraphFilters.networks"
+          :options="networkOptions"
+          placeholder="All"
+          class="filter-control"
+          :maxSelectedLabels="2"
+          selectedItemsLabel="{0} networks"
+        />
+      </div>
+
+      <div class="filter-group filter-number">
+        <label class="filter-label">Min Signal</label>
+        <div class="toggle-input">
           <ToggleSwitch v-model="filterStore.subgraphFilters.hideSmallSignal" />
-          <span>Min Signal</span>
-        </label>
-        <InputNumber
-          v-if="filterStore.subgraphFilters.hideSmallSignal"
-          v-model="filterStore.subgraphFilters.minSignal"
-          placeholder="Min GRT"
-          class="signal-input"
-          :min="0"
-          suffix=" GRT"
-        />
+          <InputNumber
+            v-if="filterStore.subgraphFilters.hideSmallSignal"
+            v-model="filterStore.subgraphFilters.minSignal"
+            placeholder="GRT"
+            class="number-input"
+            :min="0"
+            suffix=" GRT"
+          />
+        </div>
       </div>
 
-      <div class="filter-item filter-number">
-        <label class="field-label-sm">Max Signal</label>
+      <div class="filter-group filter-number">
+        <label class="filter-label">Max Signal</label>
         <InputNumber
           v-model="filterStore.subgraphFilters.maxSignal"
           placeholder="0 = off"
@@ -579,47 +593,8 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
         />
       </div>
 
-      <div class="filter-item filter-network">
-        <MultiSelect
-          v-model="filterStore.subgraphFilters.networks"
-          :options="networkOptions"
-          placeholder="All Networks"
-          class="network-select"
-          :maxSelectedLabels="2"
-          selectedItemsLabel="{0} networks"
-        />
-      </div>
-
-      <div class="filter-item filter-toggle">
-        <label class="toggle-label">
-          <ToggleSwitch v-model="filterStore.subgraphFilters.onlyAllocated" />
-          <span>Only Allocated</span>
-        </label>
-      </div>
-
-      <div class="filter-item filter-toggle">
-        <label class="toggle-label">
-          <ToggleSwitch v-model="filterStore.subgraphFilters.hideCurrentlyAllocated" />
-          <span>Hide Allocated</span>
-        </label>
-      </div>
-
-      <div class="filter-item filter-toggle">
-        <label class="toggle-label">
-          <ToggleSwitch v-model="filterStore.subgraphFilters.activateBlacklist" />
-          <span>Blacklist</span>
-        </label>
-      </div>
-
-      <div class="filter-item filter-toggle">
-        <label class="toggle-label">
-          <ToggleSwitch v-model="filterStore.subgraphFilters.activateSynclist" />
-          <span>Synclist</span>
-        </label>
-      </div>
-
-      <div class="filter-item filter-number">
-        <label class="field-label-sm">Target APR</label>
+      <div class="filter-group filter-number">
+        <label class="filter-label">Target APR</label>
         <InputNumber
           v-model="filterStore.subgraphFilters.targetApr"
           class="number-input"
@@ -628,14 +603,42 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
         />
       </div>
 
-      <div class="filter-item filter-number">
-        <label class="field-label-sm">New Allo</label>
+      <div class="filter-group filter-number">
+        <label class="filter-label">New Allocation</label>
         <InputNumber
           v-model="filterStore.subgraphFilters.newAllocation"
           class="number-input"
           :min="0"
           suffix=" GRT"
         />
+      </div>
+
+      <div class="filter-toggle">
+        <label class="toggle-label">
+          <ToggleSwitch v-model="filterStore.subgraphFilters.onlyAllocated" />
+          <span>Only Allocated</span>
+        </label>
+      </div>
+
+      <div class="filter-toggle">
+        <label class="toggle-label">
+          <ToggleSwitch v-model="filterStore.subgraphFilters.hideCurrentlyAllocated" />
+          <span>Hide Allocated</span>
+        </label>
+      </div>
+
+      <div class="filter-toggle">
+        <label class="toggle-label">
+          <ToggleSwitch v-model="filterStore.subgraphFilters.activateBlacklist" />
+          <span>Blacklist</span>
+        </label>
+      </div>
+
+      <div class="filter-toggle">
+        <label class="toggle-label">
+          <ToggleSwitch v-model="filterStore.subgraphFilters.activateSynclist" />
+          <span>Synclist</span>
+        </label>
       </div>
     </div>
 
@@ -730,8 +733,8 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
 /* --- Filter bar --- */
 .filter-bar {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: flex-end;
+  gap: 16px;
   flex-wrap: wrap;
   flex-shrink: 0;
   padding: 12px 16px;
@@ -740,10 +743,19 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   border-radius: 12px;
 }
 
-.filter-item {
+.filter-group {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filter-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--p-text-muted-color);
+  white-space: nowrap;
 }
 
 .filter-search {
@@ -755,8 +767,28 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   width: 100%;
 }
 
+.filter-select {
+  min-width: 150px;
+}
+
+.filter-control {
+  width: 100%;
+}
+
+.filter-number .number-input {
+  width: 120px;
+}
+
+.toggle-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 35px;
+}
+
 .filter-toggle {
   white-space: nowrap;
+  padding-bottom: 2px;
 }
 
 .toggle-label {
@@ -767,56 +799,6 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   color: var(--p-text-color);
   cursor: pointer;
   user-select: none;
-}
-
-.filter-signal-group {
-  gap: 12px;
-}
-
-.signal-input {
-  width: 120px;
-}
-
-.filter-rewards {
-  min-width: 150px;
-}
-
-.rewards-select {
-  width: 100%;
-}
-
-.filter-status {
-  min-width: 160px;
-}
-
-.status-select {
-  width: 100%;
-}
-
-.filter-network {
-  min-width: 160px;
-}
-
-.network-select {
-  width: 100%;
-}
-
-.filter-number {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-}
-
-.field-label-sm {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: var(--p-text-muted-color);
-  white-space: nowrap;
-}
-
-.number-input {
-  width: 120px;
 }
 
 /* --- Table wrapper --- */
