@@ -124,6 +124,51 @@ const totalCount = computed(() => allocationsQuery.data.value?.length ?? 0)
 const filteredCount = computed(() => filteredAllocations.value.length)
 
 // ---------------------------------------------------------------------------
+// Totals row
+// ---------------------------------------------------------------------------
+const totals = computed(() => {
+  const allocs = filteredAllocations.value
+  const cut = indexerQuery.data.value?.indexingRewardCut ?? 0
+
+  let totalAllocated = 0
+  let totalDailyRewardsCut = 0
+  let totalPendingRewards = 0n
+  let totalPendingRewardsCut = 0n
+  let aprWeightedSum = 0
+  let aprWeightDenom = 0
+
+  for (const a of allocs) {
+    const allocGrt = Number(a.allocatedTokens) / 1e18
+    totalAllocated += allocGrt
+    totalDailyRewardsCut += a.dailyRewardsCut
+
+    if (isFinite(a.apr) && allocGrt > 0) {
+      aprWeightedSum += a.apr * allocGrt
+      aprWeightDenom += allocGrt
+    }
+
+    if (a.pendingRewards.loaded) {
+      totalPendingRewards += a.pendingRewards.value
+      totalPendingRewardsCut += (a.pendingRewards.value * BigInt(cut)) / 1_000_000n
+    }
+  }
+
+  const avgApr = aprWeightDenom > 0 ? aprWeightedSum / aprWeightDenom : 0
+  const dailyRewardsCutGrt = weiToGrt(String(totalDailyRewardsCut))
+  const pendingGrt = Number(formatUnits(totalPendingRewards, 18))
+  const pendingCutGrt = Number(formatUnits(totalPendingRewardsCut, 18))
+
+  return {
+    count: allocs.length,
+    totalAllocated,
+    avgApr,
+    dailyRewardsCutGrt,
+    pendingGrt,
+    pendingCutGrt,
+  }
+})
+
+// ---------------------------------------------------------------------------
 // Selection — sync with wizardStore.closingAllocations
 // ---------------------------------------------------------------------------
 
@@ -467,6 +512,31 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
         empty-message="No allocations found. Try adjusting your search filter."
         @selection-change="handleSelectionChange"
       />
+      <div class="totals-bar">
+        <span class="total-item total-label">
+          <strong>{{ totals.count }}</strong> allocations
+        </span>
+        <span class="total-item">
+          <span class="total-key">Allocated:</span>
+          <strong>{{ formatNumber(totals.totalAllocated, 0) }} GRT</strong>
+        </span>
+        <span class="total-item">
+          <span class="total-key">Avg APR:</span>
+          <strong>{{ formatNumber(totals.avgApr, 2) }}%</strong>
+        </span>
+        <span class="total-item">
+          <span class="total-key">Daily (Cut):</span>
+          <strong>{{ formatNumber(totals.dailyRewardsCutGrt, 0) }} GRT</strong>
+        </span>
+        <span class="total-item">
+          <span class="total-key">Pending:</span>
+          <strong>{{ formatNumber(totals.pendingGrt, 0) }} GRT</strong>
+        </span>
+        <span class="total-item">
+          <span class="total-key">Pending (Cut):</span>
+          <strong>{{ formatNumber(totals.pendingCutGrt, 0) }} GRT</strong>
+        </span>
+      </div>
     </div>
   </div>
 </template>
@@ -523,6 +593,46 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  position: relative;
+  padding-bottom: 40px;
+}
+
+/* --- Totals bar --- */
+.totals-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 16px;
+  background-color: var(--app-surface-50);
+  border-top: 1px solid var(--app-surface-200);
+  border-radius: 0 0 12px 12px;
+  z-index: 3;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.total-item {
+  font-size: 0.75rem;
+  color: var(--p-text-color);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.total-label {
+  font-weight: 600;
+}
+
+.total-key {
+  color: var(--p-text-muted-color);
+  font-weight: 500;
 }
 
 /* --- Cell styles --- */

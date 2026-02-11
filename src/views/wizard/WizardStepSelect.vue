@@ -130,6 +130,49 @@ const totalCount = computed(() => subgraphsQuery.data.value?.length ?? 0)
 const filteredCount = computed(() => computedSubgraphs.value.length)
 
 // ---------------------------------------------------------------------------
+// Totals row
+// ---------------------------------------------------------------------------
+const totals = computed(() => {
+  const subs = computedSubgraphs.value
+
+  let totalSignal = 0
+  let totalStake = 0
+  let totalDailyRewardsCut = 0
+  let totalMaxAllo = 0
+  let aprWeightedSum = 0
+  let aprWeightDenom = 0
+
+  for (const sg of subs) {
+    const signalGrt = weiToGrt(sg.deployment.signalledTokens)
+    const stakeGrt = weiToGrt(sg.deployment.stakedTokens)
+    totalSignal += signalGrt
+    totalStake += stakeGrt
+    totalDailyRewardsCut += sg.dailyRewardsCut
+
+    if (isFinite(sg.maxAllo) && sg.maxAllo !== Number.MIN_SAFE_INTEGER && sg.maxAllo > 0) {
+      totalMaxAllo += sg.maxAllo
+    }
+
+    if (isFinite(sg.apr) && signalGrt > 0) {
+      aprWeightedSum += sg.apr * signalGrt
+      aprWeightDenom += signalGrt
+    }
+  }
+
+  const avgApr = aprWeightDenom > 0 ? aprWeightedSum / aprWeightDenom : 0
+  const dailyRewardsCutGrt = weiToGrt(String(totalDailyRewardsCut))
+
+  return {
+    count: subs.length,
+    totalSignal,
+    totalStake,
+    avgApr,
+    dailyRewardsCutGrt,
+    totalMaxAllo,
+  }
+})
+
+// ---------------------------------------------------------------------------
 // Selection — sync with wizardStore.selectedDeployments
 // ---------------------------------------------------------------------------
 function handleSelectionChange(ids: Set<string>) {
@@ -369,6 +412,31 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
         empty-message="No subgraphs found."
         @selection-change="handleSelectionChange"
       />
+      <div class="totals-bar">
+        <span class="total-item total-label">
+          <strong>{{ totals.count }}</strong> subgraphs
+        </span>
+        <span class="total-item">
+          <span class="total-key">Signal:</span>
+          <strong>{{ formatNumber(totals.totalSignal, 0) }} GRT</strong>
+        </span>
+        <span class="total-item">
+          <span class="total-key">Stake:</span>
+          <strong>{{ formatNumber(totals.totalStake, 0) }} GRT</strong>
+        </span>
+        <span class="total-item">
+          <span class="total-key">Avg APR:</span>
+          <strong>{{ formatNumber(totals.avgApr, 2) }}%</strong>
+        </span>
+        <span class="total-item">
+          <span class="total-key">Daily (Cut):</span>
+          <strong>{{ formatNumber(totals.dailyRewardsCutGrt, 0) }} GRT</strong>
+        </span>
+        <span class="total-item">
+          <span class="total-key">Max Allo:</span>
+          <strong>{{ formatNumber(totals.totalMaxAllo, 0) }} GRT</strong>
+        </span>
+      </div>
     </div>
   </div>
 </template>
@@ -482,6 +550,46 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  position: relative;
+  padding-bottom: 40px;
+}
+
+/* --- Totals bar --- */
+.totals-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 16px;
+  background-color: var(--app-surface-50);
+  border-top: 1px solid var(--app-surface-200);
+  border-radius: 0 0 12px 12px;
+  z-index: 3;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.total-item {
+  font-size: 0.75rem;
+  color: var(--p-text-color);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.total-label {
+  font-weight: 600;
+}
+
+.total-key {
+  color: var(--p-text-muted-color);
+  font-weight: 500;
 }
 
 /* --- Cell styles --- */
