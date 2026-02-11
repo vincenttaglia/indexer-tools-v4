@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { AllocationRaw, ActionInput, SubgraphComputed } from '@/types'
-import { grtToWei, weiToGrt } from '@/services/calculations'
+import { weiToGrt } from '@/services/calculations'
 
 const ZERO_POI = '0x0000000000000000000000000000000000000000000000000000000000000000'
 
@@ -271,7 +271,7 @@ export const useWizardStore = defineStore('wizard', () => {
         status: 'queued',
         type: 'allocate',
         deploymentID: ipfsHash,
-        amount: grtToWei(amountGrt),
+        amount: String(amountGrt),
         protocolNetwork: chainId,
         source: 'Indexer Tools - Agent Connect',
         reason: 'Allocation Wizard',

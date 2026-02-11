@@ -3,16 +3,16 @@ export type ActionType = 'allocate' | 'unallocate' | 'reallocate'
 
 /** Action as returned by the Indexer Agent GraphQL API */
 export interface Action {
-  id: string
+  id: number
   status: ActionStatus
   type: ActionType
   deploymentID: string
   allocationID: string | null
-  amount: string
+  amount: string | null
   poi: string | null
   publicPOI: string | null
   poiBlockNumber: number | null
-  force: boolean
+  force: boolean | null
   priority: number
   source: string
   reason: string
@@ -44,7 +44,7 @@ export interface ActionInput {
 
 /** Filter for querying actions from the agent */
 export interface ActionFilter {
-  id?: string
+  id?: number
   status?: ActionStatus
   type?: ActionType
   deploymentID?: string

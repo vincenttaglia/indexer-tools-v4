@@ -260,6 +260,8 @@ function hasCustomData(ipfsHash: string): boolean {
   flex-direction: column;
   gap: 16px;
   padding: 16px;
+  height: 100%;
+  overflow: hidden;
 }
 
 /* --- Step header --- */
@@ -268,6 +270,7 @@ function hasCustomData(ipfsHash: string): boolean {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
+  flex-shrink: 0;
 }
 
 .step-header-text {
@@ -313,6 +316,9 @@ function hasCustomData(ipfsHash: string): boolean {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 /* --- Individual POI card --- */

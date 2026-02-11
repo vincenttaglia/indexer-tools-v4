@@ -10,7 +10,7 @@ import Tag from 'primevue/tag'
 import SelectButton from 'primevue/selectbutton'
 
 // Project components
-import { DataTable, TokenCell } from '@/components/DataTable'
+import { DataTable } from '@/components/DataTable'
 
 // Composables
 import { useActionsQuery } from '@/composables'
@@ -29,6 +29,9 @@ import {
 
 // Types
 import type { Action, ActionStatus } from '@/types'
+
+// Formatting
+import { formatNumber } from '@/services/formatting/numbers'
 
 // ---------------------------------------------------------------------------
 // Stores
@@ -115,30 +118,30 @@ function handleSelectionChange(ids: Set<string>) {
 }
 
 function getRowId(row: Action) {
-  return row.id
+  return String(row.id)
 }
 
 // ---------------------------------------------------------------------------
 // Selected action helpers
 // ---------------------------------------------------------------------------
 const selectedActionsList = computed(() =>
-  allActions.value.filter((a) => selectedActions.value.has(a.id)),
+  allActions.value.filter((a) => selectedActions.value.has(String(a.id))),
 )
 
 const selectedQueuedIds = computed(() =>
   selectedActionsList.value
     .filter((a) => a.status === 'queued')
-    .map((a) => a.id),
+    .map((a) => String(a.id)),
 )
 
 const selectedCancelableIds = computed(() =>
   selectedActionsList.value
     .filter((a) => a.status === 'queued' || a.status === 'approved')
-    .map((a) => a.id),
+    .map((a) => String(a.id)),
 )
 
 const selectedIds = computed(() =>
-  selectedActionsList.value.map((a) => a.id),
+  selectedActionsList.value.map((a) => String(a.id)),
 )
 
 const approvedCount = computed(() =>
@@ -302,8 +305,8 @@ const columns: ColumnDef<Action, unknown>[] = [
     header: 'ID',
     size: 70,
     cell: (info) => {
-      const id = info.getValue() as string
-      return h('span', { class: 'mono-text', title: id }, `#${id}`)
+      const id = info.getValue() as number
+      return h('span', { class: 'mono-text', title: String(id) }, `#${id}`)
     },
   }),
   columnHelper.accessor('type', {
@@ -345,9 +348,11 @@ const columns: ColumnDef<Action, unknown>[] = [
     header: 'Amount (GRT)',
     size: 140,
     cell: (info) => {
-      const val = info.getValue() as string
+      const val = info.getValue() as string | null
       if (!val || val === '0') return h('span', { class: 'text-muted' }, '-')
-      return h(TokenCell, { value: val, decimals: 0 })
+      const parsed = parseFloat(val)
+      if (isNaN(parsed)) return h('span', { class: 'text-muted' }, '-')
+      return h('span', { class: 'token-value' }, `${formatNumber(parsed, 0)} GRT`)
     },
   }),
   columnHelper.accessor('priority', {
