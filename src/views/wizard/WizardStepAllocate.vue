@@ -117,7 +117,7 @@ const { computed: selectedSubgraphsList } = useSubgraphComputations({
 function getDisplayName(sg: SubgraphComputed): string {
   const versions = sg.deployment.versions
   const meta = versions?.[0]?.metadata?.subgraphVersion?.subgraph?.metadata
-  return meta?.displayName ?? sg.deployment.ipfsHash.slice(0, 12)
+  return meta?.displayName ?? sg.deployment.ipfsHash
 }
 
 // ---------------------------------------------------------------------------
@@ -317,7 +317,7 @@ const remainingStake = computed<number>(() => {
           <div class="card-info">
             <div class="card-name">
               <span class="name-primary">{{ getDisplayName(sg) }}</span>
-              <span class="name-hash">{{ sg.deployment.ipfsHash.slice(0, 12) }}</span>
+              <span class="name-hash">{{ sg.deployment.ipfsHash }}</span>
             </div>
             <div class="card-metrics">
               <span class="metric">
@@ -549,9 +549,9 @@ const remainingStake = computed<number>(() => {
   color: var(--p-text-muted-color);
   font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono',
     Menlo, Consolas, monospace;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-x: auto;
   white-space: nowrap;
+  user-select: all;
   flex-shrink: 0;
 }
 

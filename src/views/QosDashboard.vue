@@ -72,8 +72,7 @@ function refreshAll() {
 
 /** Shorten an IPFS hash for display */
 function shortenHash(hash: string): string {
-  if (hash.length <= 16) return hash
-  return `${hash.slice(0, 8)}...${hash.slice(-6)}`
+  return hash
 }
 
 /** Color class for blocks behind values */
@@ -423,9 +422,9 @@ const columns: ColumnDef<AllocationDailyDataPoint, any>[] = [
     Menlo, Consolas, monospace;
   font-size: 0.75rem;
   color: var(--p-text-color);
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-x: auto;
   white-space: nowrap;
+  user-select: all;
   min-width: 0;
 }
 

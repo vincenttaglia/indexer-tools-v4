@@ -58,7 +58,7 @@ const deploymentGroups = computed<
     } else {
       const versions = alloc.subgraphDeployment.versions
       const meta = versions?.[0]?.subgraph?.metadata
-      const displayName = meta?.displayName ?? ipfsHash.slice(0, 16) + '...'
+      const displayName = meta?.displayName ?? ipfsHash
       const network = alloc.subgraphDeployment.manifest?.network ?? 'unknown'
 
       groupMap.set(ipfsHash, {
@@ -187,7 +187,7 @@ function hasCustomData(ipfsHash: string): boolean {
             <div class="card-info">
               <div class="card-name">
                 <span class="name-primary">{{ group.displayName }}</span>
-                <span class="name-hash">{{ group.ipfsHash.slice(0, 16) }}</span>
+                <span class="name-hash">{{ group.ipfsHash }}</span>
               </div>
               <div class="card-meta">
                 <span class="meta-item">
@@ -384,9 +384,9 @@ function hasCustomData(ipfsHash: string): boolean {
   color: var(--p-text-muted-color);
   font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono',
     Menlo, Consolas, monospace;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-x: auto;
   white-space: nowrap;
+  user-select: all;
 }
 
 .card-meta {

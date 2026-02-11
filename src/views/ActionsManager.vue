@@ -336,8 +336,8 @@ const columns: ColumnDef<Action, any>[] = [
     size: 140,
     cell: (info) => {
       const val = info.getValue() as string
-      const short = val ? val.slice(0, 12) + '...' : '-'
-      return h('span', { class: 'mono-text', title: val }, short)
+      if (!val) return h('span', { class: 'text-muted' }, '-')
+      return h('span', { class: 'mono-text hash-full', title: val }, val)
     },
   }),
   columnHelper.accessor('poi', {
@@ -347,8 +347,7 @@ const columns: ColumnDef<Action, any>[] = [
     cell: (info) => {
       const val = info.getValue() as string | null
       if (!val) return h('span', { class: 'text-muted' }, '-')
-      const short = `${val.slice(0, 10)}...${val.slice(-4)}`
-      return h('span', { class: 'mono-text', title: val }, short)
+      return h('span', { class: 'mono-text hash-full', title: val }, val)
     },
   }),
   columnHelper.accessor('amount', {
@@ -706,6 +705,12 @@ const columns: ColumnDef<Action, any>[] = [
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
+}
+
+:deep(.hash-full) {
+  overflow-x: auto;
+  text-overflow: clip;
+  user-select: all;
 }
 
 :deep(.text-muted) {

@@ -263,7 +263,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
       const versions = row.deployment.versions
       const meta =
         versions?.[0]?.metadata?.subgraphVersion?.subgraph?.metadata
-      return meta?.displayName ?? row.deployment.ipfsHash.slice(0, 8)
+      return meta?.displayName ?? row.deployment.ipfsHash
     },
     {
       id: 'name',
@@ -276,7 +276,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
         const meta =
           versions?.[0]?.metadata?.subgraphVersion?.subgraph?.metadata
         const name = meta?.displayName ?? 'Unknown'
-        const hash = ipfsHash.slice(0, 8)
+        const hash = ipfsHash
         const isDeployed = !!row.deploymentStatus
         const isAllocated = allocatedDeployments.value.has(ipfsHash) && !closingDeployments.value.has(ipfsHash)
         const nameChildren: ReturnType<typeof h>[] = [name as any]
@@ -919,9 +919,9 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   color: var(--p-text-muted-color);
   font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono',
     Menlo, Consolas, monospace;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-x: auto;
   white-space: nowrap;
+  user-select: all;
 }
 
 :deep(.network-cell) {

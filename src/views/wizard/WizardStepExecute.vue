@@ -155,8 +155,7 @@ async function copyToClipboard(text: string, label: string) {
 // ---------------------------------------------------------------------------
 
 function truncateId(id: string): string {
-  if (id.length <= 16) return id
-  return `${id.slice(0, 8)}...${id.slice(-6)}`
+  return id
 }
 
 function formatAmount(amount: string): string {
@@ -493,9 +492,9 @@ function formatAmount(amount: string): string {
   font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono',
     Menlo, Consolas, monospace;
   color: var(--p-text-color);
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-x: auto;
   white-space: nowrap;
+  user-select: all;
   min-width: 0;
 }
 

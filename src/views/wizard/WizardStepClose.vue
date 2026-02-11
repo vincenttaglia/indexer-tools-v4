@@ -260,7 +260,7 @@ function getDeploymentName(alloc: AllocationComputed): string {
   const firstVersion = d.versions?.[0]
   const displayName = firstVersion?.subgraph?.metadata?.displayName
   if (displayName) return displayName
-  return d.ipfsHash.slice(0, 8)
+  return d.ipfsHash
 }
 
 // ---------------------------------------------------------------------------
@@ -279,7 +279,7 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
       cell: (info) => {
         const row = info.row.original
         const name = getDeploymentName(row)
-        const hash = row.subgraphDeployment.ipfsHash.slice(0, 8)
+        const hash = row.subgraphDeployment.ipfsHash
         return h('div', { class: 'name-cell' }, [
           h('span', { class: 'name-primary' }, name),
           h('span', { class: 'name-hash' }, hash),
@@ -923,9 +923,9 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
   color: var(--p-text-muted-color);
   font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono',
     Menlo, Consolas, monospace;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-x: auto;
   white-space: nowrap;
+  user-select: all;
 }
 
 :deep(.network-cell) {
