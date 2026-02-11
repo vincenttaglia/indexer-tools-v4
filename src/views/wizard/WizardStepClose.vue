@@ -655,7 +655,6 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
         <InputText
           v-model="filterStore.allocationFilters.search"
           placeholder="Name, IPFS hash, or allocation ID..."
-          class="filter-input"
         />
       </div>
 
@@ -666,7 +665,6 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
           :options="statusFilterOptions"
           optionLabel="label"
           optionValue="value"
-          class="filter-control"
         />
       </div>
 
@@ -676,7 +674,6 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
           v-model="filterStore.allocationFilters.networks"
           :options="networkOptions"
           placeholder="All"
-          class="filter-control"
           :maxSelectedLabels="2"
           selectedItemsLabel="{0} networks"
         />
@@ -824,7 +821,7 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
   min-width: 200px;
 }
 
-.filter-input {
+.filter-search :deep(.p-inputtext) {
   width: 100%;
 }
 
@@ -832,7 +829,8 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
   min-width: 150px;
 }
 
-.filter-control {
+.filter-select :deep(.p-select),
+.filter-select :deep(.p-multiselect) {
   width: 100%;
 }
 

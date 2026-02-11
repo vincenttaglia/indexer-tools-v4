@@ -529,7 +529,6 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
         <InputText
           v-model="filterStore.subgraphFilters.search"
           placeholder="Name or IPFS hash..."
-          class="filter-input"
         />
       </div>
 
@@ -540,7 +539,6 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
           :options="rewardsFilterOptions"
           optionLabel="label"
           optionValue="value"
-          class="filter-control"
         />
       </div>
 
@@ -551,7 +549,6 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
           :options="statusFilterOptions"
           optionLabel="label"
           optionValue="value"
-          class="filter-control"
         />
       </div>
 
@@ -561,7 +558,6 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
           v-model="filterStore.subgraphFilters.networks"
           :options="networkOptions"
           placeholder="All"
-          class="filter-control"
           :maxSelectedLabels="2"
           selectedItemsLabel="{0} networks"
         />
@@ -575,7 +571,6 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
             v-if="filterStore.subgraphFilters.hideSmallSignal"
             v-model="filterStore.subgraphFilters.minSignal"
             placeholder="GRT"
-            class="number-input"
             :min="0"
             suffix=" GRT"
           />
@@ -587,7 +582,6 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
         <InputNumber
           v-model="filterStore.subgraphFilters.maxSignal"
           placeholder="0 = off"
-          class="number-input"
           :min="0"
           suffix=" GRT"
         />
@@ -597,8 +591,8 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
         <label class="filter-label">Target APR</label>
         <InputNumber
           v-model="filterStore.subgraphFilters.targetApr"
-          class="number-input"
           :min="0"
+          :maxFractionDigits="4"
           suffix="%"
         />
       </div>
@@ -607,7 +601,6 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
         <label class="filter-label">New Allocation</label>
         <InputNumber
           v-model="filterStore.subgraphFilters.newAllocation"
-          class="number-input"
           :min="0"
           suffix=" GRT"
         />
@@ -763,7 +756,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   min-width: 180px;
 }
 
-.filter-input {
+.filter-search :deep(.p-inputtext) {
   width: 100%;
 }
 
@@ -771,11 +764,12 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   min-width: 150px;
 }
 
-.filter-control {
+.filter-select :deep(.p-select),
+.filter-select :deep(.p-multiselect) {
   width: 100%;
 }
 
-.filter-number .number-input {
+.filter-number :deep(.p-inputnumber) {
   width: 120px;
 }
 
