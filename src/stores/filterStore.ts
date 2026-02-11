@@ -14,6 +14,14 @@ export interface AllocationFilters {
   search: string
 }
 
+export interface QosFilters {
+  search: string
+}
+
+export interface QueryFeeFilters {
+  search: string
+}
+
 /**
  * Table filter state for subgraph and allocation views.
  *
@@ -34,8 +42,18 @@ export const useFilterStore = defineStore('filters', () => {
     search: '',
   })
 
+  const qosFilters = ref<QosFilters>({
+    search: '',
+  })
+
+  const queryFeeFilters = ref<QueryFeeFilters>({
+    search: '',
+  })
+
   return {
     subgraphFilters,
     allocationFilters,
+    qosFilters,
+    queryFeeFilters,
   }
 })
