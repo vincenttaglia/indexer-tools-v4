@@ -16,6 +16,7 @@ import {
   DataTable,
   TokenCell,
   PercentCell,
+  HealthCell,
   AddressCell,
 } from '@/components/DataTable'
 
@@ -38,7 +39,7 @@ import type { AllocationDescriptor } from '@/composables'
 import { useFilterStore, useSelectionStore, useChainStore } from '@/stores'
 
 // Types
-import type { AllocationComputed } from '@/types'
+import type { AllocationComputed, HealthStatus } from '@/types'
 
 // Formatting
 import { formatNumber } from '@/services/formatting/numbers'
@@ -420,7 +421,22 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     },
   ),
 
-  // 13. Status checks (multi-indicator with colored dots)
+  // 13. Health (from graph-node status endpoint)
+  columnHelper.accessor(
+    (row) =>
+      (row.deploymentStatus?.health ?? null) as HealthStatus | null,
+    {
+      id: 'health',
+      header: 'Health',
+      size: 100,
+      cell: (info) => {
+        const val = info.getValue() as HealthStatus | null
+        return h(HealthCell, { status: val })
+      },
+    },
+  ),
+
+  // 14. Status checks (multi-indicator with colored dots)
   columnHelper.accessor(
     (row) => row.statusChecks,
     {
@@ -495,7 +511,7 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     },
   ),
 
-  // 14. Allocation ID
+  // 15. Allocation ID
   columnHelper.accessor('id', {
     id: 'allocationId',
     header: 'Allocation ID',

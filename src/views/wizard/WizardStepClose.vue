@@ -10,6 +10,7 @@ import {
   DataTable,
   TokenCell,
   PercentCell,
+  HealthCell,
 } from '@/components/DataTable'
 
 // Composables
@@ -26,7 +27,7 @@ import {
 import { useFilterStore, useWizardStore, useChainStore } from '@/stores'
 
 // Types
-import type { AllocationComputed, AllocationRaw } from '@/types'
+import type { AllocationComputed, AllocationRaw, HealthStatus } from '@/types'
 
 // Formatting
 import { formatNumber } from '@/services/formatting/numbers'
@@ -249,7 +250,22 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     },
   }),
 
-  // 7. Status checks (multi-indicator with colored dots)
+  // 7. Health (from graph-node status endpoint)
+  columnHelper.accessor(
+    (row) =>
+      (row.deploymentStatus?.health ?? null) as HealthStatus | null,
+    {
+      id: 'health',
+      header: 'Health',
+      size: 100,
+      cell: (info) => {
+        const val = info.getValue() as HealthStatus | null
+        return h(HealthCell, { status: val })
+      },
+    },
+  ),
+
+  // 8. Status checks (multi-indicator with colored dots)
   columnHelper.accessor(
     (row) => row.statusChecks,
     {
