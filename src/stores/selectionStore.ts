@@ -27,7 +27,7 @@ export const useSelectionStore = defineStore('selection', () => {
   }
 
   function clearAllSubgraphs(): void {
-    selectedSubgraphs.value.clear()
+    selectedSubgraphs.value = new Set()
   }
 
   // --- Allocations ---
@@ -45,7 +45,7 @@ export const useSelectionStore = defineStore('selection', () => {
   }
 
   function clearAllAllocations(): void {
-    selectedAllocations.value.clear()
+    selectedAllocations.value = new Set()
   }
 
   // --- Actions ---
@@ -63,7 +63,7 @@ export const useSelectionStore = defineStore('selection', () => {
   }
 
   function clearAllActions(): void {
-    selectedActions.value.clear()
+    selectedActions.value = new Set()
   }
 
   return {

@@ -144,9 +144,6 @@ const selectedIds = computed(() =>
   selectedActionsList.value.map((a) => String(a.id)),
 )
 
-const approvedCount = computed(() =>
-  allActions.value.filter((a) => a.status === 'approved').length,
-)
 
 // ---------------------------------------------------------------------------
 // Confirmation state for delete
@@ -361,8 +358,7 @@ const columns: ColumnDef<Action, unknown>[] = [
     size: 80,
     cell: (info) => {
       const val = info.getValue() as number
-      const label = val === 0 ? 'high' : 'low'
-      return h('span', { class: 'priority-cell' }, label)
+      return h('span', { class: 'priority-cell' }, String(val))
     },
   }),
   columnHelper.accessor((row) => `${row.source}${row.reason ? ` / ${row.reason}` : ''}`, {
@@ -534,7 +530,7 @@ const columns: ColumnDef<Action, unknown>[] = [
           icon="pi pi-play"
           severity="info"
           size="small"
-          :disabled="approvedCount === 0 || isMutating"
+          :disabled="isMutating"
           :loading="executeMutation.isPending.value"
           @click="handleExecuteApproved"
         />
