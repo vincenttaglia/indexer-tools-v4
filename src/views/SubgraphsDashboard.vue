@@ -32,6 +32,7 @@ import type { SubgraphComputed, HealthStatus } from '@/types'
 
 // Formatting
 import { formatNumber } from '@/services/formatting/numbers'
+import { weiToGrt } from '@/services/calculations'
 
 // ---------------------------------------------------------------------------
 // Stores
@@ -205,10 +206,11 @@ const columns: ColumnDef<SubgraphComputed, unknown>[] = [
     size: 160,
     cell: (info) => {
       const val = info.getValue() as number
+      const grt = weiToGrt(String(val))
       return h(
         'span',
         { class: 'token-value' },
-        `${formatNumber(val, 0)} GRT`,
+        `${formatNumber(grt, 0)} GRT`,
       )
     },
   }),

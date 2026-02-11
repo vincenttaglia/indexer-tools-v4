@@ -11,7 +11,7 @@ const props = withDefaults(
 
 const formatted = computed(() => {
   if (isNaN(props.value) || !isFinite(props.value)) return '0.00%'
-  return `${props.value >= 0 ? '+' : ''}${props.value.toFixed(props.decimals)}%`
+  return `${props.value.toFixed(props.decimals)}%`
 })
 
 const colorClass = computed(() => {
