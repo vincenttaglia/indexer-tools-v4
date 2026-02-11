@@ -8,7 +8,9 @@ import { GraphQLClient } from 'graphql-request'
  * @returns A configured GraphQLClient instance
  */
 export function createGraphQLClient(url: string, token?: string): GraphQLClient {
-  const headers: Record<string, string> = {}
+  const headers: Record<string, string> = {
+    'Access-Control-Request-Private-Network': 'true',
+  }
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`

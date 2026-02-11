@@ -2,7 +2,7 @@ import { gql, type GraphQLClient } from 'graphql-request'
 import type { Action, ActionInput, ActionFilter } from '@/types'
 
 // ---------------------------------------------------------------------------
-// Action fields fragment (shared across all queries/mutations)
+// Action fields fragment (shared across queries and most mutations)
 // ---------------------------------------------------------------------------
 
 const ACTION_FIELDS = `
@@ -27,13 +27,35 @@ const ACTION_FIELDS = `
   isLegacy
 `
 
+/** ActionResult fields — executeApprovedActions returns ActionResult, not Action.
+ *  ActionResult lacks createdAt/updatedAt but is otherwise the same. */
+const ACTION_RESULT_FIELDS = `
+  id
+  status
+  type
+  deploymentID
+  allocationID
+  amount
+  poi
+  publicPOI
+  poiBlockNumber
+  force
+  priority
+  source
+  reason
+  transaction
+  failureReason
+  protocolNetwork
+  isLegacy
+`
+
 // ---------------------------------------------------------------------------
 // Query Documents
 // ---------------------------------------------------------------------------
 
 /** Queries actions from the indexer agent with an optional filter. */
 export const ACTIONS_QUERY = gql`
-  query actions($filter: ActionFilter!) {
+  query actions($filter: ActionFilter) {
     actions(filter: $filter) {
       ${ACTION_FIELDS}
     }
@@ -44,13 +66,11 @@ export const ACTIONS_QUERY = gql`
 // Mutation Documents
 // ---------------------------------------------------------------------------
 
-/** Queues new actions in the indexer agent. */
+/** Queues new actions in the indexer agent. Returns flat Action[]. */
 export const QUEUE_ACTIONS_MUTATION = gql`
   mutation queueActions($actions: [ActionInput!]!) {
     queueActions(actions: $actions) {
-      actions {
-        ${ACTION_FIELDS}
-      }
+      ${ACTION_FIELDS}
     }
   }
 `
@@ -73,20 +93,18 @@ export const CANCEL_ACTIONS_MUTATION = gql`
   }
 `
 
-/** Deletes actions by their IDs. */
+/** Deletes actions by their IDs. Returns count of deleted actions (Int). */
 export const DELETE_ACTIONS_MUTATION = gql`
   mutation deleteActions($actionIDs: [String!]!) {
-    deleteActions(actionIDs: $actionIDs) {
-      ${ACTION_FIELDS}
-    }
+    deleteActions(actionIDs: $actionIDs)
   }
 `
 
-/** Executes all currently approved actions. */
+/** Executes all currently approved actions. Returns ActionResult[]. */
 export const EXECUTE_APPROVED_ACTIONS_MUTATION = gql`
   mutation executeApprovedActions {
     executeApprovedActions {
-      ${ACTION_FIELDS}
+      ${ACTION_RESULT_FIELDS}
     }
   }
 `
@@ -100,9 +118,7 @@ interface ActionsQueryResponse {
 }
 
 interface QueueActionsResponse {
-  queueActions: {
-    actions: Action[]
-  }
+  queueActions: Action[]
 }
 
 interface ApproveActionsResponse {
@@ -114,7 +130,7 @@ interface CancelActionsResponse {
 }
 
 interface DeleteActionsResponse {
-  deleteActions: Action[]
+  deleteActions: number
 }
 
 interface ExecuteApprovedActionsResponse {
@@ -146,7 +162,7 @@ export async function queueActions(
     const data = await client.request<QueueActionsResponse>(QUEUE_ACTIONS_MUTATION, {
       actions: batch,
     })
-    allResults.push(...data.queueActions.actions)
+    allResults.push(...data.queueActions)
   }
 
   return allResults
@@ -174,11 +190,11 @@ export async function cancelActions(
   return data.cancelActions
 }
 
-/** Deletes actions by their IDs. */
+/** Deletes actions by their IDs. Returns count of deleted actions. */
 export async function deleteActions(
   client: GraphQLClient,
   actionIds: string[],
-): Promise<Action[]> {
+): Promise<number> {
   const data = await client.request<DeleteActionsResponse>(DELETE_ACTIONS_MUTATION, {
     actionIDs: actionIds,
   })

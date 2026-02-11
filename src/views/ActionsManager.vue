@@ -183,7 +183,7 @@ const deleteMutation = useMutation({
     const client = createGraphQLClient(agentEndpoint.value)
     return deleteActions(client, ids)
   },
-  onSuccess: () => {
+  onSuccess: (count: number) => {
     queryClient.invalidateQueries({ queryKey: ['actions'] })
     selectionStore.clearAllActions()
     confirmingDelete.value = false
