@@ -74,6 +74,23 @@ a {
   scrollbar-color: var(--p-surface-300) transparent;
 }
 
+/* ===== Dark mode surface overrides ===== */
+/* PrimeVue Aura keeps --p-surface-0 as white in dark mode (its semantic
+   tokens reference high surface values for dark backgrounds). Our custom
+   CSS uses low surface values (0, 50, 100) for backgrounds, so we remap
+   them to the zinc dark palette. PrimeVue's own component tokens
+   (--p-text-color, --p-content-background, etc.) are resolved to hex
+   values at generation time and are NOT affected by these overrides. */
+html.app-dark {
+  --p-surface-0: #09090b;
+  --p-surface-50: #18181b;
+  --p-surface-100: #27272a;
+  --p-surface-200: #3f3f46;
+  --p-surface-300: #52525b;
+  --p-surface-400: #71717a;
+  --p-surface-ground: #09090b;
+}
+
 /* ===== Transitions for theme switching ===== */
 .sidebar,
 .main-content,
