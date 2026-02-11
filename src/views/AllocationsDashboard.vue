@@ -339,7 +339,46 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     },
   ),
 
-  // 8. QoS: Query Count
+  // 8. Pending Rewards After Cut (GRT)
+  columnHelper.accessor(
+    (row) => row.pendingRewards,
+    {
+      id: 'pendingRewardsCut',
+      header: 'Pending Cut (GRT)',
+      size: 160,
+      cell: (info) => {
+        const pr = info.getValue() as AllocationComputed['pendingRewards']
+        if (pr.loading) {
+          return h('span', { class: 'pending-loading' }, [
+            h('span', { class: 'spinner' }),
+          ])
+        }
+        if (!pr.loaded) {
+          return h('span', { class: 'text-muted' }, '?')
+        }
+        const cut = indexerQuery.data.value?.indexingRewardCut ?? 0
+        const afterCut = (pr.value * BigInt(cut)) / 1_000_000n
+        const grt = Number(formatUnits(afterCut, 18))
+        return h(
+          'span',
+          { class: 'token-value' },
+          `${formatNumber(grt, 0)} GRT`,
+        )
+      },
+      sortingFn: (rowA, rowB) => {
+        const a = rowA.original.pendingRewards
+        const b = rowB.original.pendingRewards
+        if (!a.loaded && !b.loaded) return 0
+        if (!a.loaded) return -1
+        if (!b.loaded) return 1
+        if (a.value < b.value) return -1
+        if (a.value > b.value) return 1
+        return 0
+      },
+    },
+  ),
+
+  // 9. QoS: Query Count
   columnHelper.accessor(
     (row) => row.qosData?.queryCount ?? null,
     {

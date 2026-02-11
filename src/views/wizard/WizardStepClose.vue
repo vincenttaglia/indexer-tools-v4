@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, h } from 'vue'
 import { createColumnHelper, type ColumnDef } from '@tanstack/vue-table'
+import { formatUnits } from 'viem'
 
 // PrimeVue components
 import InputText from 'primevue/inputtext'
+import Button from 'primevue/button'
 
 // Project components
 import {
@@ -20,8 +22,10 @@ import {
   useStatusQuery,
   useIndexerQuery,
   useEpochQuery,
+  useRewardsQuery,
   useAllocationComputations,
 } from '@/composables'
+import type { AllocationDescriptor } from '@/composables'
 
 // Stores
 import { useFilterStore, useWizardStore, useChainStore } from '@/stores'
@@ -50,6 +54,24 @@ const indexerQuery = useIndexerQuery()
 const epochQuery = useEpochQuery()
 
 // ---------------------------------------------------------------------------
+// Rewards query (on-demand)
+// ---------------------------------------------------------------------------
+const allocationDescriptors = computed<AllocationDescriptor[]>(() => {
+  const raw = allocationsQuery.data.value
+  if (!raw) return []
+  return raw.map((a) => ({
+    id: a.id as `0x${string}`,
+    isLegacy: a.isLegacy,
+  }))
+})
+
+const rewardsQuery = useRewardsQuery(allocationDescriptors)
+
+const rewardsFetched = computed(
+  () => rewardsQuery.isSuccess.value || rewardsQuery.isError.value,
+)
+
+// ---------------------------------------------------------------------------
 // Computation
 // ---------------------------------------------------------------------------
 const { computed: computedAllocations } = useAllocationComputations({
@@ -60,10 +82,9 @@ const { computed: computedAllocations } = useAllocationComputations({
     () => indexerQuery.data.value?.indexingRewardCut ?? 0,
   ),
   blocksPerDay: computed(() => chainStore.chainConfig.blocksPerDay),
-  // No rewards in wizard close step — keep lightweight
-  pendingRewardsMap: computed(() => undefined),
-  rewardsLoading: computed(() => false),
-  rewardsFetched: computed(() => false),
+  pendingRewardsMap: computed(() => rewardsQuery.data.value),
+  rewardsLoading: computed(() => rewardsQuery.isFetching.value),
+  rewardsFetched,
   qosData: computed(() => undefined),
   epochData: computed(() => epochQuery.data.value),
   otherIndexersStatus: computed(() => undefined),
@@ -250,7 +271,83 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     },
   }),
 
-  // 7. Health (from graph-node status endpoint)
+  // 7. Pending Rewards (GRT)
+  columnHelper.accessor(
+    (row) => row.pendingRewards,
+    {
+      id: 'pendingRewards',
+      header: 'Pending (GRT)',
+      size: 150,
+      cell: (info) => {
+        const pr = info.getValue() as AllocationComputed['pendingRewards']
+        if (pr.loading) {
+          return h('span', { class: 'pending-loading' }, [
+            h('span', { class: 'spinner' }),
+          ])
+        }
+        if (!pr.loaded) {
+          return h('span', { class: 'text-muted' }, '?')
+        }
+        const grt = Number(formatUnits(pr.value, 18))
+        return h(
+          'span',
+          { class: 'token-value' },
+          `${formatNumber(grt, 0)} GRT`,
+        )
+      },
+      sortingFn: (rowA, rowB) => {
+        const a = rowA.original.pendingRewards
+        const b = rowB.original.pendingRewards
+        if (!a.loaded && !b.loaded) return 0
+        if (!a.loaded) return -1
+        if (!b.loaded) return 1
+        if (a.value < b.value) return -1
+        if (a.value > b.value) return 1
+        return 0
+      },
+    },
+  ),
+
+  // 8. Pending Rewards After Cut (GRT)
+  columnHelper.accessor(
+    (row) => row.pendingRewards,
+    {
+      id: 'pendingRewardsCut',
+      header: 'Pending Cut (GRT)',
+      size: 160,
+      cell: (info) => {
+        const pr = info.getValue() as AllocationComputed['pendingRewards']
+        if (pr.loading) {
+          return h('span', { class: 'pending-loading' }, [
+            h('span', { class: 'spinner' }),
+          ])
+        }
+        if (!pr.loaded) {
+          return h('span', { class: 'text-muted' }, '?')
+        }
+        const cut = indexerQuery.data.value?.indexingRewardCut ?? 0
+        const afterCut = (pr.value * BigInt(cut)) / 1_000_000n
+        const grt = Number(formatUnits(afterCut, 18))
+        return h(
+          'span',
+          { class: 'token-value' },
+          `${formatNumber(grt, 0)} GRT`,
+        )
+      },
+      sortingFn: (rowA, rowB) => {
+        const a = rowA.original.pendingRewards
+        const b = rowB.original.pendingRewards
+        if (!a.loaded && !b.loaded) return 0
+        if (!a.loaded) return -1
+        if (!b.loaded) return 1
+        if (a.value < b.value) return -1
+        if (a.value > b.value) return 1
+        return 0
+      },
+    },
+  ),
+
+  // 9. Health (from graph-node status endpoint)
   columnHelper.accessor(
     (row) =>
       (row.deploymentStatus?.health ?? null) as HealthStatus | null,
@@ -353,6 +450,15 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
           class="filter-input"
         />
       </div>
+      <Button
+        label="Fetch Rewards"
+        icon="pi pi-download"
+        severity="info"
+        outlined
+        size="small"
+        :loading="rewardsQuery.isFetching.value"
+        @click="rewardsQuery.refetch()"
+      />
       <span class="row-count">
         {{ filteredCount }} / {{ totalCount }} allocations
       </span>
@@ -544,5 +650,33 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
 
 :deep(.duration-red) {
   color: var(--p-red-400);
+}
+
+/* --- Pending rewards loading spinner --- */
+:deep(.pending-loading) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--p-text-muted-color);
+  font-size: 0.8125rem;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+:deep(.spinner) {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--app-surface-300);
+  border-top-color: var(--p-primary-color);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
