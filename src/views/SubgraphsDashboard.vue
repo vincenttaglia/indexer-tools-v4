@@ -667,7 +667,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
         </span>
         <span class="total-item">
           <span class="total-key">Avg APR:</span>
-          <strong>{{ formatNumber(totals.avgApr * 100, 2) }}%</strong>
+          <strong>{{ formatNumber(totals.avgApr, 2) }}%</strong>
         </span>
         <span class="total-item">
           <span class="total-key">Daily (Cut):</span>
