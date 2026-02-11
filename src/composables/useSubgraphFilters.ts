@@ -124,8 +124,8 @@ function applyStatusFilter(
   if (!status) return false
 
   switch (filter) {
-    case 'healthy-synced':
-      return status.health === 'healthy' && status.synced
+    case 'healthy':
+      return status.health === 'healthy'
     case 'syncing':
       return status.health === 'healthy' && !status.synced
     case 'failed':

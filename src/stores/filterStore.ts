@@ -10,7 +10,7 @@ export interface SubgraphFilters {
   minSignal: number
   maxSignal: number // 0 = disabled
   networks: string[] // empty = all networks
-  statusFilter: string // 'none' | 'all' | 'closable' | 'healthy-synced' | 'syncing' | 'failed' | 'non-deterministic' | 'deterministic'
+  statusFilter: string // 'none' | 'all' | 'closable' | 'healthy' | 'syncing' | 'failed' | 'non-deterministic' | 'deterministic'
   activateBlacklist: boolean
   activateSynclist: boolean
   targetApr: number

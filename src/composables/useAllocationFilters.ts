@@ -86,8 +86,8 @@ function applyStatusFilter(
   switch (filter) {
     case 'closable':
       return alloc.statusChecks.closable
-    case 'healthy-synced':
-      return status.health === 'healthy' && status.synced
+    case 'healthy':
+      return status.health === 'healthy'
     case 'syncing':
       return status.health === 'healthy' && !status.synced
     case 'failed':

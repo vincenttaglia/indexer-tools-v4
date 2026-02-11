@@ -103,7 +103,7 @@ const statusFilterOptions = [
   { label: 'No Filter', value: 'none' },
   { label: 'All Statuses', value: 'all' },
   { label: 'Closable', value: 'closable' },
-  { label: 'Healthy & Synced', value: 'healthy-synced' },
+  { label: 'Healthy', value: 'healthy' },
   { label: 'Syncing', value: 'syncing' },
   { label: 'Failed', value: 'failed' },
   { label: 'Non-Deterministic', value: 'non-deterministic' },
