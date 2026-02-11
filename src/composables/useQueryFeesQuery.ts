@@ -9,7 +9,7 @@ import { createGraphQLClient, fetchQueryFeesDailyDataLatest } from '@/api'
  * This is the gateway's QoS subgraph which tracks query fee data.
  * QoS data is only available for Arbitrum mainnet.
  */
-const QOS_SUBGRAPH_ID = 'Rcmfro42dGsz6gScmMRx1ITzcoD8QLfaxPD5BDTGKWQ'
+const QOS_SUBGRAPH_ID = 'Dtr9rETvwokot4BSXaD5tECanXfqfJKcvHuaaEgPDD2D'
 
 /**
  * Builds the QoS subgraph URL with the user's API key.

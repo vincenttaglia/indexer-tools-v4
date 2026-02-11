@@ -1,205 +1,182 @@
 <script setup lang="ts">
-import { computed, h } from 'vue'
+import { computed, ref, h } from 'vue'
 import { createColumnHelper, type ColumnDef } from '@tanstack/vue-table'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { storeToRefs } from 'pinia'
 
 // PrimeVue components
 import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
 
 // Project components
-import { DataTable, HealthCell, AddressCell } from '@/components/DataTable'
-
-// Composables
-import { useStatusQuery } from '@/composables'
+import { DataTable, AddressCell } from '@/components/DataTable'
 
 // Stores
-import { useAccountStore } from '@/stores'
+import { useAccountStore, useChainStore } from '@/stores'
+
+// API
+import {
+  createGraphQLClient,
+  fetchIndexingRules,
+  setIndexingRule,
+  deleteIndexingRule,
+} from '@/api'
 
 // Types
-import type { DeploymentStatus, HealthStatus } from '@/types'
-
-// Formatting
-import { formatNumber } from '@/services/formatting/numbers'
+import type { IndexingRule } from '@/types'
 
 // ---------------------------------------------------------------------------
 // Stores
 // ---------------------------------------------------------------------------
 const accountStore = useAccountStore()
+const chainStore = useChainStore()
+const queryClient = useQueryClient()
 const { activeAccount } = storeToRefs(accountStore)
 
 // ---------------------------------------------------------------------------
-// Endpoint check
+// Agent endpoint
 // ---------------------------------------------------------------------------
-const hasEndpoint = computed(() => !!activeAccount.value?.agentEndpoint)
+const agentEndpoint = computed(() => activeAccount.value?.agentEndpoint ?? '')
+const hasAgent = computed(() => !!agentEndpoint.value)
 
 // ---------------------------------------------------------------------------
-// Queries
+// Query: indexing rules filtered to offchain only
 // ---------------------------------------------------------------------------
-const statusQuery = useStatusQuery()
-
-// ---------------------------------------------------------------------------
-// Flatten Map to array
-// ---------------------------------------------------------------------------
-const allDeployments = computed<DeploymentStatus[]>(() => {
-  const map = statusQuery.data.value
-  if (!map) return []
-  return Array.from(map.values())
+const indexingRulesQuery = useQuery({
+  queryKey: computed(() => [
+    'indexing-rules',
+    agentEndpoint.value,
+    chainStore.selectedChain,
+  ] as const),
+  queryFn: async () => {
+    if (!agentEndpoint.value) throw new Error('No agent endpoint configured')
+    const client = createGraphQLClient(agentEndpoint.value)
+    const rules = await fetchIndexingRules(client, chainStore.selectedChain)
+    return rules.filter((r) => r.decisionBasis === 'offchain')
+  },
+  enabled: computed(() => !!agentEndpoint.value),
 })
 
-// ---------------------------------------------------------------------------
-// Loading state
-// ---------------------------------------------------------------------------
-const isLoading = computed(() => statusQuery.isLoading.value)
+const offchainRules = computed<IndexingRule[]>(() => indexingRulesQuery.data.value ?? [])
+const isLoading = computed(() => indexingRulesQuery.isLoading.value)
 
 // ---------------------------------------------------------------------------
-// Counts
+// Add deployment input
 // ---------------------------------------------------------------------------
-const totalCount = computed(() => allDeployments.value.length)
+const newDeploymentHash = ref('')
 
 // ---------------------------------------------------------------------------
-// Refresh
+// Mutations
 // ---------------------------------------------------------------------------
+const addMutation = useMutation({
+  mutationFn: async (ipfsHash: string) => {
+    const client = createGraphQLClient(agentEndpoint.value)
+    return setIndexingRule(client, {
+      identifier: ipfsHash,
+      identifierType: 'deployment',
+      decisionBasis: 'offchain',
+      protocolNetwork: chainStore.selectedChain,
+    })
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['indexing-rules'] })
+    newDeploymentHash.value = ''
+  },
+})
+
+const removeMutation = useMutation({
+  mutationFn: async (ipfsHash: string) => {
+    const client = createGraphQLClient(agentEndpoint.value)
+    return deleteIndexingRule(client, {
+      identifier: ipfsHash,
+      protocolNetwork: chainStore.selectedChain,
+    })
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['indexing-rules'] })
+  },
+})
+
+const isMutating = computed(
+  () => addMutation.isPending.value || removeMutation.isPending.value,
+)
+
+// ---------------------------------------------------------------------------
+// Handlers
+// ---------------------------------------------------------------------------
+function handleAdd() {
+  const hash = newDeploymentHash.value.trim()
+  if (!hash) return
+  addMutation.mutate(hash)
+}
+
+function handleRemove(ipfsHash: string) {
+  removeMutation.mutate(ipfsHash)
+}
+
 function refreshAll() {
-  statusQuery.refetch()
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Get the latest block number from the first chain status */
-function getLatestBlock(status: DeploymentStatus): number | null {
-  const chain = status.chains[0]
-  return chain?.latestBlock?.number ?? null
-}
-
-/** Get the chain head block number from the first chain status */
-function getChainHeadBlock(status: DeploymentStatus): number | null {
-  const chain = status.chains[0]
-  return chain?.chainHeadBlock?.number ?? null
-}
-
-/** Calculate blocks behind */
-function getBlocksBehind(status: DeploymentStatus): number | null {
-  const latest = getLatestBlock(status)
-  const chainHead = getChainHeadBlock(status)
-  if (latest === null || chainHead === null) return null
-  return Math.max(0, chainHead - latest)
+  indexingRulesQuery.refetch()
 }
 
 // ---------------------------------------------------------------------------
 // Row ID
 // ---------------------------------------------------------------------------
-function getRowId(row: DeploymentStatus) {
-  return row.subgraph
+function getRowId(row: IndexingRule) {
+  return row.identifier
 }
 
 // ---------------------------------------------------------------------------
 // Column definitions
 // ---------------------------------------------------------------------------
-const columnHelper = createColumnHelper<DeploymentStatus>()
+const columnHelper = createColumnHelper<IndexingRule>()
 
-const columns: ColumnDef<DeploymentStatus, unknown>[] = [
-  // 1. Deployment (IPFS hash)
-  columnHelper.accessor('subgraph', {
+const columns: ColumnDef<IndexingRule, unknown>[] = [
+  columnHelper.accessor('identifier', {
     id: 'deployment',
     header: 'Deployment',
-    size: 200,
+    size: 340,
     cell: (info) => {
       const hash = info.getValue() as string
       return h(AddressCell, { address: hash })
     },
   }),
-
-  // 2. Network (node field)
-  columnHelper.accessor(
-    (row) => row.node ?? 'unknown',
-    {
-      id: 'network',
-      header: 'Network',
-      size: 120,
-      cell: (info) => {
-        const val = info.getValue() as string
-        return h('span', { class: 'network-cell' }, val)
-      },
-    },
-  ),
-
-  // 3. Health
-  columnHelper.accessor('health', {
-    id: 'health',
-    header: 'Health',
+  columnHelper.accessor('identifierType', {
+    id: 'type',
+    header: 'Type',
     size: 120,
+    cell: (info) => h('span', { class: 'type-cell' }, info.getValue() as string),
+  }),
+  columnHelper.accessor('protocolNetwork', {
+    id: 'network',
+    header: 'Network',
+    size: 160,
+    cell: (info) => h('span', { class: 'network-cell' }, info.getValue() as string),
+  }),
+  columnHelper.display({
+    id: 'actions',
+    header: '',
+    size: 100,
     cell: (info) => {
-      const val = info.getValue() as HealthStatus
-      return h(HealthCell, { status: val })
+      const rule = info.row.original
+      return h(Button, {
+        icon: 'pi pi-trash',
+        severity: 'danger',
+        text: true,
+        size: 'small',
+        disabled: isMutating.value,
+        loading: removeMutation.isPending.value && removeMutation.variables.value === rule.identifier,
+        onClick: () => handleRemove(rule.identifier),
+      })
     },
   }),
-
-  // 4. Synced
-  columnHelper.accessor('synced', {
-    id: 'synced',
-    header: 'Synced',
-    size: 90,
-    cell: (info) => {
-      const val = info.getValue() as boolean
-      return h(
-        'span',
-        { class: val ? 'synced-yes' : 'synced-no' },
-        val ? 'Yes' : 'No',
-      )
-    },
-  }),
-
-  // 5. Latest Block
-  columnHelper.accessor(
-    (row) => getLatestBlock(row),
-    {
-      id: 'latestBlock',
-      header: 'Latest Block',
-      size: 130,
-      cell: (info) => {
-        const val = info.getValue() as number | null
-        if (val === null) return h('span', { class: 'text-muted' }, '-')
-        return h('span', { class: 'block-number' }, formatNumber(val, 0))
-      },
-    },
-  ),
-
-  // 6. Blocks Behind (color-coded)
-  columnHelper.accessor(
-    (row) => getBlocksBehind(row),
-    {
-      id: 'blocksBehind',
-      header: 'Blocks Behind',
-      size: 130,
-      cell: (info) => {
-        const val = info.getValue() as number | null
-        if (val === null) return h('span', { class: 'text-muted' }, '-')
-
-        let colorClass = 'behind-green'
-        if (val > 1000) {
-          colorClass = 'behind-red'
-        } else if (val > 100) {
-          colorClass = 'behind-yellow'
-        }
-
-        return h(
-          'span',
-          { class: `blocks-behind ${colorClass}` },
-          formatNumber(val, 0),
-        )
-      },
-    },
-  ),
 ]
 </script>
 
 <template>
   <div class="offchain-sync-manager">
-    <!-- No endpoint message -->
-    <div v-if="!hasEndpoint" class="no-endpoint-message">
-      <div class="no-endpoint-card">
+    <!-- No agent endpoint message -->
+    <div v-if="!hasAgent" class="no-agent-message">
+      <div class="no-agent-card">
         <svg
           width="48"
           height="48"
@@ -214,9 +191,9 @@ const columns: ColumnDef<DeploymentStatus, unknown>[] = [
           <line x1="12" y1="8" x2="12" y2="12" />
           <line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
-        <h2>Graph Node Status Endpoint Not Configured</h2>
+        <h2>Agent Endpoint Not Configured</h2>
         <p>
-          To manage offchain sync, configure your graph node status endpoint in
+          To manage offchain sync, configure your indexer agent endpoint in
           <strong>Settings</strong>.
         </p>
       </div>
@@ -228,7 +205,7 @@ const columns: ColumnDef<DeploymentStatus, unknown>[] = [
         <div class="header-left">
           <h1 class="page-title">Offchain Sync</h1>
           <span class="row-count">
-            {{ totalCount }} deployments
+            {{ offchainRules.length }} deployments
           </span>
         </div>
         <div class="header-right">
@@ -243,15 +220,41 @@ const columns: ColumnDef<DeploymentStatus, unknown>[] = [
         </div>
       </div>
 
+      <!-- Add deployment bar -->
+      <div class="add-bar">
+        <InputText
+          v-model="newDeploymentHash"
+          placeholder="Enter deployment IPFS hash (Qm...)..."
+          class="add-input"
+          @keyup.enter="handleAdd"
+        />
+        <Button
+          label="Add to Offchain Sync"
+          icon="pi pi-plus"
+          size="small"
+          :disabled="!newDeploymentHash.trim() || isMutating"
+          :loading="addMutation.isPending.value"
+          @click="handleAdd"
+        />
+      </div>
+
+      <!-- Error messages -->
+      <div v-if="addMutation.error.value" class="error-message">
+        Add failed: {{ addMutation.error.value instanceof Error ? addMutation.error.value.message : 'Unknown error' }}
+      </div>
+      <div v-if="removeMutation.error.value" class="error-message">
+        Remove failed: {{ removeMutation.error.value instanceof Error ? removeMutation.error.value.message : 'Unknown error' }}
+      </div>
+
       <!-- Data table -->
       <div class="table-wrapper">
         <DataTable
-          :data="allDeployments"
+          :data="offchainRules"
           :columns="columns"
           :loading="isLoading"
           :get-row-id="getRowId"
           table-height="100%"
-          empty-message="No deployments found. The graph node may not have any indexed subgraphs."
+          empty-message="No offchain sync deployments. Add a deployment IPFS hash above to start syncing."
         />
       </div>
     </template>
@@ -268,15 +271,15 @@ const columns: ColumnDef<DeploymentStatus, unknown>[] = [
   overflow: hidden;
 }
 
-/* --- No endpoint message --- */
-.no-endpoint-message {
+/* --- No agent message --- */
+.no-agent-message {
   display: flex;
   align-items: center;
   justify-content: center;
   height: 100%;
 }
 
-.no-endpoint-card {
+.no-agent-card {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -286,21 +289,21 @@ const columns: ColumnDef<DeploymentStatus, unknown>[] = [
   color: var(--p-text-muted-color);
 }
 
-.no-endpoint-card h2 {
+.no-agent-card h2 {
   margin: 0;
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--p-text-color);
 }
 
-.no-endpoint-card p {
+.no-agent-card p {
   margin: 0;
   font-size: 0.875rem;
   max-width: 400px;
   line-height: 1.5;
 }
 
-.no-endpoint-card svg {
+.no-agent-card svg {
   opacity: 0.3;
   color: var(--app-surface-400);
 }
@@ -340,6 +343,34 @@ const columns: ColumnDef<DeploymentStatus, unknown>[] = [
   gap: 8px;
 }
 
+/* --- Add bar --- */
+.add-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 12px 16px;
+  background-color: var(--app-surface-50);
+  border: 1px solid var(--app-surface-200);
+  border-radius: 12px;
+}
+
+.add-input {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* --- Error message --- */
+.error-message {
+  padding: 8px 16px;
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 8px;
+  color: var(--p-red-400);
+  font-size: 0.8125rem;
+  flex-shrink: 0;
+}
+
 /* --- Table wrapper --- */
 .table-wrapper {
   flex: 1;
@@ -348,9 +379,10 @@ const columns: ColumnDef<DeploymentStatus, unknown>[] = [
 }
 
 /* --- Cell styles --- */
-:deep(.text-muted) {
-  color: var(--p-text-muted-color);
+:deep(.type-cell) {
   font-size: 0.8125rem;
+  color: var(--p-text-color);
+  text-transform: capitalize;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -362,49 +394,5 @@ const columns: ColumnDef<DeploymentStatus, unknown>[] = [
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-:deep(.synced-yes) {
-  font-weight: 500;
-  font-size: 0.8125rem;
-  color: var(--p-green-400);
-  white-space: nowrap;
-}
-
-:deep(.synced-no) {
-  font-weight: 500;
-  font-size: 0.8125rem;
-  color: var(--p-red-400);
-  white-space: nowrap;
-}
-
-:deep(.block-number) {
-  font-variant-numeric: tabular-nums;
-  font-size: 0.8125rem;
-  white-space: nowrap;
-  color: var(--p-text-color);
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-:deep(.blocks-behind) {
-  font-variant-numeric: tabular-nums;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-:deep(.behind-green) {
-  color: var(--p-green-400);
-}
-
-:deep(.behind-yellow) {
-  color: var(--p-yellow-400);
-}
-
-:deep(.behind-red) {
-  color: var(--p-red-400);
 }
 </style>

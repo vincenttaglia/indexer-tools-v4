@@ -33,3 +33,10 @@ export type {
   ActionInput,
   ActionFilter,
 } from './action'
+export type {
+  IndexingDecisionBasis,
+  IdentifierType,
+  IndexingRule,
+  IndexingRuleInput,
+  IndexingRuleIdentifier,
+} from './indexingRule'

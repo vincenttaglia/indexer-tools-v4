@@ -58,6 +58,16 @@ export {
   executeApprovedActions,
 } from './graphql/mutations/actions'
 
+// GraphQL mutations - Indexing Rules
+export {
+  INDEXING_RULES_QUERY,
+  SET_INDEXING_RULE_MUTATION,
+  DELETE_INDEXING_RULE_MUTATION,
+  fetchIndexingRules,
+  setIndexingRule,
+  deleteIndexingRule,
+} from './graphql/mutations/indexingRules'
+
 // RPC client factory
 export { createRpcClient } from './rpc/client'
 
