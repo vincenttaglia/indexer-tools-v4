@@ -14,7 +14,6 @@ import {
   useStatusQuery,
   useIndexerQuery,
   useQueryFeesQuery,
-  useSubgraphFilters,
   useSubgraphComputations,
 } from '@/composables'
 
@@ -80,24 +79,26 @@ const queryFeesMap = computed<Map<string, QueryFeeData> | undefined>(() => {
 })
 
 // ---------------------------------------------------------------------------
-// Filtering + Computation
+// Computation (bypass filters — selected subgraphs always shown)
 // ---------------------------------------------------------------------------
 
 /**
- * Use the standard subgraph filters to produce the base list,
- * then pass closingAllocations into useSubgraphComputations so that
- * APR / maxAllo reflect the "future" state after closing allocations.
+ * Only include the subgraphs that were selected in Step 3, regardless of
+ * any active filters. Filters are for discovery in Step 3; once selected,
+ * subgraphs must always appear here.
  */
-const { filtered: filteredSubgraphs } = useSubgraphFilters(
-  computed(() => subgraphsQuery.data.value),
-  allocatedDeployments,
-)
+const selectedRawSubgraphs = computed(() => {
+  const raw = subgraphsQuery.data.value ?? []
+  const selected = wizardStore.selectedDeployments
+  if (selected.size === 0) return []
+  return raw.filter((sg) => selected.has(sg.deployment.ipfsHash))
+})
 
 const targetApr = computed(() => filterStore.subgraphFilters.targetApr)
 const newAllocation = computed(() => String(filterStore.subgraphFilters.newAllocation))
 
-const { computed: computedSubgraphs } = useSubgraphComputations({
-  subgraphs: filteredSubgraphs,
+const { computed: selectedSubgraphsList } = useSubgraphComputations({
+  subgraphs: selectedRawSubgraphs,
   networkMetrics: computed(() => networkQuery.data.value),
   statuses: computed(() => statusQuery.data.value),
   queryFees: queryFeesMap,
@@ -107,18 +108,6 @@ const { computed: computedSubgraphs } = useSubgraphComputations({
   targetApr,
   newAllocation,
   closingAllocations: computed(() => wizardStore.closingAllocations),
-})
-
-// ---------------------------------------------------------------------------
-// Selected subgraphs list (only those in wizardStore.selectedDeployments)
-// ---------------------------------------------------------------------------
-
-const selectedSubgraphsList = computed<SubgraphComputed[]>(() => {
-  const selected = wizardStore.selectedDeployments
-  if (selected.size === 0) return []
-  return computedSubgraphs.value.filter((sg) =>
-    selected.has(sg.deployment.ipfsHash),
-  )
 })
 
 // ---------------------------------------------------------------------------
