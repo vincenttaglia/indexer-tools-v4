@@ -411,12 +411,13 @@ function handleRowClick(row: T) {
   top: 0;
   z-index: 2;
   display: block;
-  overflow: hidden;
 }
 
 .data-table-header-row {
   display: flex;
-  width: 100%;
+  min-width: 100%;
+  background-color: var(--app-surface-50);
+  border-bottom: 1px solid var(--app-surface-200);
 }
 
 .data-table-th {
@@ -429,7 +430,6 @@ function handleRowClick(row: T) {
   letter-spacing: 0.05em;
   color: var(--p-text-muted-color);
   background-color: var(--app-surface-50);
-  border-bottom: 1px solid var(--app-surface-200);
   user-select: none;
   white-space: nowrap;
   overflow: hidden;
@@ -491,7 +491,7 @@ function handleRowClick(row: T) {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
+  min-width: 100%;
   display: flex;
   align-items: center;
   transition: background-color 150ms ease-out;
@@ -546,7 +546,7 @@ function handleRowClick(row: T) {
   cursor: default;
   display: flex;
   align-items: center;
-  width: 100%;
+  min-width: 100%;
 }
 
 .skeleton-row:hover {
@@ -580,7 +580,7 @@ function handleRowClick(row: T) {
 .empty-row {
   cursor: default;
   display: flex;
-  width: 100%;
+  min-width: 100%;
 }
 
 .empty-cell {
