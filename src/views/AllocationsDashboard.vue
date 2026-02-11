@@ -16,7 +16,6 @@ import {
   DataTable,
   TokenCell,
   PercentCell,
-  HealthCell,
   AddressCell,
 } from '@/components/DataTable'
 
@@ -39,7 +38,7 @@ import type { AllocationDescriptor } from '@/composables'
 import { useFilterStore, useSelectionStore, useChainStore } from '@/stores'
 
 // Types
-import type { AllocationComputed, HealthStatus } from '@/types'
+import type { AllocationComputed } from '@/types'
 
 // Formatting
 import { formatNumber } from '@/services/formatting/numbers'
@@ -421,60 +420,70 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     },
   ),
 
-  // 13. Status checks (multi-indicator)
+  // 13. Status checks (multi-indicator with colored dots)
   columnHelper.accessor(
     (row) => row.statusChecks,
     {
       id: 'status',
       header: 'Status',
-      size: 180,
+      size: 200,
       cell: (info) => {
         const row = info.row.original
         const sc = row.statusChecks
-        const health = row.deploymentStatus?.health ?? null
 
         const indicators: ReturnType<typeof h>[] = []
 
-        // Health indicator
-        if (health) {
-          indicators.push(h(HealthCell, { status: health as HealthStatus }))
-        }
-
-        // Synced indicator
+        // Synced indicator (EBO epoch check)
         if (sc.synced !== null) {
           indicators.push(
             h('span', {
-              class: `status-dot ${sc.synced ? 'status-green' : 'status-red'}`,
-              title: sc.synced ? 'Synced to epoch' : 'Not synced to epoch',
-            }, sc.synced ? 'Synced' : 'Behind'),
+              class: 'status-check',
+              title: sc.synced ? 'Synced to epoch' : 'Behind epoch',
+            }, [
+              h('span', { class: `dot ${sc.synced ? 'dot-green' : 'dot-red'}` }),
+              h('span', { class: 'check-label' }, 'Synced'),
+            ]),
           )
         }
 
-        // Other indexers
+        // Other indexers health comparison
         if (sc.healthyCount > 0 || sc.failedCount > 0) {
           indicators.push(
             h('span', {
-              class: `status-dot ${sc.healthComparison ? 'status-green' : 'status-red'}`,
+              class: 'status-check',
               title: `Other indexers: ${sc.healthyCount} healthy, ${sc.failedCount} failed`,
-            }, `${sc.healthyCount}H/${sc.failedCount}F`),
+            }, [
+              h('span', { class: `dot ${sc.healthComparison ? 'dot-green' : 'dot-red'}` }),
+              h('span', { class: 'check-label' }, `${sc.healthyCount}/${sc.failedCount}`),
+            ]),
           )
         }
 
         // Deterministic failure
-        if (sc.deterministicFailure !== null) {
-          if (sc.deterministicFailure) {
-            indicators.push(
-              h('span', {
-                class: sc.closable ? 'status-dot status-yellow' : 'status-dot status-red',
-                title: sc.closable ? 'Deterministic failure - safe to close' : 'Deterministic failure',
-              }, 'Det.'),
-            )
-          }
+        if (sc.deterministicFailure !== null && sc.deterministicFailure) {
+          indicators.push(
+            h('span', {
+              class: 'status-check',
+              title: sc.closable
+                ? 'Deterministic failure - safe to close'
+                : 'Deterministic failure - not safe to close',
+            }, [
+              h('span', { class: `dot ${sc.closable ? 'dot-yellow' : 'dot-red'}` }),
+              h('span', { class: 'check-label' }, 'Det.'),
+            ]),
+          )
         }
 
-        if (indicators.length === 0) {
-          return h('span', { class: 'text-muted' }, '-')
-        }
+        // Closable composite indicator
+        indicators.push(
+          h('span', {
+            class: 'status-check',
+            title: sc.closable ? 'Safe to close' : 'Not safe to close',
+          }, [
+            h('span', { class: `dot ${sc.closable ? 'dot-green' : 'dot-red'}` }),
+            h('span', { class: 'check-label' }, 'Close'),
+          ]),
+        )
 
         return h('div', { class: 'status-indicators' }, indicators)
       },
@@ -800,19 +809,45 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
   color: var(--p-red-400);
 }
 
-/* --- Status indicators --- */
+/* --- Status indicators with colored dots --- */
 :deep(.status-indicators) {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
   overflow: hidden;
 }
 
-:deep(.status-dot) {
+:deep(.status-check) {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+:deep(.dot) {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+:deep(.dot-green) {
+  background-color: var(--p-green-400);
+}
+
+:deep(.dot-yellow) {
+  background-color: var(--p-yellow-400);
+}
+
+:deep(.dot-red) {
+  background-color: var(--p-red-400);
+}
+
+:deep(.check-label) {
   font-size: 0.6875rem;
   font-weight: 500;
-  white-space: nowrap;
+  color: var(--p-text-muted-color);
 }
 
 /* --- Pending rewards loading spinner --- */

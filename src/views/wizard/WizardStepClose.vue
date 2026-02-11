@@ -10,7 +10,6 @@ import {
   DataTable,
   TokenCell,
   PercentCell,
-  HealthCell,
 } from '@/components/DataTable'
 
 // Composables
@@ -19,6 +18,7 @@ import {
   useNetworkQuery,
   useStatusQuery,
   useIndexerQuery,
+  useEpochQuery,
   useAllocationComputations,
 } from '@/composables'
 
@@ -26,7 +26,7 @@ import {
 import { useFilterStore, useWizardStore, useChainStore } from '@/stores'
 
 // Types
-import type { AllocationComputed, AllocationRaw, HealthStatus } from '@/types'
+import type { AllocationComputed, AllocationRaw } from '@/types'
 
 // Formatting
 import { formatNumber } from '@/services/formatting/numbers'
@@ -46,6 +46,7 @@ const allocationsQuery = useAllocationsQuery()
 const networkQuery = useNetworkQuery()
 const statusQuery = useStatusQuery()
 const indexerQuery = useIndexerQuery()
+const epochQuery = useEpochQuery()
 
 // ---------------------------------------------------------------------------
 // Computation
@@ -63,7 +64,7 @@ const { computed: computedAllocations } = useAllocationComputations({
   rewardsLoading: computed(() => false),
   rewardsFetched: computed(() => false),
   qosData: computed(() => undefined),
-  epochData: computed(() => undefined),
+  epochData: computed(() => epochQuery.data.value),
   otherIndexersStatus: computed(() => undefined),
 })
 
@@ -248,17 +249,77 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     },
   }),
 
-  // 7. Status
+  // 7. Status checks (multi-indicator with colored dots)
   columnHelper.accessor(
-    (row) =>
-      (row.deploymentStatus?.health ?? null) as HealthStatus | null,
+    (row) => row.statusChecks,
     {
       id: 'status',
       header: 'Status',
-      size: 120,
+      size: 200,
       cell: (info) => {
-        const val = info.getValue() as HealthStatus | null
-        return h(HealthCell, { status: val })
+        const row = info.row.original
+        const sc = row.statusChecks
+
+        const indicators: ReturnType<typeof h>[] = []
+
+        // Synced indicator (EBO epoch check)
+        if (sc.synced !== null) {
+          indicators.push(
+            h('span', {
+              class: 'status-check',
+              title: sc.synced ? 'Synced to epoch' : 'Behind epoch',
+            }, [
+              h('span', { class: `dot ${sc.synced ? 'dot-green' : 'dot-red'}` }),
+              h('span', { class: 'check-label' }, 'Synced'),
+            ]),
+          )
+        }
+
+        // Other indexers health comparison
+        if (sc.healthyCount > 0 || sc.failedCount > 0) {
+          indicators.push(
+            h('span', {
+              class: 'status-check',
+              title: `Other indexers: ${sc.healthyCount} healthy, ${sc.failedCount} failed`,
+            }, [
+              h('span', { class: `dot ${sc.healthComparison ? 'dot-green' : 'dot-red'}` }),
+              h('span', { class: 'check-label' }, `${sc.healthyCount}/${sc.failedCount}`),
+            ]),
+          )
+        }
+
+        // Deterministic failure
+        if (sc.deterministicFailure !== null && sc.deterministicFailure) {
+          indicators.push(
+            h('span', {
+              class: 'status-check',
+              title: sc.closable
+                ? 'Deterministic failure - safe to close'
+                : 'Deterministic failure - not safe to close',
+            }, [
+              h('span', { class: `dot ${sc.closable ? 'dot-yellow' : 'dot-red'}` }),
+              h('span', { class: 'check-label' }, 'Det.'),
+            ]),
+          )
+        }
+
+        // Closable composite indicator
+        indicators.push(
+          h('span', {
+            class: 'status-check',
+            title: sc.closable ? 'Safe to close' : 'Not safe to close',
+          }, [
+            h('span', { class: `dot ${sc.closable ? 'dot-green' : 'dot-red'}` }),
+            h('span', { class: 'check-label' }, 'Close'),
+          ]),
+        )
+
+        return h('div', { class: 'status-indicators' }, indicators)
+      },
+      sortingFn: (rowA, rowB) => {
+        const a = rowA.original.statusChecks.closable ? 1 : 0
+        const b = rowB.original.statusChecks.closable ? 1 : 0
+        return a - b
       },
     },
   ),
@@ -404,6 +465,47 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* --- Status indicators with colored dots --- */
+:deep(.status-indicators) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  overflow: hidden;
+}
+
+:deep(.status-check) {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+:deep(.dot) {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+:deep(.dot-green) {
+  background-color: var(--p-green-400);
+}
+
+:deep(.dot-yellow) {
+  background-color: var(--p-yellow-400);
+}
+
+:deep(.dot-red) {
+  background-color: var(--p-red-400);
+}
+
+:deep(.check-label) {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--p-text-muted-color);
 }
 
 /* --- Duration color coding --- */

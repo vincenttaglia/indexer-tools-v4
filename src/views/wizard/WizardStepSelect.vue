@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, h } from 'vue'
+import { computed, h } from 'vue'
 import { createColumnHelper, type ColumnDef } from '@tanstack/vue-table'
 
 // PrimeVue components
@@ -18,6 +18,7 @@ import {
   useAllocationsQuery,
   useStatusQuery,
   useIndexerQuery,
+  useQueryFeesQuery,
   useSubgraphFilters,
   useSubgraphComputations,
 } from '@/composables'
@@ -26,10 +27,11 @@ import {
 import { useFilterStore, useWizardStore, useChainStore } from '@/stores'
 
 // Types
-import type { SubgraphComputed, HealthStatus } from '@/types'
+import type { SubgraphComputed, QueryFeeData, HealthStatus } from '@/types'
 
 // Formatting
 import { formatNumber } from '@/services/formatting/numbers'
+import { weiToGrt } from '@/services/calculations'
 
 // ---------------------------------------------------------------------------
 // Stores
@@ -46,6 +48,7 @@ const networkQuery = useNetworkQuery()
 const allocationsQuery = useAllocationsQuery()
 const statusQuery = useStatusQuery()
 const indexerQuery = useIndexerQuery()
+const queryFeesQuery = useQueryFeesQuery()
 
 // ---------------------------------------------------------------------------
 // Derived state
@@ -69,6 +72,23 @@ const networkOptions = computed(() => {
   return [...networks].sort()
 })
 
+/** Transform QueryDailyDataPoint[] into Map<string, QueryFeeData> */
+const queryFeesMap = computed<Map<string, QueryFeeData> | undefined>(() => {
+  const points = queryFeesQuery.data.value
+  if (!points) return undefined
+  const map = new Map<string, QueryFeeData>()
+  for (const p of points) {
+    map.set(p.subgraphDeployment.id, {
+      avgQueryFee: Number(p.avg_query_fee),
+      totalQueryFees: weiToGrt(p.total_query_fees),
+      queryCount: p.query_count,
+      avgGatewayLatencyMs: p.avg_gateway_latency_ms,
+      successRate: p.gateway_query_success_rate,
+    })
+  }
+  return map
+})
+
 // ---------------------------------------------------------------------------
 // Filtering
 // ---------------------------------------------------------------------------
@@ -80,14 +100,14 @@ const { filtered: filteredSubgraphs } = useSubgraphFilters(
 // ---------------------------------------------------------------------------
 // Computation inputs
 // ---------------------------------------------------------------------------
-const targetApr = ref(10)
-const newAllocation = ref('0')
+const targetApr = computed(() => filterStore.subgraphFilters.targetApr)
+const newAllocation = computed(() => String(filterStore.subgraphFilters.newAllocation))
 
 const { computed: computedSubgraphs } = useSubgraphComputations({
   subgraphs: filteredSubgraphs,
   networkMetrics: computed(() => networkQuery.data.value),
   statuses: computed(() => statusQuery.data.value),
-  queryFees: computed(() => undefined),
+  queryFees: queryFeesMap,
   allocatedDeployments,
   indexingRewardCut: computed(() => indexerQuery.data.value?.indexingRewardCut ?? 0),
   blocksPerDay: computed(() => chainStore.chainConfig.blocksPerDay),
@@ -212,6 +232,45 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
       return h('span', { class: 'token-value' }, val.toFixed(4))
     },
   }),
+  columnHelper.accessor(
+    (row) => row.queryFees?.queryCount ?? null,
+    {
+      id: 'queryCount',
+      header: 'Queries',
+      size: 100,
+      cell: (info) => {
+        const val = info.getValue() as number | null
+        if (val === null) return h('span', { class: 'text-muted' }, '-')
+        return h('span', { class: 'token-value' }, formatNumber(val, 0))
+      },
+    },
+  ),
+  columnHelper.accessor(
+    (row) => row.queryFees?.totalQueryFees ?? null,
+    {
+      id: 'totalQueryFees',
+      header: 'Query Fees (GRT)',
+      size: 130,
+      cell: (info) => {
+        const val = info.getValue() as number | null
+        if (val === null) return h('span', { class: 'text-muted' }, '-')
+        return h('span', { class: 'token-value' }, `${formatNumber(val, 4)} GRT`)
+      },
+    },
+  ),
+  columnHelper.accessor(
+    (row) => row.queryFees?.avgGatewayLatencyMs ?? null,
+    {
+      id: 'gwLatency',
+      header: 'Gw Latency (ms)',
+      size: 120,
+      cell: (info) => {
+        const val = info.getValue() as number | null
+        if (val === null) return h('span', { class: 'text-muted' }, '-')
+        return h('span', { class: 'token-value' }, `${formatNumber(val, 0)}ms`)
+      },
+    },
+  ),
   columnHelper.accessor(
     (row) =>
       (row.deploymentStatus?.health ?? null) as HealthStatus | null,

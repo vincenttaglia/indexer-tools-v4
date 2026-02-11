@@ -13,6 +13,7 @@ import {
   useAllocationsQuery,
   useStatusQuery,
   useIndexerQuery,
+  useQueryFeesQuery,
   useSubgraphFilters,
   useSubgraphComputations,
 } from '@/composables'
@@ -31,7 +32,7 @@ import {
 import { formatNumber, formatPercent } from '@/services/formatting/numbers'
 
 // Types
-import type { SubgraphComputed } from '@/types'
+import type { SubgraphComputed, QueryFeeData } from '@/types'
 
 // ---------------------------------------------------------------------------
 // Stores
@@ -48,6 +49,7 @@ const networkQuery = useNetworkQuery()
 const allocationsQuery = useAllocationsQuery()
 const statusQuery = useStatusQuery()
 const indexerQuery = useIndexerQuery()
+const queryFeesQuery = useQueryFeesQuery()
 
 // ---------------------------------------------------------------------------
 // Derived state
@@ -58,6 +60,23 @@ const allocatedDeployments = computed(() => {
   const allocations = allocationsQuery.data.value
   if (!allocations) return new Set<string>()
   return new Set(allocations.map((a) => a.subgraphDeployment.ipfsHash))
+})
+
+/** Transform QueryDailyDataPoint[] into Map<string, QueryFeeData> */
+const queryFeesMap = computed<Map<string, QueryFeeData> | undefined>(() => {
+  const points = queryFeesQuery.data.value
+  if (!points) return undefined
+  const map = new Map<string, QueryFeeData>()
+  for (const p of points) {
+    map.set(p.subgraphDeployment.id, {
+      avgQueryFee: Number(p.avg_query_fee),
+      totalQueryFees: weiToGrt(p.total_query_fees),
+      queryCount: p.query_count,
+      avgGatewayLatencyMs: p.avg_gateway_latency_ms,
+      successRate: p.gateway_query_success_rate,
+    })
+  }
+  return map
 })
 
 // ---------------------------------------------------------------------------
@@ -81,7 +100,7 @@ const { computed: computedSubgraphs } = useSubgraphComputations({
   subgraphs: filteredSubgraphs,
   networkMetrics: computed(() => networkQuery.data.value),
   statuses: computed(() => statusQuery.data.value),
-  queryFees: computed(() => undefined),
+  queryFees: queryFeesMap,
   allocatedDeployments,
   indexingRewardCut: computed(() => indexerQuery.data.value?.indexingRewardCut ?? 0),
   blocksPerDay: computed(() => chainStore.chainConfig.blocksPerDay),
