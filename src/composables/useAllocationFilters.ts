@@ -80,8 +80,8 @@ function applyStatusFilter(
   status: DeploymentStatus | undefined,
   alloc: AllocationComputed,
 ): boolean {
-  if (filter === 'all') return true
-  if (!status) return filter === 'none'
+  if (filter === 'all') return !!status
+  if (!status) return false
 
   switch (filter) {
     case 'closable':
