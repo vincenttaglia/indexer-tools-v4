@@ -119,15 +119,11 @@ function applyStatusFilter(
   status: DeploymentStatus | undefined,
 ): boolean {
   if (filter === 'all') return !!status
+  // 'closable' is handled post-computation using statusChecks.closable
+  if (filter === 'closable') return true
   if (!status) return false
 
   switch (filter) {
-    case 'closable':
-      // For subgraphs, closable = synced AND (no fatal error OR deterministic)
-      if (status.synced) {
-        if (!status.fatalError || status.fatalError.deterministic) return true
-      }
-      return false
     case 'healthy-synced':
       return status.health === 'healthy' && status.synced
     case 'syncing':

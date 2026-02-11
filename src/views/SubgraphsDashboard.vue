@@ -149,6 +149,15 @@ const { computed: computedSubgraphs } = useSubgraphComputations({
 })
 
 // ---------------------------------------------------------------------------
+// Post-computation filter: closable uses statusChecks.closable
+// ---------------------------------------------------------------------------
+const displaySubgraphs = computed(() => {
+  const statusFilter = filterStore.subgraphFilters.statusFilter
+  if (statusFilter !== 'closable') return computedSubgraphs.value
+  return computedSubgraphs.value.filter((sg) => sg.statusChecks.closable)
+})
+
+// ---------------------------------------------------------------------------
 // Loading state
 // ---------------------------------------------------------------------------
 const isLoading = computed(
@@ -159,7 +168,7 @@ const isLoading = computed(
 // Counts
 // ---------------------------------------------------------------------------
 const totalCount = computed(() => subgraphsQuery.data.value?.length ?? 0)
-const filteredCount = computed(() => computedSubgraphs.value.length)
+const filteredCount = computed(() => displaySubgraphs.value.length)
 
 // ---------------------------------------------------------------------------
 // Refresh all queries
@@ -589,7 +598,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
     <!-- Data table -->
     <div class="table-wrapper">
       <DataTable
-        :data="computedSubgraphs"
+        :data="displaySubgraphs"
         :columns="columns"
         :loading="isLoading"
         :enable-selection="true"
