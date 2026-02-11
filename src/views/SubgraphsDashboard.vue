@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h } from 'vue'
+import { computed, h, watchEffect } from 'vue'
 import { createColumnHelper, type ColumnDef } from '@tanstack/vue-table'
 import { storeToRefs } from 'pinia'
 
@@ -238,6 +238,18 @@ function refreshAll() {
   indexerQuery.refetch()
   if (isArbitrum.value) queryFeesQuery.refetch()
 }
+
+// ---------------------------------------------------------------------------
+// Prune stale selections when displayed subgraphs change
+// ---------------------------------------------------------------------------
+watchEffect(() => {
+  const visibleHashes = new Set(displaySubgraphs.value.map((sg) => sg.deployment.ipfsHash))
+  for (const hash of selectionStore.selectedSubgraphs) {
+    if (!visibleHashes.has(hash)) {
+      selectionStore.selectedSubgraphs.delete(hash)
+    }
+  }
+})
 
 // ---------------------------------------------------------------------------
 // Selection

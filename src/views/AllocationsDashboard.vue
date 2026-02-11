@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h } from 'vue'
+import { computed, h, watchEffect } from 'vue'
 import { createColumnHelper, type ColumnDef } from '@tanstack/vue-table'
 import { storeToRefs } from 'pinia'
 import { formatUnits } from 'viem'
@@ -225,6 +225,18 @@ function refreshAll() {
 function fetchRewards() {
   rewardsQuery.refetch()
 }
+
+// ---------------------------------------------------------------------------
+// Prune stale selections when filtered allocations change
+// ---------------------------------------------------------------------------
+watchEffect(() => {
+  const visibleIds = new Set(filteredAllocations.value.map((a) => a.id))
+  for (const id of selectionStore.selectedAllocations) {
+    if (!visibleIds.has(id)) {
+      selectionStore.selectedAllocations.delete(id)
+    }
+  }
+})
 
 // ---------------------------------------------------------------------------
 // Selection

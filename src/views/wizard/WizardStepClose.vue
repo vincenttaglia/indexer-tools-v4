@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h } from 'vue'
+import { computed, h, watchEffect } from 'vue'
 import { createColumnHelper, type ColumnDef } from '@tanstack/vue-table'
 import { formatUnits } from 'viem'
 
@@ -209,6 +209,18 @@ function refreshAll() {
   epochQuery.refetch()
   if (isArbitrum.value) qosQuery.refetch()
 }
+
+// ---------------------------------------------------------------------------
+// Prune stale selections when filtered allocations change
+// ---------------------------------------------------------------------------
+watchEffect(() => {
+  const visibleIds = new Set(filteredAllocations.value.map((a) => a.id))
+  for (const id of wizardStore.closingAllocations.keys()) {
+    if (!visibleIds.has(id)) {
+      wizardStore.closingAllocations.delete(id)
+    }
+  }
+})
 
 // ---------------------------------------------------------------------------
 // Selection — sync with wizardStore.closingAllocations

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, h } from 'vue'
+import { computed, ref, h, watchEffect } from 'vue'
 import { createColumnHelper, type ColumnDef } from '@tanstack/vue-table'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { storeToRefs } from 'pinia'
@@ -111,6 +111,18 @@ const isLoading = computed(() => actionsQuery.isLoading.value)
 function refreshAll() {
   actionsQuery.refetch()
 }
+
+// ---------------------------------------------------------------------------
+// Prune stale selections when filtered actions change
+// ---------------------------------------------------------------------------
+watchEffect(() => {
+  const visibleIds = new Set(filteredActions.value.map((a) => String(a.id)))
+  for (const id of selectionStore.selectedActions) {
+    if (!visibleIds.has(id)) {
+      selectionStore.selectedActions.delete(id)
+    }
+  }
+})
 
 // ---------------------------------------------------------------------------
 // Selection
