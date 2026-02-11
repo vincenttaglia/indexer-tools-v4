@@ -1,4 +1,4 @@
-export type ActionStatus = 'queued' | 'approved' | 'pending' | 'success' | 'failed' | 'canceled'
+export type ActionStatus = 'queued' | 'approved' | 'pending' | 'success' | 'failed' | 'canceled' | 'deploying'
 export type ActionType = 'allocate' | 'unallocate' | 'reallocate'
 
 /** Action as returned by the Indexer Agent GraphQL API */

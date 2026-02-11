@@ -321,7 +321,7 @@ describe('Action type shape (matches real Indexer Agent API)', () => {
   })
 
   describe('status and type enums match expected values', () => {
-    const validStatuses: ActionStatus[] = ['queued', 'approved', 'pending', 'success', 'failed', 'canceled']
+    const validStatuses: ActionStatus[] = ['queued', 'approved', 'pending', 'success', 'failed', 'canceled', 'deploying']
     const validTypes: ActionType[] = ['allocate', 'unallocate', 'reallocate']
 
     it('all sample statuses are valid ActionStatus values', () => {
