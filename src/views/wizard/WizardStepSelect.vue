@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, h } from 'vue'
+import { computed, h, watchEffect } from 'vue'
 import { createColumnHelper, type ColumnDef } from '@tanstack/vue-table'
 
 // PrimeVue components
@@ -165,6 +165,23 @@ const displaySubgraphs = computed(() => {
   const statusFilter = filterStore.subgraphFilters.statusFilter
   if (statusFilter !== 'closable') return computedSubgraphs.value
   return computedSubgraphs.value.filter((sg) => sg.statusChecks.closable)
+})
+
+// ---------------------------------------------------------------------------
+// Prune stale selections when displayed subgraphs change
+// ---------------------------------------------------------------------------
+// If filters remove a subgraph from the visible list, its selection must be
+// cleared.  Otherwise Step 4 (which bypasses filters) would include subgraphs
+// that no longer match the user's filter criteria (e.g. unsynced subgraphs
+// sneaking through when the closable filter is active).
+watchEffect(() => {
+  const visibleHashes = new Set(displaySubgraphs.value.map((sg) => sg.deployment.ipfsHash))
+  const selected = wizardStore.selectedDeployments
+  for (const hash of selected) {
+    if (!visibleHashes.has(hash)) {
+      wizardStore.toggleDeployment(hash)
+    }
+  }
 })
 
 // ---------------------------------------------------------------------------
