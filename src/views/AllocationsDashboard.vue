@@ -18,6 +18,7 @@ import {
   PercentCell,
   HealthCell,
   AddressCell,
+  DurationCell,
 } from '@/components/DataTable'
 
 // Composables
@@ -325,25 +326,14 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     },
   }),
 
-  // 6. Duration (days)
-  columnHelper.accessor('duration', {
+  // 6. Duration (live counter from allocation createdAt timestamp)
+  columnHelper.accessor('createdAt', {
     id: 'duration',
     header: 'Duration',
-    size: 100,
+    size: 180,
     cell: (info) => {
-      const days = info.getValue() as number
-      const daysRounded = Math.floor(days)
-      let colorClass = 'duration-green'
-      if (days >= 28) {
-        colorClass = 'duration-red'
-      } else if (days >= 14) {
-        colorClass = 'duration-yellow'
-      }
-      return h(
-        'span',
-        { class: `duration-cell ${colorClass}` },
-        `${daysRounded}d`,
-      )
+      const createdAt = info.getValue() as number
+      return h(DurationCell, { createdAt })
     },
   }),
 
@@ -939,28 +929,6 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-/* --- Duration color coding --- */
-:deep(.duration-cell) {
-  font-variant-numeric: tabular-nums;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-:deep(.duration-green) {
-  color: var(--p-green-400);
-}
-
-:deep(.duration-yellow) {
-  color: var(--p-yellow-400);
-}
-
-:deep(.duration-red) {
-  color: var(--p-red-400);
 }
 
 /* --- Status color coding --- */
