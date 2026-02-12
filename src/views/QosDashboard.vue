@@ -8,12 +8,13 @@ import Button from 'primevue/button'
 
 // Project components
 import { DataTable } from '@/components/DataTable'
+import SubgraphNameCell from '@/components/SubgraphNameCell.vue'
 
 // Composables
-import { useQosDailyDataQuery } from '@/composables'
+import { useQosDailyDataQuery, useSubgraphMetadataMap, useStatusQuery, useEpochQuery, useAllocationsQuery } from '@/composables'
 
 // Stores
-import { useFilterStore, useChainStore } from '@/stores'
+import { useFilterStore, useChainStore, useAccountStore } from '@/stores'
 
 // Types
 import type { AllocationDailyDataPoint } from '@/types'
@@ -27,12 +28,17 @@ import { weiToGrt } from '@/services/calculations/tokenMath'
 // ---------------------------------------------------------------------------
 const filterStore = useFilterStore()
 const chainStore = useChainStore()
+const accountStore = useAccountStore()
 const isArbitrum = computed(() => chainStore.selectedChain === 'arbitrum-one')
 
 // ---------------------------------------------------------------------------
 // Queries
 // ---------------------------------------------------------------------------
 const qosQuery = useQosDailyDataQuery()
+const { metadataMap } = useSubgraphMetadataMap()
+const statusQuery = useStatusQuery()
+const epochQuery = useEpochQuery()
+const allocationsQuery = useAllocationsQuery()
 
 // ---------------------------------------------------------------------------
 // Loading state
@@ -47,10 +53,14 @@ const filteredData = computed(() => {
   const search = filterStore.qosFilters.search.toLowerCase().trim()
   if (!search) return all
 
-  return all.filter((row) =>
-    row.subgraph_deployment_ipfs_hash.toLowerCase().includes(search) ||
-    row.id.toLowerCase().includes(search),
-  )
+  return all.filter((row) => {
+    const hash = row.subgraph_deployment_ipfs_hash
+    const meta = metadataMap.value.get(hash)
+    const name = meta?.displayName?.toLowerCase() ?? ''
+    return hash.toLowerCase().includes(search) ||
+      row.id.toLowerCase().includes(search) ||
+      name.includes(search)
+  })
 })
 
 // ---------------------------------------------------------------------------
@@ -91,23 +101,52 @@ function successRateColorClass(rate: number): string {
 }
 
 // ---------------------------------------------------------------------------
+// Computed helpers
+// ---------------------------------------------------------------------------
+const allocatedDeployments = computed(() => {
+  const allocations = allocationsQuery.data.value
+  if (!allocations) return new Set<string>()
+  return new Set(allocations.map((a: any) => a.subgraphDeployment.ipfsHash))
+})
+
+// ---------------------------------------------------------------------------
 // Column definitions
 // ---------------------------------------------------------------------------
 const columnHelper = createColumnHelper<AllocationDailyDataPoint>()
 
 const columns: ColumnDef<AllocationDailyDataPoint, any>[] = [
-  // 1. Deployment (IPFS hash)
+  // 1. Deployment (IPFS hash + subgraph name)
   columnHelper.accessor('subgraph_deployment_ipfs_hash', {
     id: 'deployment',
     header: 'Deployment',
-    size: 180,
+    size: 220,
     cell: (info) => {
       const hash = info.getValue() as string
-      return h(
-        'span',
-        { class: 'hash-cell', title: hash },
-        shortenHash(hash),
-      )
+      const meta = metadataMap.value.get(hash)
+      const statusMap = statusQuery.data.value
+      const deploymentStatus = statusMap?.get(hash) ?? null
+      const network = meta?.network ?? null
+
+      const epochData = epochQuery.data.value
+      const epochBlock = epochData?.blockNumbers?.find(
+        (b: any) => b.network.alias === network
+      )?.blockNumber ?? null
+
+      return h(SubgraphNameCell, {
+        displayName: meta?.displayName ?? hash,
+        ipfsHash: hash,
+        imageUrl: meta?.image ?? null,
+        network,
+        health: deploymentStatus?.health ?? null,
+        synced: deploymentStatus?.synced ?? null,
+        denied: false,
+        isDeployed: !!deploymentStatus,
+        isAllocated: allocatedDeployments.value.has(hash),
+        deploymentStatus,
+        epochBlockNumber: epochBlock,
+        isOffchainSynced: false,
+        agentConnected: !!accountStore.activeAccount?.agentEndpoint,
+      })
     },
   }),
 
