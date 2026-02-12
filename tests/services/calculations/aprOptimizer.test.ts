@@ -305,4 +305,66 @@ describe('aprOptimizer', () => {
       expect(result.totalDailyRewardsCut).toBeGreaterThan(0)
     })
   })
+
+  describe('rounding and budget integrity', () => {
+    // Helper to generate N subgraphs with varied signal/stake
+    function makeSubgraphs(count: number): OptimizableSubgraph[] {
+      return Array.from({ length: count }, (_, i) =>
+        makeSg(`Qm${i}`, (i + 1) * 10_000_000, (i + 1) * 1_000_000, `Sub${i}`)
+      )
+    }
+
+    it('budget is never exceeded (2 subgraphs)', () => {
+      const budget = 100000
+      const result = optimizeAllocations(makeParams(makeSubgraphs(2), budget))
+      const sum = result.perSubgraph.reduce((s, e) => s + e.allocationGrt, 0)
+      expect(sum).toBeLessThanOrEqual(budget)
+      expect(sum).toBeGreaterThanOrEqual(budget - 2)
+    })
+
+    it('budget is never exceeded (3 subgraphs)', () => {
+      const budget = 100000
+      const result = optimizeAllocations(makeParams(makeSubgraphs(3), budget))
+      const sum = result.perSubgraph.reduce((s, e) => s + e.allocationGrt, 0)
+      expect(sum).toBeLessThanOrEqual(budget)
+      expect(sum).toBeGreaterThanOrEqual(budget - 3)
+    })
+
+    it('budget is never exceeded (5 subgraphs)', () => {
+      const budget = 500000
+      const result = optimizeAllocations(makeParams(makeSubgraphs(5), budget))
+      const sum = result.perSubgraph.reduce((s, e) => s + e.allocationGrt, 0)
+      expect(sum).toBeLessThanOrEqual(budget)
+      expect(sum).toBeGreaterThanOrEqual(budget - 5)
+    })
+
+    it('budget is never exceeded (10 subgraphs)', () => {
+      const budget = 1_000_000
+      const result = optimizeAllocations(makeParams(makeSubgraphs(10), budget))
+      const sum = result.perSubgraph.reduce((s, e) => s + e.allocationGrt, 0)
+      expect(sum).toBeLessThanOrEqual(budget)
+      expect(sum).toBeGreaterThanOrEqual(budget - 10)
+    })
+
+    it('handles fractional budget without over-allocation', () => {
+      const budget = 100000.7
+      const result = optimizeAllocations(makeParams(makeSubgraphs(3), budget))
+      const sum = result.perSubgraph.reduce((s, e) => s + e.allocationGrt, 0)
+      expect(sum).toBeLessThanOrEqual(Math.floor(budget))
+    })
+
+    it('all allocations are whole numbers', () => {
+      const result = optimizeAllocations(makeParams(makeSubgraphs(5), 500000))
+      for (const entry of result.perSubgraph) {
+        expect(entry.allocationGrt % 1).toBe(0)
+      }
+    })
+
+    it('allocations Map matches perSubgraph values', () => {
+      const result = optimizeAllocations(makeParams(makeSubgraphs(3), 300000))
+      for (const entry of result.perSubgraph) {
+        expect(result.allocations.get(entry.ipfsHash)).toBe(entry.allocationGrt)
+      }
+    })
+  })
 })

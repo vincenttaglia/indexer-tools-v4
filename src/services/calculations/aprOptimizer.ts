@@ -69,6 +69,9 @@ export function optimizeAllocations(params: OptimizationParams): OptimizationRes
     minAllocationGrt = 0,
   } = params
 
+  // Floor the budget so we never allocate fractional GRT
+  const budgetGrt = Math.floor(totalBudgetGrt)
+
   const emptyResult: OptimizationResult = {
     allocations: new Map(),
     totalDailyRewardsCut: 0,
@@ -76,7 +79,7 @@ export function optimizeAllocations(params: OptimizationParams): OptimizationRes
   }
 
   // Edge case: empty or zero budget
-  if (subgraphs.length === 0 || totalBudgetGrt <= 0) {
+  if (subgraphs.length === 0 || budgetGrt <= 0) {
     return emptyResult
   }
 
@@ -104,16 +107,17 @@ export function optimizeAllocations(params: OptimizationParams): OptimizationRes
   // Single subgraph: give it everything
   if (candidates.length === 1) {
     const sg = candidates[0]
-    const amount = Math.max(totalBudgetGrt, minAllocationGrt)
+    const amount = Math.max(budgetGrt, minAllocationGrt)
     return buildResult(
       candidates,
       new Map([[sg.ipfsHash, amount]]),
       ctx,
+      budgetGrt,
     )
   }
 
   const amounts = new Map<string, number>()
-  let remainingBudget = totalBudgetGrt
+  let remainingBudget = budgetGrt
 
   // Handle zero-stake subgraphs separately: marginal reward is infinite at a=0
   // but constant for any a>0, so give them minimum allocation.
@@ -129,7 +133,7 @@ export function optimizeAllocations(params: OptimizationParams): OptimizationRes
   if (remainingBudget <= 0 || normalStake.length === 0) {
     // All budget consumed by zero-stake minimums, or no normal subgraphs
     // Distribute remaining budget equally among zero-stake if budget left
-    return buildResult(candidates, amounts, ctx)
+    return buildResult(candidates, amounts, ctx, budgetGrt)
   }
 
   // Closed-form optimization with iterative constraint enforcement.
@@ -171,7 +175,7 @@ export function optimizeAllocations(params: OptimizationParams): OptimizationRes
     if (active.length === 0) break
   }
 
-  return buildResult(candidates, amounts, ctx)
+  return buildResult(candidates, amounts, ctx, budgetGrt)
 }
 
 // ---------------------------------------------------------------------------
@@ -189,13 +193,44 @@ function buildResult(
   subgraphs: Array<OptimizableSubgraph & { signalGrt: number; stakeGrt: number }>,
   amounts: Map<string, number>,
   ctx: NetworkContext,
+  totalBudgetGrt: number,
 ): OptimizationResult {
+  // Step 1: Floor each allocation and track fractional remainders
+  const entries: Array<{ sg: typeof subgraphs[0]; floored: number; fractional: number }> = []
+  for (const sg of subgraphs) {
+    const raw = amounts.get(sg.ipfsHash) ?? 0
+    const floored = Math.floor(raw)
+    entries.push({ sg, floored, fractional: raw - floored })
+  }
+
+  // Step 2: Distribute leftover budget using largest-remainder method
+  const flooredSum = entries.reduce((sum, e) => sum + e.floored, 0)
+  let leftover = Math.floor(totalBudgetGrt) - flooredSum
+  const sorted = [...entries].sort((a, b) => b.fractional - a.fractional)
+  for (const entry of sorted) {
+    if (leftover <= 0) break
+    entry.floored += 1
+    leftover -= 1
+  }
+
+  // Step 3: Build final amounts map and result
+  const finalAmounts = new Map<string, number>()
   let totalDailyRewardsCut = 0
   const perSubgraph: OptimizationResult['perSubgraph'] = []
 
-  for (const sg of subgraphs) {
-    const amount = amounts.get(sg.ipfsHash) ?? 0
-    const roundedAmount = Math.round(amount)
+  for (const { sg, floored } of entries) {
+    finalAmounts.set(sg.ipfsHash, floored)
+
+    const dailyRewards = calculateSubgraphDailyRewards({
+      signalledTokens: sg.signalledTokens,
+      stakedTokens: sg.stakedTokens,
+      totalTokensSignalled: ctx.totalTokensSignalled,
+      networkGRTIssuancePerBlock: ctx.networkGRTIssuancePerBlock,
+      blocksPerDay: ctx.blocksPerDay,
+      newAllocation: String(Math.round(floored)),
+    })
+    const dailyRewardsCut = calculateDailyRewardsCut(dailyRewards, ctx.indexingRewardCut)
+    totalDailyRewardsCut += dailyRewardsCut
 
     const apr = calculateNewApr({
       signalledTokens: sg.signalledTokens,
@@ -203,30 +238,20 @@ function buildResult(
       totalTokensSignalled: ctx.totalTokensSignalled,
       networkGRTIssuancePerBlock: ctx.networkGRTIssuancePerBlock,
       blocksPerDay: ctx.blocksPerDay,
-      newAllocation: String(roundedAmount),
+      newAllocation: String(floored),
     })
-    const dailyRewards = calculateSubgraphDailyRewards({
-      signalledTokens: sg.signalledTokens,
-      stakedTokens: sg.stakedTokens,
-      totalTokensSignalled: ctx.totalTokensSignalled,
-      networkGRTIssuancePerBlock: ctx.networkGRTIssuancePerBlock,
-      blocksPerDay: ctx.blocksPerDay,
-      newAllocation: String(roundedAmount),
-    })
-    const dailyRewardsCut = calculateDailyRewardsCut(dailyRewards, ctx.indexingRewardCut)
-    totalDailyRewardsCut += dailyRewardsCut
 
     perSubgraph.push({
       ipfsHash: sg.ipfsHash,
       displayName: sg.displayName,
-      allocationGrt: roundedAmount,
+      allocationGrt: floored,
       apr,
       dailyRewardsCut,
     })
   }
 
   return {
-    allocations: amounts,
+    allocations: finalAmounts,
     totalDailyRewardsCut,
     perSubgraph,
   }
