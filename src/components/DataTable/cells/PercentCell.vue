@@ -22,7 +22,7 @@ const colorClass = computed(() => {
 </script>
 
 <template>
-  <span class="percent-cell" :class="colorClass" :title="`${value}%`">
+  <span class="percent-cell" :class="colorClass" :title="formatted">
     {{ formatted }}
   </span>
 </template>
