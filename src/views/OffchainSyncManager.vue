@@ -16,7 +16,7 @@ import SubgraphNameCell from '@/components/SubgraphNameCell.vue'
 import { useAccountStore, useChainStore } from '@/stores'
 
 // Composables
-import { useStatusQuery, useSubgraphMetadataMap, useEpochQuery, useAllocationsQuery } from '@/composables'
+import { useStatusQuery, useSubgraphMetadataMap, useEpochQuery, useAllocationsQuery, useColumnPreferences } from '@/composables'
 
 // API
 import {
@@ -212,6 +212,8 @@ const columns: ColumnDef<IndexingRule, any>[] = [
     },
   }),
 ]
+
+const { visibleColumns } = useColumnPreferences('offchain-sync', columns)
 </script>
 
 <template>
@@ -292,7 +294,7 @@ const columns: ColumnDef<IndexingRule, any>[] = [
       <div class="table-wrapper">
         <DataTable
           :data="offchainRules"
-          :columns="columns"
+          :columns="visibleColumns"
           :loading="isLoading"
           :get-row-id="getRowId"
           table-height="100%"

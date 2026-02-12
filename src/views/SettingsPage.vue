@@ -173,6 +173,48 @@ const wizardCloseColumns = [
   { id: 'status', label: 'Status' },
   { id: 'allocationId', label: 'Allocation ID' },
 ]
+
+const qosColumns = [
+  { id: 'deployment', label: 'Deployment' },
+  { id: 'chainId', label: 'Chain ID' },
+  { id: 'avgBlocksBehind', label: 'Avg Blocks Behind' },
+  { id: 'maxBlocksBehind', label: 'Max Blocks Behind' },
+  { id: 'avgLatency', label: 'Avg Latency (ms)' },
+  { id: 'maxLatency', label: 'Max Latency (ms)' },
+  { id: 'avgQueryFee', label: 'Avg Query Fee (GRT)' },
+  { id: 'queryCount', label: 'Queries' },
+  { id: 'totalQueryFees', label: 'Total Query Fees (GRT)' },
+  { id: 'successRate', label: 'Success %' },
+]
+
+const queryFeeColumns = [
+  { id: 'deployment', label: 'Deployment' },
+  { id: 'chainId', label: 'Chain ID' },
+  { id: 'avgQueryFee', label: 'Avg Query Fee (GRT)' },
+  { id: 'avgGatewayLatency', label: 'Avg Gateway Latency (ms)' },
+  { id: 'successRate', label: 'Success %' },
+  { id: 'queryCount', label: 'Queries' },
+  { id: 'totalQueryFees', label: 'Total Query Fees (GRT)' },
+]
+
+const deploymentStatusColumns = [
+  { id: 'deployment', label: 'Deployment' },
+  { id: 'node', label: 'Node' },
+  { id: 'network', label: 'Network' },
+  { id: 'health', label: 'Health' },
+  { id: 'synced', label: 'Synced' },
+  { id: 'latestBlock', label: 'Latest Block' },
+  { id: 'chainHeadBlock', label: 'Chain Head' },
+  { id: 'blocksBehind', label: 'Blocks Behind' },
+  { id: 'fatalError', label: 'Fatal Error' },
+]
+
+const offchainSyncColumns = [
+  { id: 'deployment', label: 'Deployment' },
+  { id: 'type', label: 'Type' },
+  { id: 'network', label: 'Network' },
+  { id: 'actions', label: 'Actions' },
+]
 </script>
 
 <template>
@@ -287,6 +329,34 @@ const wizardCloseColumns = [
             <ColumnCustomizer
               dashboard-id="wizard-close"
               :columns="wizardCloseColumns"
+            />
+          </div>
+          <div class="column-section">
+            <h3 class="column-section-title">QoS Dashboard</h3>
+            <ColumnCustomizer
+              dashboard-id="qos"
+              :columns="qosColumns"
+            />
+          </div>
+          <div class="column-section">
+            <h3 class="column-section-title">Query Fees Dashboard</h3>
+            <ColumnCustomizer
+              dashboard-id="query-fees"
+              :columns="queryFeeColumns"
+            />
+          </div>
+          <div class="column-section">
+            <h3 class="column-section-title">Deployment Status</h3>
+            <ColumnCustomizer
+              dashboard-id="deployment-status"
+              :columns="deploymentStatusColumns"
+            />
+          </div>
+          <div class="column-section">
+            <h3 class="column-section-title">Offchain Sync</h3>
+            <ColumnCustomizer
+              dashboard-id="offchain-sync"
+              :columns="offchainSyncColumns"
             />
           </div>
         </div>

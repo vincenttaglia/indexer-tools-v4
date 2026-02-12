@@ -11,7 +11,7 @@ import { DataTable } from '@/components/DataTable'
 import SubgraphNameCell from '@/components/SubgraphNameCell.vue'
 
 // Composables
-import { useQueryFeesQuery, useSubgraphMetadataMap, useStatusQuery, useEpochQuery, useAllocationsQuery } from '@/composables'
+import { useQueryFeesQuery, useSubgraphMetadataMap, useStatusQuery, useEpochQuery, useAllocationsQuery, useColumnPreferences } from '@/composables'
 
 // Stores
 import { useFilterStore, useChainStore, useAccountStore } from '@/stores'
@@ -229,6 +229,8 @@ const columns: ColumnDef<QueryDailyDataPoint, any>[] = [
     },
   }),
 ]
+
+const { visibleColumns } = useColumnPreferences('query-fees', columns)
 </script>
 
 <template>
@@ -282,7 +284,7 @@ const columns: ColumnDef<QueryDailyDataPoint, any>[] = [
     <div class="table-wrapper">
       <DataTable
         :data="filteredData"
-        :columns="columns"
+        :columns="visibleColumns"
         :loading="isLoading"
         table-height="100%"
         empty-message="No query fee data found. Ensure you have an API key configured."
