@@ -290,80 +290,7 @@ const offchainSyncColumns = [
       </template>
     </Card>
 
-    <!-- Section 4: Dashboard Columns -->
-    <Card class="settings-section">
-      <template #title>Dashboard Columns</template>
-      <template #subtitle>Customize which columns appear and their order in each dashboard</template>
-      <template #content>
-        <div class="column-sections">
-          <div class="column-section">
-            <h3 class="column-section-title">Subgraphs Dashboard</h3>
-            <ColumnCustomizer
-              dashboard-id="subgraphs"
-              :columns="subgraphColumns"
-            />
-          </div>
-          <div class="column-section">
-            <h3 class="column-section-title">Allocations Dashboard</h3>
-            <ColumnCustomizer
-              dashboard-id="allocations"
-              :columns="allocationColumns"
-            />
-          </div>
-          <div class="column-section">
-            <h3 class="column-section-title">Actions Manager</h3>
-            <ColumnCustomizer
-              dashboard-id="actions"
-              :columns="actionColumns"
-            />
-          </div>
-          <div class="column-section">
-            <h3 class="column-section-title">Wizard - Select Subgraphs</h3>
-            <ColumnCustomizer
-              dashboard-id="wizard-select"
-              :columns="wizardSelectColumns"
-            />
-          </div>
-          <div class="column-section">
-            <h3 class="column-section-title">Wizard - Close Allocations</h3>
-            <ColumnCustomizer
-              dashboard-id="wizard-close"
-              :columns="wizardCloseColumns"
-            />
-          </div>
-          <div class="column-section">
-            <h3 class="column-section-title">QoS Dashboard</h3>
-            <ColumnCustomizer
-              dashboard-id="qos"
-              :columns="qosColumns"
-            />
-          </div>
-          <div class="column-section">
-            <h3 class="column-section-title">Query Fees Dashboard</h3>
-            <ColumnCustomizer
-              dashboard-id="query-fees"
-              :columns="queryFeeColumns"
-            />
-          </div>
-          <div class="column-section">
-            <h3 class="column-section-title">Deployment Status</h3>
-            <ColumnCustomizer
-              dashboard-id="deployment-status"
-              :columns="deploymentStatusColumns"
-            />
-          </div>
-          <div class="column-section">
-            <h3 class="column-section-title">Offchain Sync</h3>
-            <ColumnCustomizer
-              dashboard-id="offchain-sync"
-              :columns="offchainSyncColumns"
-            />
-          </div>
-        </div>
-      </template>
-    </Card>
-
-    <!-- Section 5: Subgraph Lists -->
+    <!-- Section 4: Subgraph Lists -->
     <Card class="settings-section">
       <template #title>Subgraph Lists</template>
       <template #subtitle>Manage blacklist and synclist for subgraph filtering (comma or newline separated IPFS hashes)</template>
@@ -397,7 +324,7 @@ const offchainSyncColumns = [
       </template>
     </Card>
 
-    <!-- Section 6: Indexer Accounts -->
+    <!-- Section 5: Indexer Accounts -->
     <Card class="settings-section">
       <template #title>Indexer Accounts</template>
       <template #subtitle>Manage your indexer accounts across different chains</template>
@@ -532,6 +459,79 @@ const offchainSyncColumns = [
               label="Add Account"
               :disabled="!newAccount.label.trim() || !newAccount.address.trim()"
               @click="handleAddAccount"
+            />
+          </div>
+        </div>
+      </template>
+    </Card>
+
+    <!-- Section 6: Dashboard Columns -->
+    <Card class="settings-section">
+      <template #title>Dashboard Columns</template>
+      <template #subtitle>Customize which columns appear and their order in each dashboard</template>
+      <template #content>
+        <div class="column-sections">
+          <div class="column-section">
+            <h3 class="column-section-title">Subgraphs Dashboard</h3>
+            <ColumnCustomizer
+              dashboard-id="subgraphs"
+              :columns="subgraphColumns"
+            />
+          </div>
+          <div class="column-section">
+            <h3 class="column-section-title">Allocations Dashboard</h3>
+            <ColumnCustomizer
+              dashboard-id="allocations"
+              :columns="allocationColumns"
+            />
+          </div>
+          <div class="column-section">
+            <h3 class="column-section-title">Actions Manager</h3>
+            <ColumnCustomizer
+              dashboard-id="actions"
+              :columns="actionColumns"
+            />
+          </div>
+          <div class="column-section">
+            <h3 class="column-section-title">Wizard - Select Subgraphs</h3>
+            <ColumnCustomizer
+              dashboard-id="wizard-select"
+              :columns="wizardSelectColumns"
+            />
+          </div>
+          <div class="column-section">
+            <h3 class="column-section-title">Wizard - Close Allocations</h3>
+            <ColumnCustomizer
+              dashboard-id="wizard-close"
+              :columns="wizardCloseColumns"
+            />
+          </div>
+          <div class="column-section">
+            <h3 class="column-section-title">QoS Dashboard</h3>
+            <ColumnCustomizer
+              dashboard-id="qos"
+              :columns="qosColumns"
+            />
+          </div>
+          <div class="column-section">
+            <h3 class="column-section-title">Query Fees Dashboard</h3>
+            <ColumnCustomizer
+              dashboard-id="query-fees"
+              :columns="queryFeeColumns"
+            />
+          </div>
+          <div class="column-section">
+            <h3 class="column-section-title">Deployment Status</h3>
+            <ColumnCustomizer
+              dashboard-id="deployment-status"
+              :columns="deploymentStatusColumns"
+            />
+          </div>
+          <div class="column-section">
+            <h3 class="column-section-title">Offchain Sync</h3>
+            <ColumnCustomizer
+              dashboard-id="offchain-sync"
+              :columns="offchainSyncColumns"
             />
           </div>
         </div>
