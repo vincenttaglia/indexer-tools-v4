@@ -332,14 +332,17 @@ function applyOptimizedAllocations() {
             outlined
             @click="wizardStore.applyMinimums(selectedSubgraphsList)"
           />
-          <Button
-            label="Optimize Allocations"
-            icon="pi pi-sliders-h"
-            severity="secondary"
-            outlined
-            :disabled="selectedSubgraphsList.length === 0 || totalAvailableGrt <= 0"
-            @click="applyOptimizedAllocations"
-          />
+          <span class="experimental-wrapper" title="This feature is experimental. Review allocations before submitting.">
+            <Button
+              label="Optimize Allocations"
+              icon="pi pi-sliders-h"
+              severity="warn"
+              outlined
+              :disabled="selectedSubgraphsList.length === 0 || totalAvailableGrt <= 0"
+              @click="applyOptimizedAllocations"
+            />
+            <span class="experimental-badge">BETA</span>
+          </span>
           <Button
             label="Reset"
             icon="pi pi-refresh"
@@ -693,6 +696,26 @@ function applyOptimizedAllocations() {
 
 .summary-value.over-allocated {
   color: var(--p-red-400);
+}
+
+.experimental-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.experimental-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--p-yellow-500);
+  color: var(--p-surface-900);
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  line-height: 1.3;
+  pointer-events: none;
 }
 
 .optimize-result {
