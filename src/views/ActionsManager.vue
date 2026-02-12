@@ -14,7 +14,7 @@ import { DataTable } from '@/components/DataTable'
 import SubgraphNameCell from '@/components/SubgraphNameCell.vue'
 
 // Composables
-import { useActionsQuery, useSubgraphMetadataMap, useStatusQuery, useEpochQuery, useAllocationsQuery } from '@/composables'
+import { useActionsQuery, useColumnPreferences, useSubgraphMetadataMap, useStatusQuery, useEpochQuery, useAllocationsQuery } from '@/composables'
 
 // Stores
 import { useAccountStore, useSelectionStore } from '@/stores'
@@ -466,6 +466,11 @@ const columns: ColumnDef<Action, any>[] = [
     },
   }),
 ]
+
+// ---------------------------------------------------------------------------
+// Column preferences (visibility + ordering from settings)
+// ---------------------------------------------------------------------------
+const { visibleColumns } = useColumnPreferences('actions', columns)
 </script>
 
 <template>
@@ -603,7 +608,7 @@ const columns: ColumnDef<Action, any>[] = [
       <div class="table-wrapper">
         <DataTable
           :data="filteredActions"
-          :columns="columns"
+          :columns="visibleColumns"
           :loading="isLoading"
           :enable-selection="true"
           :selected-keys="selectedActions"
