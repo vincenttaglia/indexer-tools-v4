@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - development
+      - dev
     tags:
       - 'v*'
 
@@ -29,7 +29,7 @@ jobs:
             # main branch → :latest
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             # development branch → :dev
-            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/development' }}
+            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/dev' }}
             # version tags → :v1.0.0, :1.0
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
