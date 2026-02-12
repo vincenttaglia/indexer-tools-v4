@@ -152,7 +152,7 @@ const columns: ColumnDef<AllocationDailyDataPoint, any>[] = [
     size: 150,
     cell: (info) => {
       const val = info.getValue() as number
-      return h('span', { class: 'metric-cell' }, formatNumber(val, 1))
+      return h('span', { class: 'metric-cell' }, formatNumber(val, 0))
     },
   }),
 
@@ -431,8 +431,6 @@ const columns: ColumnDef<AllocationDailyDataPoint, any>[] = [
 :deep(.chain-cell) {
   font-size: 0.8125rem;
   color: var(--p-text-color);
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -441,8 +439,6 @@ const columns: ColumnDef<AllocationDailyDataPoint, any>[] = [
   font-size: 0.8125rem;
   white-space: nowrap;
   font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 :deep(.token-value) {
@@ -450,8 +446,6 @@ const columns: ColumnDef<AllocationDailyDataPoint, any>[] = [
   font-size: 0.8125rem;
   white-space: nowrap;
   color: var(--p-text-color);
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* --- Color coding --- */

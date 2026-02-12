@@ -383,16 +383,12 @@ const columns: ColumnDef<IndexingRule, any>[] = [
   font-size: 0.8125rem;
   color: var(--p-text-color);
   text-transform: capitalize;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 :deep(.network-cell) {
   font-size: 0.8125rem;
   color: var(--p-text-color);
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 </style>

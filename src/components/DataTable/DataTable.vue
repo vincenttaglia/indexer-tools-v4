@@ -432,8 +432,6 @@ function handleRowClick(row: T) {
   background-color: var(--app-surface-50);
   user-select: none;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   display: flex;
   align-items: center;
   box-sizing: border-box;
@@ -517,8 +515,6 @@ function handleRowClick(row: T) {
   color: var(--p-text-color);
   border-bottom: 1px solid var(--app-surface-100);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   display: flex;
   align-items: center;
   box-sizing: border-box;

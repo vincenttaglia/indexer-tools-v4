@@ -9,7 +9,9 @@ import type {
   PendingReward,
   AllocationDailyDataPoint,
   Epoch,
+  OtherIndexerDetail,
 } from '@/types'
+import type { OtherIndexersHealth } from './useOtherIndexersQuery'
 import {
   calculateApr,
   calculateAllocationDailyRewards,
@@ -44,8 +46,8 @@ interface AllocationComputationInputs {
   qosData: Ref<AllocationDailyDataPoint[] | undefined>
   /** Epoch data from EBO subgraph for synced check */
   epochData: Ref<Epoch | null | undefined>
-  /** Other indexers status aggregation: Map<ipfsHash, {healthyCount, failedCount}> */
-  otherIndexersStatus: Ref<Map<string, { healthyCount: number; failedCount: number }> | undefined>
+  /** Other indexers status aggregation: Map<ipfsHash, OtherIndexersHealth> */
+  otherIndexersStatus: Ref<Map<string, OtherIndexersHealth> | undefined>
 }
 
 /**
@@ -174,7 +176,7 @@ function computeStatusChecks(
   alloc: AllocationRaw,
   deploymentStatus: DeploymentStatus | null,
   epoch: Epoch | null | undefined,
-  otherIndexers: Map<string, { healthyCount: number; failedCount: number }> | undefined,
+  otherIndexers: Map<string, OtherIndexersHealth> | undefined,
 ): AllocationStatusChecks {
   const ipfsHash = alloc.subgraphDeployment.ipfsHash
   const network = alloc.subgraphDeployment.manifest.network
@@ -193,12 +195,14 @@ function computeStatusChecks(
   let healthComparison: boolean | null = null
   let healthyCount = 0
   let failedCount = 0
+  let otherIndexerDetails: OtherIndexerDetail[] = []
   if (otherIndexers) {
     const otherStatus = otherIndexers.get(ipfsHash)
     if (otherStatus) {
       healthyCount = otherStatus.healthyCount
       failedCount = otherStatus.failedCount
       healthComparison = healthyCount > failedCount
+      otherIndexerDetails = otherStatus.details
     }
   }
 
@@ -236,5 +240,6 @@ function computeStatusChecks(
     failedCount,
     deterministicFailure,
     closable,
+    otherIndexerDetails,
   }
 }

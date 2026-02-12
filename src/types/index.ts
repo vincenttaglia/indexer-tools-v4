@@ -23,6 +23,7 @@ export type {
   ChainStatus,
   DeploymentStatus,
   AggregatedDeploymentStatus,
+  OtherIndexerDetail,
 } from './status'
 export type {
   AllocationDailyDataPoint,

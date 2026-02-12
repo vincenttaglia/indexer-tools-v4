@@ -716,8 +716,6 @@ const columns: ColumnDef<Action, any>[] = [
     Menlo, Consolas, monospace;
   font-size: 0.75rem;
   color: var(--p-text-color);
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
 }
@@ -731,14 +729,10 @@ const columns: ColumnDef<Action, any>[] = [
 :deep(.text-muted) {
   color: var(--p-text-muted-color);
   font-size: 0.8125rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 :deep(.text-ellipsis) {
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
   max-width: 100%;
@@ -750,16 +744,12 @@ const columns: ColumnDef<Action, any>[] = [
   font-size: 0.8125rem;
   text-transform: capitalize;
   color: var(--p-text-color);
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 :deep(.failure-text) {
   font-size: 0.75rem;
   color: var(--p-red-400);
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
 }

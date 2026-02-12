@@ -64,6 +64,7 @@ export interface DeploymentStatusChecks {
   failedCount: number
   deterministicFailure: boolean | null
   closable: boolean
+  otherIndexerDetails: import('./status').OtherIndexerDetail[]
 }
 
 /** @deprecated Use DeploymentStatusChecks instead */

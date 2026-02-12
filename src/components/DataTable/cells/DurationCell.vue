@@ -63,8 +63,6 @@ const colorClass = computed(() => {
   font-size: 0.8125rem;
   font-weight: 500;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .duration-green {

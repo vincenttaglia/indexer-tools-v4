@@ -8,7 +8,9 @@ import type {
   QueryFeeData,
   AllocationRaw,
   Epoch,
+  OtherIndexerDetail,
 } from '@/types'
+import type { OtherIndexersHealth } from './useOtherIndexersQuery'
 import {
   calculateApr,
   calculateNewApr,
@@ -51,8 +53,8 @@ interface ComputationInputs {
   closingAllocations?: Ref<Map<string, AllocationRaw>>
   /** Optional: Epoch data from EBO subgraph for synced check */
   epochData?: Ref<Epoch | null | undefined>
-  /** Optional: Other indexers status aggregation: Map<ipfsHash, {healthyCount, failedCount}> */
-  otherIndexersStatus?: Ref<Map<string, { healthyCount: number; failedCount: number }> | undefined>
+  /** Optional: Other indexers status aggregation: Map<ipfsHash, OtherIndexersHealth> */
+  otherIndexersStatus?: Ref<Map<string, OtherIndexersHealth> | undefined>
 }
 
 /**
@@ -224,7 +226,7 @@ function computeDeploymentStatusChecks(
   network: string | null,
   deploymentStatus: DeploymentStatus | null,
   epoch: Epoch | null,
-  otherIndexers: Map<string, { healthyCount: number; failedCount: number }> | undefined,
+  otherIndexers: Map<string, OtherIndexersHealth> | undefined,
 ): DeploymentStatusChecks {
   // EBO-based synced check
   let synced: boolean | null = null
@@ -240,12 +242,14 @@ function computeDeploymentStatusChecks(
   let healthComparison: boolean | null = null
   let healthyCount = 0
   let failedCount = 0
+  let otherIndexerDetails: OtherIndexerDetail[] = []
   if (otherIndexers) {
     const otherStatus = otherIndexers.get(ipfsHash)
     if (otherStatus) {
       healthyCount = otherStatus.healthyCount
       failedCount = otherStatus.failedCount
       healthComparison = healthyCount > failedCount
+      otherIndexerDetails = otherStatus.details
     }
   }
 
@@ -281,5 +285,6 @@ function computeDeploymentStatusChecks(
     failedCount,
     deterministicFailure,
     closable,
+    otherIndexerDetails,
   }
 }

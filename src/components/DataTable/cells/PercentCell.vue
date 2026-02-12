@@ -33,9 +33,6 @@ const colorClass = computed(() => {
   font-size: 0.8125rem;
   white-space: nowrap;
   font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
 }
 
 .positive {

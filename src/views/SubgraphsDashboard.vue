@@ -939,8 +939,6 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
 :deep(.network-cell) {
   font-size: 0.8125rem;
   color: var(--p-text-color);
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -949,15 +947,11 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   font-size: 0.8125rem;
   white-space: nowrap;
   color: var(--p-text-color);
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 :deep(.text-muted) {
   color: var(--p-text-muted-color);
   font-size: 0.8125rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 

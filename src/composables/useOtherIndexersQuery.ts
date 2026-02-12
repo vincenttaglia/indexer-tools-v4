@@ -3,6 +3,7 @@ import { storeToRefs } from 'pinia'
 import { useChainStore, useSettingsStore, useAccountStore } from '@/stores'
 import { createGraphQLClient, fetchIndexerUrls, fetchAllDeploymentStatuses } from '@/api'
 import { getChainConfig } from '@/config/chains'
+import type { OtherIndexerDetail, DeploymentStatus } from '@/types'
 
 /**
  * Per-deployment aggregation of other indexers' health.
@@ -10,6 +11,7 @@ import { getChainConfig } from '@/config/chains'
 export interface OtherIndexersHealth {
   healthyCount: number
   failedCount: number
+  details: OtherIndexerDetail[]
 }
 
 /**
@@ -69,9 +71,9 @@ export function useOtherIndexersQuery() {
         const promises = batch.map(async (indexer) => {
           try {
             const statuses = await fetchAllDeploymentStatuses(indexer.url)
-            return statuses
+            return { url: indexer.url, statuses }
           } catch {
-            return new Map()
+            return { url: indexer.url, statuses: new Map() as Map<string, DeploymentStatus> }
           }
         })
 
@@ -79,14 +81,24 @@ export function useOtherIndexersQuery() {
         fetchedCount.value += batch.length
 
         // Aggregate results
-        for (const statusMap of results) {
-          for (const [ipfsHash, status] of statusMap) {
-            const existing = aggregation.get(ipfsHash) ?? { healthyCount: 0, failedCount: 0 }
+        for (const { url, statuses } of results) {
+          for (const [ipfsHash, status] of statuses) {
+            const existing = aggregation.get(ipfsHash) ?? { healthyCount: 0, failedCount: 0, details: [] }
             if (status.health === 'healthy') {
               existing.healthyCount++
             } else if (status.health === 'failed') {
               existing.failedCount++
             }
+            existing.details.push({
+              url,
+              health: status.health,
+              latestBlock: status.chains?.[0]?.latestBlock?.number ?? null,
+              fatalError: status.fatalError ? {
+                message: status.fatalError.message,
+                deterministic: status.fatalError.deterministic,
+                blockNumber: status.fatalError.block?.number ?? null,
+              } : null,
+            })
             aggregation.set(ipfsHash, existing)
           }
         }

@@ -42,9 +42,6 @@ const formatted = computed(() => {
   font-size: 0.8125rem;
   white-space: nowrap;
   color: var(--p-text-color);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
 }
 
 .token-symbol {
