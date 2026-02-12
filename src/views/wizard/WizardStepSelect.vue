@@ -27,6 +27,7 @@ import {
   useOtherIndexersQuery,
   useSubgraphFilters,
   useSubgraphComputations,
+  useColumnPreferences,
 } from '@/composables'
 
 // Stores
@@ -490,6 +491,8 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
     },
   ),
 ]
+
+const { visibleColumns } = useColumnPreferences('wizard-select', columns)
 </script>
 
 <template>
@@ -652,7 +655,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
     <div class="table-wrapper">
       <DataTable
         :data="displaySubgraphs"
-        :columns="columns"
+        :columns="visibleColumns"
         :loading="isLoading"
         :enable-selection="true"
         :selected-keys="wizardStore.selectedDeployments"

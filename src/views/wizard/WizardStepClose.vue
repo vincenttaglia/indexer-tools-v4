@@ -33,6 +33,7 @@ import {
   useQosDailyDataQuery,
   useOtherIndexersQuery,
   useAllocationComputations,
+  useColumnPreferences,
 } from '@/composables'
 import { useAllocationFilters } from '@/composables/useAllocationFilters'
 import type { AllocationDescriptor } from '@/composables'
@@ -602,6 +603,8 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     },
   }),
 ]
+
+const { visibleColumns } = useColumnPreferences('wizard-close', columns)
 </script>
 
 <template>
@@ -699,7 +702,7 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     <div class="table-wrapper">
       <DataTable
         :data="filteredAllocations"
-        :columns="columns"
+        :columns="visibleColumns"
         :loading="isLoading"
         :enable-selection="true"
         :selected-keys="selectedKeys"
