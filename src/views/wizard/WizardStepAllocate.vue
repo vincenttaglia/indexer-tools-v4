@@ -302,6 +302,7 @@ function applyOptimizedAllocations() {
             :minFractionDigits="0"
             :maxFractionDigits="0"
             class="control-input"
+            inputClass="compact-input"
           />
         </div>
 
@@ -314,6 +315,7 @@ function applyOptimizedAllocations() {
             :minFractionDigits="0"
             :maxFractionDigits="0"
             class="control-input"
+            inputClass="compact-input"
           />
         </div>
 
@@ -323,6 +325,7 @@ function applyOptimizedAllocations() {
             icon="pi pi-arrow-up"
             severity="secondary"
             outlined
+            size="small"
             @click="wizardStore.setAllMaxAllos(selectedSubgraphsList)"
           />
           <Button
@@ -330,6 +333,7 @@ function applyOptimizedAllocations() {
             icon="pi pi-filter"
             severity="secondary"
             outlined
+            size="small"
             @click="wizardStore.applyMinimums(selectedSubgraphsList)"
           />
           <span class="experimental-wrapper" title="This feature is experimental. Review allocations before submitting.">
@@ -338,6 +342,7 @@ function applyOptimizedAllocations() {
               icon="pi pi-sliders-h"
               severity="warn"
               outlined
+              size="small"
               :disabled="selectedSubgraphsList.length === 0 || totalAvailableGrt <= 0"
               @click="applyOptimizedAllocations"
             />
@@ -348,6 +353,7 @@ function applyOptimizedAllocations() {
             icon="pi pi-refresh"
             severity="danger"
             outlined
+            size="small"
             @click="wizardStore.resetAllos()"
           />
         </div>
@@ -402,6 +408,7 @@ function applyOptimizedAllocations() {
               @update:modelValue="(val: number | null) => handleAmountChange(sg.deployment.ipfsHash, val)"
               placeholder="GRT amount"
               class="amount-input"
+              inputClass="compact-input"
               :min="0"
               suffix=" GRT"
               :minFractionDigits="0"
@@ -538,6 +545,12 @@ function applyOptimizedAllocations() {
 
 .control-input {
   width: 160px;
+}
+
+:deep(.compact-input) {
+  font-size: 0.8125rem !important;
+  padding: 0.4rem 0.6rem !important;
+  height: auto !important;
 }
 
 .control-actions {
