@@ -498,7 +498,7 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
       cell: (info) => {
         const val = info.getValue() as number | null
         if (val === null) return h('span', { class: 'text-muted' }, '-')
-        return h('span', { class: 'token-value' }, `${formatNumber(val, 4)} GRT`)
+        return h('span', { class: 'token-value' }, `${formatNumber(val, 2)} GRT`)
       },
     },
   ),
