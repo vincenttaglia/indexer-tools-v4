@@ -391,7 +391,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
     size: 110,
     cell: (info) => {
       const val = info.getValue() as number
-      return h('span', { class: 'token-value' }, formatNumber(val, 4))
+      return h('span', { class: 'token-value' }, formatNumber(val, 2))
     },
   }),
   columnHelper.accessor(
