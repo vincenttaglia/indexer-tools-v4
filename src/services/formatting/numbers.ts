@@ -14,7 +14,9 @@
  * formatNumber(1500.1, 4) // => '1,500.1000'
  */
 export function formatNumber(value: number, decimals: number = 2): string {
-  return value.toLocaleString('en-US', {
+  const num = Number(value)
+  if (!isFinite(num)) return '0'
+  return num.toLocaleString('en-US', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   })
@@ -32,7 +34,9 @@ export function formatNumber(value: number, decimals: number = 2): string {
  * formatPercent(0.5, 1) // => '0.5%'
  */
 export function formatPercent(value: number, decimals: number = 2): string {
-  return `${value.toLocaleString('en-US', {
+  const num = Number(value)
+  if (!isFinite(num)) return '0%'
+  return `${num.toLocaleString('en-US', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   })}%`
@@ -72,8 +76,10 @@ export function formatDuration(seconds: number): string {
  * abbreviateNumber(500) // => '500'
  */
 export function abbreviateNumber(value: number): string {
-  const absValue = Math.abs(value)
-  const sign = value < 0 ? '-' : ''
+  const num = Number(value)
+  if (!isFinite(num)) return '0'
+  const absValue = Math.abs(num)
+  const sign = num < 0 ? '-' : ''
 
   if (absValue >= 1e12) {
     return `${sign}${(absValue / 1e12).toFixed(1)}T`
