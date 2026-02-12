@@ -21,26 +21,26 @@ services:
       # Each account needs: address, chain, label.
       # Optional: agentEndpoint, graphmanEndpoint, graphmanToken.
       #
+      # HTTP(S) endpoints are automatically proxied through nginx so the
+      # browser can reach internal Docker network services. Each account
+      # gets its own proxy path (/api/agent/0/, /api/graphman/0/, etc.).
+      #
       # DEFAULT_ACCOUNTS: >
       #   [
       #     {
-      #       "address": "0xYOUR_INDEXER_ADDRESS",
+      #       "address": "0xINDEXER_A",
       #       "chain": "arbitrum-one",
-      #       "label": "My Indexer",
-      #       "agentEndpoint": "http://indexer-agent:8000/",
-      #       "graphmanEndpoint": "http://graph-node:8050/",
-      #       "graphmanToken": "your-bearer-token"
+      #       "label": "Indexer A",
+      #       "agentEndpoint": "http://indexer-agent-a:8000/",
+      #       "graphmanEndpoint": "http://graph-node-a:8050/",
+      #       "graphmanToken": "token-a"
+      #     },
+      #     {
+      #       "address": "0xINDEXER_B",
+      #       "chain": "arbitrum-one",
+      #       "label": "Indexer B",
+      #       "agentEndpoint": "http://indexer-agent-b:8000/",
+      #       "graphmanEndpoint": "http://graph-node-b:8050/",
+      #       "graphmanToken": "token-b"
       #     }
       #   ]
-
-      # ── API Proxy (optional) ─────────────────────────────────────────
-      # If the Agent or Graphman APIs are on an internal network that the
-      # user's browser can't reach directly, set these to enable nginx
-      # reverse proxying. The browser will connect to /api/agent/ and
-      # /api/graphman/ on this container, which forwards to the real APIs.
-      #
-      # When using the proxy, set the account's agentEndpoint to
-      # "/api/agent/" and graphmanEndpoint to "/api/graphman/".
-      #
-      # AGENT_PROXY_URL: "http://indexer-agent:8000/"
-      # GRAPHMAN_PROXY_URL: "http://graph-node:8050/"

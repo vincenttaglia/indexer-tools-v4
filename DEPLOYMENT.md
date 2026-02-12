@@ -22,19 +22,27 @@ environment:
 
 ### Default Accounts
 
-Pre-configure one or more indexer accounts:
+Pre-configure one or more indexer accounts. HTTP(S) endpoints in `agentEndpoint` and `graphmanEndpoint` are **automatically proxied** through nginx so the browser can reach services on internal Docker networks.
 
 ```yaml
 environment:
   DEFAULT_ACCOUNTS: >
     [
       {
-        "address": "0xYOUR_INDEXER_ADDRESS",
+        "address": "0xINDEXER_A",
         "chain": "arbitrum-one",
-        "label": "My Indexer",
-        "agentEndpoint": "http://indexer-agent:8000/",
-        "graphmanEndpoint": "http://graph-node:8050/",
-        "graphmanToken": "your-bearer-token"
+        "label": "Indexer A",
+        "agentEndpoint": "http://indexer-agent-a:8000/",
+        "graphmanEndpoint": "http://graph-node-a:8050/",
+        "graphmanToken": "bearer-token-a"
+      },
+      {
+        "address": "0xINDEXER_B",
+        "chain": "arbitrum-one",
+        "label": "Indexer B",
+        "agentEndpoint": "http://indexer-agent-b:8000/",
+        "graphmanEndpoint": "http://graph-node-b:8050/",
+        "graphmanToken": "bearer-token-b"
       }
     ]
 ```
@@ -52,47 +60,33 @@ Account fields:
 
 ## API Proxy
 
-If the Indexer Agent or Graphman APIs are on an internal Docker network that the user's browser cannot reach directly, enable the built-in nginx reverse proxy.
+When account endpoints are HTTP URLs (e.g., `http://indexer-agent:8000/`), the Docker entrypoint automatically sets up per-account nginx reverse proxy locations and rewrites the endpoints in the app config:
 
-### Setup
+| Account Index | Agent Proxy Path | Graphman Proxy Path |
+|---------------|-----------------|---------------------|
+| 0 | `/api/agent/0/` | `/api/graphman/0/` |
+| 1 | `/api/agent/1/` | `/api/graphman/1/` |
+| 2 | `/api/agent/2/` | `/api/graphman/2/` |
 
-```yaml
-environment:
-  AGENT_PROXY_URL: "http://indexer-agent:8000/"
-  GRAPHMAN_PROXY_URL: "http://graph-node:8050/"
-  DEFAULT_ACCOUNTS: >
-    [
-      {
-        "address": "0xYOUR_INDEXER_ADDRESS",
-        "chain": "arbitrum-one",
-        "label": "My Indexer",
-        "agentEndpoint": "/api/agent/",
-        "graphmanEndpoint": "/api/graphman/",
-        "graphmanToken": "your-bearer-token"
-      }
-    ]
-```
+This is transparent — you just set the real internal URLs in `DEFAULT_ACCOUNTS` and the entrypoint handles the rest. The browser sends requests to `/api/agent/0/` on this container, and nginx forwards them to `http://indexer-agent-a:8000/`.
 
-When proxy URLs are set:
-- Browser requests to `/api/agent/*` are forwarded to `AGENT_PROXY_URL`
-- Browser requests to `/api/graphman/*` are forwarded to `GRAPHMAN_PROXY_URL`
-- Account endpoints should use the relative paths (`/api/agent/`, `/api/graphman/`)
+Endpoints that don't start with `http://` or `https://` are left as-is (assumed to be already browser-reachable).
 
-### When to use the proxy
+### When is the proxy used?
 
-| Scenario | Proxy needed? |
-|----------|--------------|
-| Indexer-tools on the same machine as graph-node | No (use `http://localhost:8050`) |
-| Indexer-tools on the same Docker network | Yes (browser can't reach internal hostnames) |
-| Indexer-tools on a different machine | No (use the remote machine's IP/hostname) |
+| Scenario | What to do |
+|----------|------------|
+| Indexer-tools on the same Docker network as the indexer | Set HTTP URLs in `DEFAULT_ACCOUNTS` — proxy is automatic |
+| Indexer-tools on the same host (no Docker networking) | Use `http://localhost:8000` — no proxy needed, browser can reach it directly |
+| Indexer-tools on a different machine | Use the remote IP/hostname — no proxy needed |
 
 ## Docker Compose with Indexer Stack
 
-Example integrating indexer-tools into an existing indexer Docker Compose setup:
+Example integrating indexer-tools into an existing indexer Docker Compose setup with multiple indexers:
 
 ```yaml
 services:
-  # ... your existing graph-node, indexer-agent, etc. ...
+  # ... your existing graph-node, indexer-agent services ...
 
   indexer-tools:
     image: ghcr.io/vincenttaglia/indexer-tools-v4:latest
@@ -102,20 +96,30 @@ services:
     environment:
       GRAPH_API_KEY: "your-graph-api-key"
       DRPC_API_KEY: "your-drpc-api-key"
-      AGENT_PROXY_URL: "http://indexer-agent:8000/"
-      GRAPHMAN_PROXY_URL: "http://graph-node:8050/"
       DEFAULT_ACCOUNTS: >
         [
           {
-            "address": "0xYOUR_INDEXER_ADDRESS",
+            "address": "0xINDEXER_A",
             "chain": "arbitrum-one",
-            "label": "My Indexer",
-            "agentEndpoint": "/api/agent/",
-            "graphmanEndpoint": "/api/graphman/",
-            "graphmanToken": "your-bearer-token"
+            "label": "Indexer A",
+            "agentEndpoint": "http://indexer-agent-a:8000/",
+            "graphmanEndpoint": "http://graph-node-a:8050/",
+            "graphmanToken": "bearer-token-a"
+          },
+          {
+            "address": "0xINDEXER_B",
+            "chain": "arbitrum-one",
+            "label": "Indexer B",
+            "agentEndpoint": "http://indexer-agent-b:8000/",
+            "graphmanEndpoint": "http://graph-node-b:8050/",
+            "graphmanToken": "bearer-token-b"
           }
         ]
 ```
+
+The entrypoint generates proxy paths automatically:
+- Indexer A: agent at `/api/agent/0/`, graphman at `/api/graphman/0/`
+- Indexer B: agent at `/api/agent/1/`, graphman at `/api/graphman/1/`
 
 ## Published Docker Images
 
@@ -154,22 +158,24 @@ npm run test:watch   # Run tests in watch mode
 |----------|-------------|
 | `GRAPH_API_KEY` | The Graph API key (injected at container start) |
 | `DRPC_API_KEY` | dRPC API key (injected at container start) |
-| `DEFAULT_ACCOUNTS` | JSON array of indexer accounts |
-| `AGENT_PROXY_URL` | Upstream URL for Agent API proxy (enables `/api/agent/`) |
-| `GRAPHMAN_PROXY_URL` | Upstream URL for Graphman API proxy (enables `/api/graphman/`) |
+| `DEFAULT_ACCOUNTS` | JSON array of indexer accounts (HTTP endpoints are auto-proxied) |
 
 ## How Configuration Works
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │ Docker Environment Variables                            │
-│ GRAPH_API_KEY, DEFAULT_ACCOUNTS, etc.                   │
+│ GRAPH_API_KEY, DRPC_API_KEY, DEFAULT_ACCOUNTS           │
 └──────────────────────┬──────────────────────────────────┘
                        │ docker-entrypoint.sh
+                       │  1. Parse accounts JSON
+                       │  2. Generate nginx proxy for HTTP endpoints
+                       │  3. Rewrite endpoints to proxy paths
                        ▼
 ┌─────────────────────────────────────────────────────────┐
 │ /config.json (generated at container start)             │
 │ { theGraphApiKey, drpcApiKey, accounts[] }              │
+│ (endpoints rewritten: http://agent:8000 → /api/agent/0)│
 └──────────────────────┬──────────────────────────────────┘
                        │ fetch('/config.json') on app load
                        ▼
@@ -182,7 +188,7 @@ npm run test:watch   # Run tests in watch mode
 ┌─────────────────────────────────────────────────────────┐
 │ Pinia Stores (persisted to localStorage)                │
 │ settingsStore: API keys, preferences                    │
-│ accountStore: indexer accounts with endpoints            │
+│ accountStore: indexer accounts with proxy endpoints      │
 └─────────────────────────────────────────────────────────┘
 ```
 

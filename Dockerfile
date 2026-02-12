@@ -8,6 +8,7 @@ RUN npm run build
 
 # Stage 2: Serve
 FROM nginx:stable-alpine
+RUN apk add --no-cache jq
 COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY docker/docker-entrypoint.sh /docker-entrypoint.sh
 COPY --from=build /app/dist /usr/share/nginx/html

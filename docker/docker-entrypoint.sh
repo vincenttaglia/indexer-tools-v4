@@ -2,61 +2,80 @@
 set -e
 
 # ---------------------------------------------------------------------------
-# Runtime configuration injection
+# Runtime configuration injection + per-account API proxy
 #
-# Generates /usr/share/nginx/html/config.json from environment variables.
-# The Vue app fetches this file at startup and applies the values as defaults
-# (only when the user has no existing localStorage configuration).
+# 1. Reads DEFAULT_ACCOUNTS JSON and generates nginx proxy locations for each
+#    account's agentEndpoint and graphmanEndpoint (when they are HTTP URLs).
+# 2. Rewrites those endpoints in config.json to use the proxy paths so the
+#    browser reaches internal services through this container.
+# 3. Generates /usr/share/nginx/html/config.json for the Vue app to load.
 # ---------------------------------------------------------------------------
 
 CONFIG_FILE="/usr/share/nginx/html/config.json"
+NGINX_CONF="/etc/nginx/conf.d/default.conf"
+ACCOUNTS_JSON="${DEFAULT_ACCOUNTS:-[]}"
+PROXY_CONF=""
 
+# Parse accounts and generate per-account proxy locations.
+# For each account at index N:
+#   - agentEndpoint "http://..." → proxy at /api/agent/N/, rewrite to "/api/agent/N/"
+#   - graphmanEndpoint "http://..." → proxy at /api/graphman/N/, rewrite to "/api/graphman/N/"
+# Endpoints that don't start with http are left as-is (already browser-reachable).
+
+NUM_ACCOUNTS=$(echo "$ACCOUNTS_JSON" | jq 'length')
+REWRITTEN_ACCOUNTS="$ACCOUNTS_JSON"
+
+i=0
+while [ "$i" -lt "$NUM_ACCOUNTS" ]; do
+  AGENT_URL=$(echo "$ACCOUNTS_JSON" | jq -r ".[$i].agentEndpoint // \"\"")
+  GRAPHMAN_URL=$(echo "$ACCOUNTS_JSON" | jq -r ".[$i].graphmanEndpoint // \"\"")
+
+  # Proxy agent endpoint if it's an HTTP URL
+  if echo "$AGENT_URL" | grep -q '^https\?://'; then
+    # Ensure trailing slash for proper proxy_pass behavior
+    AGENT_URL_SLASH=$(echo "$AGENT_URL" | sed 's|/*$|/|')
+    PROXY_CONF="${PROXY_CONF}
+    # Account $i: Indexer Agent Admin API
+    location /api/agent/$i/ {
+        proxy_pass ${AGENT_URL_SLASH};
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+"
+    REWRITTEN_ACCOUNTS=$(echo "$REWRITTEN_ACCOUNTS" | jq ".[$i].agentEndpoint = \"/api/agent/$i/\"")
+  fi
+
+  # Proxy graphman endpoint if it's an HTTP URL
+  if echo "$GRAPHMAN_URL" | grep -q '^https\?://'; then
+    GRAPHMAN_URL_SLASH=$(echo "$GRAPHMAN_URL" | sed 's|/*$|/|')
+    PROXY_CONF="${PROXY_CONF}
+    # Account $i: Graphman API
+    location /api/graphman/$i/ {
+        proxy_pass ${GRAPHMAN_URL_SLASH};
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+"
+    REWRITTEN_ACCOUNTS=$(echo "$REWRITTEN_ACCOUNTS" | jq ".[$i].graphmanEndpoint = \"/api/graphman/$i/\"")
+  fi
+
+  i=$((i + 1))
+done
+
+# Write config.json with rewritten proxy paths
 cat > "$CONFIG_FILE" <<EOF
 {
   "theGraphApiKey": "${GRAPH_API_KEY:-}",
   "drpcApiKey": "${DRPC_API_KEY:-}",
-  "accounts": ${DEFAULT_ACCOUNTS:-[]}
+  "accounts": $(echo "$REWRITTEN_ACCOUNTS" | jq -c '.')
 }
 EOF
 
-# ---------------------------------------------------------------------------
-# Nginx proxy configuration
-#
-# If AGENT_PROXY_URL or GRAPHMAN_PROXY_URL are set, generate proxy location
-# blocks so the browser can reach internal APIs through this container.
-# This is useful when the agent/graphman APIs are on the same Docker network
-# but not directly reachable from the user's browser.
-# ---------------------------------------------------------------------------
-
-NGINX_CONF="/etc/nginx/conf.d/default.conf"
-PROXY_CONF=""
-
-if [ -n "${AGENT_PROXY_URL:-}" ]; then
-  PROXY_CONF="${PROXY_CONF}
-    # Reverse proxy to Indexer Agent Admin API
-    location /api/agent/ {
-        proxy_pass ${AGENT_PROXY_URL};
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
-"
-fi
-
-if [ -n "${GRAPHMAN_PROXY_URL:-}" ]; then
-  PROXY_CONF="${PROXY_CONF}
-    # Reverse proxy to Graphman API
-    location /api/graphman/ {
-        proxy_pass ${GRAPHMAN_PROXY_URL};
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
-"
-fi
-
+# Generate nginx config with proxy locations
 cat > "$NGINX_CONF" <<EOF
 server {
     listen 80;
