@@ -28,6 +28,7 @@ import {
   useOtherIndexersQuery,
   useSubgraphFilters,
   useSubgraphComputations,
+  useColumnPreferences,
 } from '@/composables'
 
 // Stores
@@ -483,6 +484,11 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
     },
   ),
 ]
+
+// ---------------------------------------------------------------------------
+// Column preferences (visibility + ordering from settings)
+// ---------------------------------------------------------------------------
+const { visibleColumns } = useColumnPreferences('subgraphs', columns)
 </script>
 
 <template>
@@ -640,7 +646,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
     <div class="table-wrapper">
       <DataTable
         :data="displaySubgraphs"
-        :columns="columns"
+        :columns="visibleColumns"
         :loading="isLoading"
         :enable-selection="true"
         :selected-keys="selectedSubgraphs"

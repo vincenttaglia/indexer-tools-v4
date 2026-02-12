@@ -1,6 +1,12 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 
+/** Per-dashboard column configuration */
+export interface ColumnConfig {
+  id: string
+  visible: boolean
+}
+
 /**
  * Global application settings.
  *
@@ -22,12 +28,60 @@ export const useSettingsStore = defineStore('settings', () => {
   /** Comma/newline-separated IPFS hashes of synclist subgraphs. */
   const subgraphSynclist = ref('')
 
+  /** Per-dashboard column configuration (visibility and order) */
+  const columnPreferences = ref<Record<string, ColumnConfig[]>>({})
+
+  /** Get column config for a specific dashboard, returning defaults if not set */
+  function getColumnConfig(dashboardId: string, defaultColumns: string[]): ColumnConfig[] {
+    if (!columnPreferences.value[dashboardId]) {
+      columnPreferences.value[dashboardId] = defaultColumns.map(id => ({
+        id,
+        visible: true,
+      }))
+    }
+    return columnPreferences.value[dashboardId]
+  }
+
+  /** Update column visibility */
+  function setColumnVisibility(
+    dashboardId: string,
+    columnId: string,
+    visible: boolean,
+  ) {
+    const config = columnPreferences.value[dashboardId]
+    if (!config) return
+    const col = config.find(c => c.id === columnId)
+    if (col) col.visible = visible
+  }
+
+  /** Reorder columns */
+  function reorderColumns(
+    dashboardId: string,
+    fromIndex: number,
+    toIndex: number,
+  ) {
+    const config = columnPreferences.value[dashboardId]
+    if (!config) return
+    const [moved] = config.splice(fromIndex, 1)
+    config.splice(toIndex, 0, moved)
+  }
+
+  /** Reset a dashboard's columns to defaults */
+  function resetColumnConfig(dashboardId: string) {
+    delete columnPreferences.value[dashboardId]
+  }
+
   return {
     theGraphApiKey,
     drpcApiKey,
     darkMode,
     subgraphBlacklist,
     subgraphSynclist,
+    columnPreferences,
+    getColumnConfig,
+    setColumnVisibility,
+    reorderColumns,
+    resetColumnConfig,
   }
 }, {
   persist: true,

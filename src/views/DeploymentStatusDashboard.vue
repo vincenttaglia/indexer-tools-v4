@@ -12,7 +12,7 @@ import { DataTable, HealthCell, ErrorDetailCell } from '@/components/DataTable'
 import SubgraphNameCell from '@/components/SubgraphNameCell.vue'
 
 // Composables
-import { useStatusQuery, useSubgraphMetadataMap, useEpochQuery, useAllocationsQuery } from '@/composables'
+import { useStatusQuery, useSubgraphMetadataMap, useEpochQuery, useAllocationsQuery, useColumnPreferences } from '@/composables'
 
 // Stores
 import { useAccountStore } from '@/stores'
@@ -294,6 +294,8 @@ const columns: ColumnDef<DeploymentStatus, any>[] = [
     },
   }),
 ]
+
+const { visibleColumns } = useColumnPreferences('deployment-status', columns)
 </script>
 
 <template>
@@ -339,7 +341,7 @@ const columns: ColumnDef<DeploymentStatus, any>[] = [
     <div class="table-wrapper">
       <DataTable
         :data="filteredDeployments"
-        :columns="columns"
+        :columns="visibleColumns"
         :loading="isLoading"
         :get-row-id="getRowId"
         table-height="100%"
