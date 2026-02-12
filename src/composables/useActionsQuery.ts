@@ -36,11 +36,23 @@ export function useActionsQuery(filter?: Ref<ActionFilter>) {
       resolvedFilter.value,
     ] as const),
     queryFn: async () => {
+      console.log('[useActionsQuery] queryFn CALLED, endpoint:', agentEndpoint.value)
       if (!agentEndpoint.value) throw new Error('No agent endpoint configured')
 
-      const client = createGraphQLClient(agentEndpoint.value)
-      return fetchActions(client, resolvedFilter.value)
+      try {
+        const client = createGraphQLClient(agentEndpoint.value)
+        const result = await fetchActions(client, resolvedFilter.value)
+        console.log('[useActionsQuery] queryFn SUCCESS, actions:', result.length)
+        return result
+      } catch (err) {
+        console.error('[useActionsQuery] queryFn ERROR:', err)
+        throw err
+      }
     },
-    enabled: computed(() => !!agentEndpoint.value),
+    enabled: computed(() => {
+      const val = !!agentEndpoint.value
+      console.log('[useActionsQuery] enabled computed:', val)
+      return val
+    }),
   })
 }
