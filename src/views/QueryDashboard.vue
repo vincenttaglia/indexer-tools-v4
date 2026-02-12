@@ -7,13 +7,14 @@ import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 
 // Project components
-import { DataTable, DeploymentNameCell } from '@/components/DataTable'
+import { DataTable } from '@/components/DataTable'
+import SubgraphNameCell from '@/components/SubgraphNameCell.vue'
 
 // Composables
-import { useQueryFeesQuery, useSubgraphMetadataMap } from '@/composables'
+import { useQueryFeesQuery, useSubgraphMetadataMap, useStatusQuery, useEpochQuery, useAllocationsQuery } from '@/composables'
 
 // Stores
-import { useFilterStore, useChainStore } from '@/stores'
+import { useFilterStore, useChainStore, useAccountStore } from '@/stores'
 
 // Types
 import type { QueryDailyDataPoint } from '@/types'
@@ -27,6 +28,7 @@ import { weiToGrt } from '@/services/calculations/tokenMath'
 // ---------------------------------------------------------------------------
 const filterStore = useFilterStore()
 const chainStore = useChainStore()
+const accountStore = useAccountStore()
 const isArbitrum = computed(() => chainStore.selectedChain === 'arbitrum-one')
 
 // ---------------------------------------------------------------------------
@@ -34,6 +36,9 @@ const isArbitrum = computed(() => chainStore.selectedChain === 'arbitrum-one')
 // ---------------------------------------------------------------------------
 const queryFeesQuery = useQueryFeesQuery()
 const { metadataMap } = useSubgraphMetadataMap()
+const statusQuery = useStatusQuery()
+const epochQuery = useEpochQuery()
+const allocationsQuery = useAllocationsQuery()
 
 // ---------------------------------------------------------------------------
 // Loading state
@@ -84,6 +89,15 @@ function successRateColorClass(rate: number): string {
 }
 
 // ---------------------------------------------------------------------------
+// Computed helpers
+// ---------------------------------------------------------------------------
+const allocatedDeployments = computed(() => {
+  const allocations = allocationsQuery.data.value
+  if (!allocations) return new Set<string>()
+  return new Set(allocations.map((a: any) => a.subgraphDeployment.ipfsHash))
+})
+
+// ---------------------------------------------------------------------------
 // Column definitions
 // ---------------------------------------------------------------------------
 const columnHelper = createColumnHelper<QueryDailyDataPoint>()
@@ -99,10 +113,29 @@ const columns: ColumnDef<QueryDailyDataPoint, any>[] = [
       cell: (info) => {
         const hash = info.getValue() as string
         const meta = metadataMap.value.get(hash)
-        return h(DeploymentNameCell, {
+        const statusMap = statusQuery.data.value
+        const deploymentStatus = statusMap?.get(hash) ?? null
+        const network = meta?.network ?? null
+
+        const epochData = epochQuery.data.value
+        const epochBlock = epochData?.blockNumbers?.find(
+          (b: any) => b.network.alias === network
+        )?.blockNumber ?? null
+
+        return h(SubgraphNameCell, {
           displayName: meta?.displayName ?? hash,
           ipfsHash: hash,
           imageUrl: meta?.image ?? null,
+          network,
+          health: deploymentStatus?.health ?? null,
+          synced: deploymentStatus?.synced ?? null,
+          denied: false,
+          isDeployed: !!deploymentStatus,
+          isAllocated: allocatedDeployments.value.has(hash),
+          deploymentStatus,
+          epochBlockNumber: epochBlock,
+          isOffchainSynced: false,
+          agentConnected: !!accountStore.activeAccount?.agentEndpoint,
         })
       },
     },
