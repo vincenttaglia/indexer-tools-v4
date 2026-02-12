@@ -22,7 +22,7 @@ spec:
             - containerPort: 80
               name: http
           envFrom:
-            - secretRef:
+            - configMapRef:
                 name: indexer-tools
           resources:
             requests:
