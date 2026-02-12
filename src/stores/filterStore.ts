@@ -34,37 +34,40 @@ export interface QueryFeeFilters {
   search: string
 }
 
+const SUBGRAPH_DEFAULTS: SubgraphFilters = {
+  search: '',
+  hideSmallSignal: false,
+  rewardsFilter: 0,
+  onlyAllocated: false,
+  hideCurrentlyAllocated: false,
+  onlyDeployed: false,
+  minSignal: 0,
+  maxSignal: 0,
+  networks: [],
+  statusFilter: 'none',
+  activateBlacklist: false,
+  activateSynclist: false,
+  targetApr: 10,
+  newAllocation: 100000,
+}
+
+const ALLOCATION_DEFAULTS: AllocationFilters = {
+  search: '',
+  statusFilter: 'none',
+  networks: [],
+  activateBlacklist: false,
+  activateSynclist: false,
+}
+
 /**
  * Table filter state for subgraph and allocation views.
  *
- * NOT persisted -- filters reset each session so the user always starts
- * with a clean view.
+ * Persisted to localStorage (except text search fields which reset each session).
  */
 export const useFilterStore = defineStore('filters', () => {
-  const subgraphFilters = ref<SubgraphFilters>({
-    search: '',
-    hideSmallSignal: false,
-    rewardsFilter: 0,
-    onlyAllocated: false,
-    hideCurrentlyAllocated: false,
-    onlyDeployed: false,
-    minSignal: 0,
-    maxSignal: 0,
-    networks: [],
-    statusFilter: 'none',
-    activateBlacklist: false,
-    activateSynclist: false,
-    targetApr: 10,
-    newAllocation: 100000,
-  })
+  const subgraphFilters = ref<SubgraphFilters>({ ...SUBGRAPH_DEFAULTS })
 
-  const allocationFilters = ref<AllocationFilters>({
-    search: '',
-    statusFilter: 'none',
-    networks: [],
-    activateBlacklist: false,
-    activateSynclist: false,
-  })
+  const allocationFilters = ref<AllocationFilters>({ ...ALLOCATION_DEFAULTS })
 
   const qosFilters = ref<QosFilters>({
     search: '',
@@ -80,4 +83,35 @@ export const useFilterStore = defineStore('filters', () => {
     qosFilters,
     queryFeeFilters,
   }
+}, {
+  persist: {
+    serializer: {
+      serialize(state) {
+        // Strip search fields before persisting
+        const s = state as {
+          subgraphFilters: SubgraphFilters
+          allocationFilters: AllocationFilters
+          qosFilters: QosFilters
+          queryFeeFilters: QueryFeeFilters
+        }
+        return JSON.stringify({
+          subgraphFilters: { ...s.subgraphFilters, search: '' },
+          allocationFilters: { ...s.allocationFilters, search: '' },
+          qosFilters: { ...s.qosFilters, search: '' },
+          queryFeeFilters: { ...s.queryFeeFilters, search: '' },
+        })
+      },
+      deserialize(value) {
+        const parsed = JSON.parse(value)
+        // Merge with defaults so new filter fields added in future versions
+        // get their default values instead of undefined
+        return {
+          subgraphFilters: { ...SUBGRAPH_DEFAULTS, ...parsed.subgraphFilters, search: '' },
+          allocationFilters: { ...ALLOCATION_DEFAULTS, ...parsed.allocationFilters, search: '' },
+          qosFilters: { ...parsed.qosFilters, search: '' },
+          queryFeeFilters: { ...parsed.queryFeeFilters, search: '' },
+        }
+      },
+    },
+  },
 })

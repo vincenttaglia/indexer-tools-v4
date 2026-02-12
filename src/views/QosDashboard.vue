@@ -80,11 +80,6 @@ function refreshAll() {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Shorten an IPFS hash for display */
-function shortenHash(hash: string): string {
-  return hash
-}
-
 /** Color class for blocks behind values */
 function blocksBehindColorClass(value: number): string {
   if (value < 10) return 'metric-green'

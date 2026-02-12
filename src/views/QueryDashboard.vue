@@ -75,11 +75,6 @@ function refreshAll() {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Shorten an IPFS hash for display */
-function shortenHash(hash: string): string {
-  return hash
-}
-
 /** Color class for success rate values (0-1 range) */
 function successRateColorClass(rate: number): string {
   const pct = rate * 100
