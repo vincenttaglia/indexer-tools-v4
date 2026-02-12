@@ -10,10 +10,10 @@ import Tag from 'primevue/tag'
 import SelectButton from 'primevue/selectbutton'
 
 // Project components
-import { DataTable } from '@/components/DataTable'
+import { DataTable, DeploymentNameCell } from '@/components/DataTable'
 
 // Composables
-import { useActionsQuery } from '@/composables'
+import { useActionsQuery, useSubgraphMetadataMap } from '@/composables'
 
 // Stores
 import { useAccountStore, useSelectionStore } from '@/stores'
@@ -71,6 +71,7 @@ const statusOptions: { label: string; value: StatusTab }[] = [
 // Query - fetch ALL actions (no filter), then filter client-side
 // ---------------------------------------------------------------------------
 const actionsQuery = useActionsQuery()
+const { metadataMap } = useSubgraphMetadataMap()
 
 const allActions = computed<Action[]>(() => actionsQuery.data.value ?? [])
 
@@ -348,11 +349,16 @@ const columns: ColumnDef<Action, any>[] = [
   columnHelper.accessor('deploymentID', {
     id: 'deployment',
     header: 'Deployment',
-    size: 140,
+    size: 220,
     cell: (info) => {
-      const val = info.getValue() as string
-      if (!val) return h('span', { class: 'text-muted' }, '-')
-      return h('span', { class: 'mono-text hash-full', title: val }, val)
+      const hash = info.getValue() as string
+      if (!hash) return h('span', { class: 'text-muted' }, '-')
+      const meta = metadataMap.value.get(hash)
+      return h(DeploymentNameCell, {
+        displayName: meta?.displayName ?? hash,
+        ipfsHash: hash,
+        imageUrl: meta?.image ?? null,
+      })
     },
   }),
   columnHelper.accessor('poi', {

@@ -7,10 +7,10 @@ import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 
 // Project components
-import { DataTable } from '@/components/DataTable'
+import { DataTable, DeploymentNameCell } from '@/components/DataTable'
 
 // Composables
-import { useQosDailyDataQuery } from '@/composables'
+import { useQosDailyDataQuery, useSubgraphMetadataMap } from '@/composables'
 
 // Stores
 import { useFilterStore, useChainStore } from '@/stores'
@@ -33,6 +33,7 @@ const isArbitrum = computed(() => chainStore.selectedChain === 'arbitrum-one')
 // Queries
 // ---------------------------------------------------------------------------
 const qosQuery = useQosDailyDataQuery()
+const { metadataMap } = useSubgraphMetadataMap()
 
 // ---------------------------------------------------------------------------
 // Loading state
@@ -96,18 +97,19 @@ function successRateColorClass(rate: number): string {
 const columnHelper = createColumnHelper<AllocationDailyDataPoint>()
 
 const columns: ColumnDef<AllocationDailyDataPoint, any>[] = [
-  // 1. Deployment (IPFS hash)
+  // 1. Deployment (IPFS hash + subgraph name)
   columnHelper.accessor('subgraph_deployment_ipfs_hash', {
     id: 'deployment',
     header: 'Deployment',
-    size: 180,
+    size: 220,
     cell: (info) => {
       const hash = info.getValue() as string
-      return h(
-        'span',
-        { class: 'hash-cell', title: hash },
-        shortenHash(hash),
-      )
+      const meta = metadataMap.value.get(hash)
+      return h(DeploymentNameCell, {
+        displayName: meta?.displayName ?? hash,
+        ipfsHash: hash,
+        imageUrl: meta?.image ?? null,
+      })
     },
   }),
 
