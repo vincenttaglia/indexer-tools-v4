@@ -604,7 +604,7 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
   }),
 ]
 
-const { visibleColumns } = useColumnPreferences('wizard-close', columns)
+const { visibleColumns } = useColumnPreferences('allocations', columns)
 </script>
 
 <template>

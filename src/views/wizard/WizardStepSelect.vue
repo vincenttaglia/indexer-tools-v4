@@ -492,7 +492,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   ),
 ]
 
-const { visibleColumns } = useColumnPreferences('wizard-select', columns)
+const { visibleColumns } = useColumnPreferences('subgraphs', columns)
 </script>
 
 <template>
