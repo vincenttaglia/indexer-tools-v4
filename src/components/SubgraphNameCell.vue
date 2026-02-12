@@ -78,6 +78,7 @@ function togglePanel(event: Event) {
   overflow: hidden;
   min-width: 0;
   max-width: 100%;
+  padding: 2px;
 }
 
 .name-text {

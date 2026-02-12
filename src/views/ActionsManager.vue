@@ -31,7 +31,7 @@ import {
 import type { Action, ActionStatus } from '@/types'
 
 // Formatting
-import { formatNumber } from '@/services/formatting/numbers'
+import { formatNumber, abbreviateNumber } from '@/services/formatting/numbers'
 
 // ---------------------------------------------------------------------------
 // Stores
@@ -374,7 +374,7 @@ const columns: ColumnDef<Action, any>[] = [
       if (!val || val === '0') return h('span', { class: 'text-muted' }, '-')
       const parsed = parseFloat(val)
       if (isNaN(parsed)) return h('span', { class: 'text-muted' }, '-')
-      return h('span', { class: 'token-value' }, `${formatNumber(parsed, 0)} GRT`)
+      return h('span', { class: 'token-value', title: `${formatNumber(parsed, 0)} GRT` }, `${abbreviateNumber(parsed)} GRT`)
     },
   }),
   columnHelper.accessor('priority', {

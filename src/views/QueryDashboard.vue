@@ -19,7 +19,7 @@ import { useFilterStore, useChainStore } from '@/stores'
 import type { QueryDailyDataPoint } from '@/types'
 
 // Formatting
-import { formatNumber } from '@/services/formatting/numbers'
+import { formatNumber, abbreviateNumber } from '@/services/formatting/numbers'
 import { weiToGrt } from '@/services/calculations/tokenMath'
 
 // ---------------------------------------------------------------------------
@@ -124,8 +124,8 @@ const columns: ColumnDef<QueryDailyDataPoint, any>[] = [
       const grt = weiToGrt(wei)
       return h(
         'span',
-        { class: 'token-value' },
-        `${formatNumber(grt, 6)} GRT`,
+        { class: 'token-value', title: `${formatNumber(grt, 6)} GRT` },
+        `${abbreviateNumber(grt)} GRT`,
       )
     },
     sortingFn: (rowA, rowB) => {
@@ -169,7 +169,7 @@ const columns: ColumnDef<QueryDailyDataPoint, any>[] = [
     size: 130,
     cell: (info) => {
       const val = info.getValue() as number
-      return h('span', { class: 'metric-cell' }, formatNumber(val, 0))
+      return h('span', { class: 'metric-cell', title: formatNumber(val, 0) }, abbreviateNumber(val))
     },
   }),
 
@@ -183,8 +183,8 @@ const columns: ColumnDef<QueryDailyDataPoint, any>[] = [
       const grt = weiToGrt(wei)
       return h(
         'span',
-        { class: 'token-value' },
-        `${formatNumber(grt, 4)} GRT`,
+        { class: 'token-value', title: `${formatNumber(grt, 4)} GRT` },
+        `${abbreviateNumber(grt)} GRT`,
       )
     },
     sortingFn: (rowA, rowB) => {

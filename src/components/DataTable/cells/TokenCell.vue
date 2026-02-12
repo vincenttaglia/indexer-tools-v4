@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { formatUnits } from 'viem'
+import { abbreviateNumber } from '@/services/formatting/numbers'
 
 const props = withDefaults(
   defineProps<{
@@ -10,27 +11,29 @@ const props = withDefaults(
   { decimals: 2 },
 )
 
-const formatted = computed(() => {
+const rawNumber = computed(() => {
   try {
-    const raw = typeof props.value === 'number'
+    const num = typeof props.value === 'number'
       ? props.value
       : Number(formatUnits(BigInt(props.value), 18))
-
-    if (isNaN(raw)) return '0'
-
-    // Format with commas and fixed decimals
-    return raw.toLocaleString('en-US', {
-      minimumFractionDigits: props.decimals,
-      maximumFractionDigits: props.decimals,
-    })
+    return isNaN(num) ? 0 : num
   } catch {
-    return '0'
+    return 0
   }
 })
+
+const formatted = computed(() => abbreviateNumber(rawNumber.value))
+
+const fullValue = computed(() =>
+  rawNumber.value.toLocaleString('en-US', {
+    minimumFractionDigits: props.decimals,
+    maximumFractionDigits: props.decimals,
+  })
+)
 </script>
 
 <template>
-  <span class="token-cell" :title="String(value)">
+  <span class="token-cell" :title="`${fullValue} GRT`">
     {{ formatted }}
     <span class="token-symbol">GRT</span>
   </span>

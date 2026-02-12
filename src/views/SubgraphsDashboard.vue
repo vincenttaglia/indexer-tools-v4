@@ -37,7 +37,7 @@ import { useFilterStore, useSelectionStore, useChainStore, useWizardStore, useAc
 import type { SubgraphComputed, QueryFeeData, HealthStatus } from '@/types'
 
 // Formatting
-import { formatNumber } from '@/services/formatting/numbers'
+import { formatNumber, abbreviateNumber } from '@/services/formatting/numbers'
 import { weiToGrt } from '@/services/calculations'
 
 // ---------------------------------------------------------------------------
@@ -364,8 +364,8 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
       const grt = weiToGrt(String(val))
       return h(
         'span',
-        { class: 'token-value' },
-        `${formatNumber(grt, 0)} GRT`,
+        { class: 'token-value', title: `${formatNumber(grt, 2)} GRT` },
+        `${abbreviateNumber(grt)} GRT`,
       )
     },
   }),
@@ -380,8 +380,8 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
       }
       return h(
         'span',
-        { class: 'token-value' },
-        `${formatNumber(val, 0)} GRT`,
+        { class: 'token-value', title: `${formatNumber(val, 0)} GRT` },
+        `${abbreviateNumber(val)} GRT`,
       )
     },
   }),
@@ -437,7 +437,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
       if (val === null || val === undefined) {
         return h('span', { class: 'text-muted' }, '?')
       }
-      return h('span', { class: 'token-value' }, formatNumber(val, 0))
+      return h('span', { class: 'token-value', title: formatNumber(val, 0) }, abbreviateNumber(val))
     },
   }),
   // QueryFees: Query Count
@@ -450,7 +450,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
       cell: (info) => {
         const val = info.getValue() as number | null
         if (val === null) return h('span', { class: 'text-muted' }, '-')
-        return h('span', { class: 'token-value' }, formatNumber(val, 0))
+        return h('span', { class: 'token-value', title: formatNumber(val, 0) }, abbreviateNumber(val))
       },
     },
   ),
@@ -464,7 +464,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
       cell: (info) => {
         const val = info.getValue() as number | null
         if (val === null) return h('span', { class: 'text-muted' }, '-')
-        return h('span', { class: 'token-value' }, `${formatNumber(val, 4)} GRT`)
+        return h('span', { class: 'token-value', title: `${formatNumber(val, 4)} GRT` }, `${abbreviateNumber(val)} GRT`)
       },
     },
   ),
