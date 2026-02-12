@@ -33,6 +33,7 @@ import {
   useQosDailyDataQuery,
   useOtherIndexersQuery,
   useAllocationComputations,
+  useColumnPreferences,
 } from '@/composables'
 import { useAllocationFilters } from '@/composables/useAllocationFilters'
 import type { AllocationDescriptor } from '@/composables'
@@ -498,7 +499,7 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
       cell: (info) => {
         const val = info.getValue() as number | null
         if (val === null) return h('span', { class: 'text-muted' }, '-')
-        return h('span', { class: 'token-value' }, `${formatNumber(val, 4)} GRT`)
+        return h('span', { class: 'token-value' }, `${formatNumber(val, 2)} GRT`)
       },
     },
   ),
@@ -602,6 +603,8 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     },
   }),
 ]
+
+const { visibleColumns } = useColumnPreferences('allocations', columns)
 </script>
 
 <template>
@@ -699,7 +702,7 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     <div class="table-wrapper">
       <DataTable
         :data="filteredAllocations"
-        :columns="columns"
+        :columns="visibleColumns"
         :loading="isLoading"
         :enable-selection="true"
         :selected-keys="selectedKeys"

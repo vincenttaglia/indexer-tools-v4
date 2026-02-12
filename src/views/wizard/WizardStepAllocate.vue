@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 // PrimeVue components
 import InputNumber from 'primevue/inputnumber'
@@ -27,7 +27,9 @@ import {
   calculateDailyRewardsCut,
   calculateProportion,
   weiToGrt,
+  optimizeAllocations,
 } from '@/services/calculations'
+import type { OptimizationResult } from '@/services/calculations'
 import { formatNumber, formatPercent } from '@/services/formatting/numbers'
 
 // Types
@@ -242,6 +244,40 @@ const totalAvailableGrt = computed<number>(() => {
 const remainingStake = computed<number>(() => {
   return totalAvailableGrt.value - wizardStore.totalAllocated
 })
+
+// ---------------------------------------------------------------------------
+// APR Optimizer
+// ---------------------------------------------------------------------------
+
+const optimizationResult = ref<OptimizationResult | null>(null)
+
+function applyOptimizedAllocations() {
+  const metrics = networkQuery.data.value
+  if (!metrics) return
+
+  const optimizable = selectedSubgraphsList.value.map((sg) => ({
+    ipfsHash: sg.deployment.ipfsHash,
+    signalledTokens: sg.deployment.signalledTokens,
+    stakedTokens: getEffectiveStakedTokens(sg),
+    displayName: getDisplayName(sg),
+  }))
+
+  const result = optimizeAllocations({
+    subgraphs: optimizable,
+    totalBudgetGrt: totalAvailableGrt.value,
+    totalTokensSignalled: metrics.totalTokensSignalled,
+    networkGRTIssuancePerBlock: metrics.networkGRTIssuancePerBlock,
+    blocksPerDay: chainStore.chainConfig.blocksPerDay,
+    indexingRewardCut: indexerQuery.data.value?.indexingRewardCut ?? 0,
+  })
+
+  // Apply optimized amounts to wizard
+  for (const entry of result.perSubgraph) {
+    wizardStore.setAmount(entry.ipfsHash, String(Math.floor(entry.allocationGrt)))
+  }
+
+  optimizationResult.value = result
+}
 </script>
 
 <template>
@@ -266,6 +302,7 @@ const remainingStake = computed<number>(() => {
             :minFractionDigits="0"
             :maxFractionDigits="0"
             class="control-input"
+            inputClass="compact-input"
           />
         </div>
 
@@ -278,6 +315,7 @@ const remainingStake = computed<number>(() => {
             :minFractionDigits="0"
             :maxFractionDigits="0"
             class="control-input"
+            inputClass="compact-input"
           />
         </div>
 
@@ -287,6 +325,7 @@ const remainingStake = computed<number>(() => {
             icon="pi pi-arrow-up"
             severity="secondary"
             outlined
+            size="small"
             @click="wizardStore.setAllMaxAllos(selectedSubgraphsList)"
           />
           <Button
@@ -294,13 +333,27 @@ const remainingStake = computed<number>(() => {
             icon="pi pi-filter"
             severity="secondary"
             outlined
+            size="small"
             @click="wizardStore.applyMinimums(selectedSubgraphsList)"
           />
+          <span class="experimental-wrapper" title="This feature is experimental. Review allocations before submitting.">
+            <Button
+              label="Optimize Allocations"
+              icon="pi pi-sliders-h"
+              severity="warn"
+              outlined
+              size="small"
+              :disabled="selectedSubgraphsList.length === 0 || totalAvailableGrt <= 0"
+              @click="applyOptimizedAllocations"
+            />
+            <span class="experimental-badge">BETA</span>
+          </span>
           <Button
             label="Reset"
             icon="pi pi-refresh"
             severity="danger"
             outlined
+            size="small"
             @click="wizardStore.resetAllos()"
           />
         </div>
@@ -343,7 +396,7 @@ const remainingStake = computed<number>(() => {
               </span>
               <span class="metric">
                 <span class="metric-label">Proportion:</span>
-                <span class="metric-value">{{ getCurrentProportion(sg).toFixed(4) }}</span>
+                <span class="metric-value">{{ formatNumber(getCurrentProportion(sg), 2) }}</span>
               </span>
             </div>
           </div>
@@ -355,6 +408,7 @@ const remainingStake = computed<number>(() => {
               @update:modelValue="(val: number | null) => handleAmountChange(sg.deployment.ipfsHash, val)"
               placeholder="GRT amount"
               class="amount-input"
+              inputClass="compact-input"
               :min="0"
               suffix=" GRT"
               :minFractionDigits="0"
@@ -389,10 +443,10 @@ const remainingStake = computed<number>(() => {
             <div class="preview-row">
               <span class="metric-label">New Prop:</span>
               <span class="metric-value">
-                {{ getNewProportion(
+                {{ formatNumber(getNewProportion(
                   sg,
                   wizardStore.allocationAmounts.get(sg.deployment.ipfsHash) ?? '0',
-                ).toFixed(4) }}
+                ), 2) }}
               </span>
             </div>
           </div>
@@ -424,6 +478,12 @@ const remainingStake = computed<number>(() => {
             :class="{ 'over-allocated': remainingStake < 0 }"
           >
             {{ formatNumber(remainingStake, 0) }} GRT
+          </span>
+        </div>
+        <div v-if="optimizationResult" class="summary-item optimize-result">
+          <span class="summary-label">Optimized Daily Rewards</span>
+          <span class="summary-value optimized-value">
+            {{ formatNumber(weiToGrt(String(optimizationResult.totalDailyRewardsCut)), 2) }} GRT/day
           </span>
         </div>
       </div>
@@ -484,7 +544,22 @@ const remainingStake = computed<number>(() => {
 }
 
 .control-input {
-  width: 160px;
+  width: 140px;
+  max-width: 140px;
+}
+
+:deep(.compact-input) {
+  font-size: 0.8125rem !important;
+  padding: 0.4rem 0.6rem !important;
+  height: auto !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+:deep(.p-inputnumber) {
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 .control-actions {
@@ -586,10 +661,20 @@ const remainingStake = computed<number>(() => {
 
 .card-input {
   flex-shrink: 0;
-  width: 180px;
+  width: 150px;
+  max-width: 150px;
 }
 
 .amount-input {
+  max-width: 100%;
+}
+
+.amount-input :deep(.p-inputnumber) {
+  width: 100%;
+  max-width: 100%;
+}
+
+.amount-input :deep(input) {
   width: 100%;
 }
 
@@ -643,5 +728,33 @@ const remainingStake = computed<number>(() => {
 
 .summary-value.over-allocated {
   color: var(--p-red-400);
+}
+
+.experimental-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.experimental-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: var(--p-yellow-500);
+  color: var(--p-surface-900);
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  line-height: 1.3;
+  pointer-events: none;
+}
+
+.optimize-result {
+  margin-left: auto;
+}
+
+.optimized-value {
+  color: var(--p-primary-color);
 }
 </style>

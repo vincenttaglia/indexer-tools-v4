@@ -8,10 +8,14 @@ import Button from 'primevue/button'
 import ToggleSwitch from 'primevue/toggleswitch'
 
 // Project components
-import { DataTable, HealthCell, AddressCell, ErrorDetailCell } from '@/components/DataTable'
+import { DataTable, HealthCell, ErrorDetailCell } from '@/components/DataTable'
+import SubgraphNameCell from '@/components/SubgraphNameCell.vue'
 
 // Composables
-import { useStatusQuery } from '@/composables'
+import { useStatusQuery, useSubgraphMetadataMap, useEpochQuery, useAllocationsQuery, useColumnPreferences } from '@/composables'
+
+// Stores
+import { useAccountStore } from '@/stores'
 
 // Types
 import type { DeploymentStatus, HealthStatus } from '@/types'
@@ -23,6 +27,19 @@ import { formatNumber } from '@/services/formatting/numbers'
 // Queries
 // ---------------------------------------------------------------------------
 const statusQuery = useStatusQuery()
+const { metadataMap } = useSubgraphMetadataMap()
+const epochQuery = useEpochQuery()
+const allocationsQuery = useAllocationsQuery()
+const accountStore = useAccountStore()
+
+// ---------------------------------------------------------------------------
+// Allocated deployments set
+// ---------------------------------------------------------------------------
+const allocatedDeployments = computed(() => {
+  const allocations = allocationsQuery.data.value
+  if (!allocations) return new Set<string>()
+  return new Set(allocations.map((a: any) => a.subgraphDeployment.ipfsHash))
+})
 
 // ---------------------------------------------------------------------------
 // Local filter state
@@ -54,9 +71,11 @@ const filteredDeployments = computed(() => {
   const term = search.value.toLowerCase().trim()
   if (term) {
     list = list.filter((d) => {
+      const meta = metadataMap.value.get(d.subgraph)
       return (
         d.subgraph.toLowerCase().includes(term) ||
-        (d.node ?? '').toLowerCase().includes(term)
+        (d.node ?? '').toLowerCase().includes(term) ||
+        (meta?.displayName ?? '').toLowerCase().includes(term)
       )
     })
   }
@@ -119,14 +138,37 @@ function getRowId(row: DeploymentStatus) {
 const columnHelper = createColumnHelper<DeploymentStatus>()
 
 const columns: ColumnDef<DeploymentStatus, any>[] = [
-  // 1. Deployment (IPFS hash, shortened with copy)
+  // 1. Deployment (subgraph name with metadata)
   columnHelper.accessor('subgraph', {
     id: 'deployment',
     header: 'Deployment',
-    size: 200,
+    size: 220,
     cell: (info) => {
       const hash = info.getValue() as string
-      return h(AddressCell, { address: hash })
+      const row = info.row.original
+      const meta = metadataMap.value.get(hash)
+      const network = meta?.network ?? null
+
+      const epochData = epochQuery.data.value
+      const epochBlock = epochData?.blockNumbers?.find(
+        (b: any) => b.network.alias === network
+      )?.blockNumber ?? null
+
+      return h(SubgraphNameCell, {
+        displayName: meta?.displayName ?? hash,
+        ipfsHash: hash,
+        imageUrl: meta?.image ?? null,
+        network,
+        health: row.health,
+        synced: row.synced,
+        denied: false,
+        isDeployed: true,
+        isAllocated: allocatedDeployments.value.has(hash),
+        deploymentStatus: row,
+        epochBlockNumber: epochBlock,
+        isOffchainSynced: false,
+        agentConnected: !!accountStore.activeAccount?.agentEndpoint,
+      })
     },
   }),
 
@@ -252,6 +294,8 @@ const columns: ColumnDef<DeploymentStatus, any>[] = [
     },
   }),
 ]
+
+const { visibleColumns } = useColumnPreferences('deployment-status', columns)
 </script>
 
 <template>
@@ -297,7 +341,7 @@ const columns: ColumnDef<DeploymentStatus, any>[] = [
     <div class="table-wrapper">
       <DataTable
         :data="filteredDeployments"
-        :columns="columns"
+        :columns="visibleColumns"
         :loading="isLoading"
         :get-row-id="getRowId"
         table-height="100%"

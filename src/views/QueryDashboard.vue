@@ -8,18 +8,19 @@ import Button from 'primevue/button'
 
 // Project components
 import { DataTable } from '@/components/DataTable'
+import SubgraphNameCell from '@/components/SubgraphNameCell.vue'
 
 // Composables
-import { useQueryFeesQuery } from '@/composables'
+import { useQueryFeesQuery, useSubgraphMetadataMap, useStatusQuery, useEpochQuery, useAllocationsQuery, useColumnPreferences } from '@/composables'
 
 // Stores
-import { useFilterStore, useChainStore } from '@/stores'
+import { useFilterStore, useChainStore, useAccountStore } from '@/stores'
 
 // Types
 import type { QueryDailyDataPoint } from '@/types'
 
 // Formatting
-import { formatNumber } from '@/services/formatting/numbers'
+import { formatNumber, abbreviateNumber } from '@/services/formatting/numbers'
 import { weiToGrt } from '@/services/calculations/tokenMath'
 
 // ---------------------------------------------------------------------------
@@ -27,12 +28,17 @@ import { weiToGrt } from '@/services/calculations/tokenMath'
 // ---------------------------------------------------------------------------
 const filterStore = useFilterStore()
 const chainStore = useChainStore()
+const accountStore = useAccountStore()
 const isArbitrum = computed(() => chainStore.selectedChain === 'arbitrum-one')
 
 // ---------------------------------------------------------------------------
 // Queries
 // ---------------------------------------------------------------------------
 const queryFeesQuery = useQueryFeesQuery()
+const { metadataMap } = useSubgraphMetadataMap()
+const statusQuery = useStatusQuery()
+const epochQuery = useEpochQuery()
+const allocationsQuery = useAllocationsQuery()
 
 // ---------------------------------------------------------------------------
 // Loading state
@@ -83,25 +89,54 @@ function successRateColorClass(rate: number): string {
 }
 
 // ---------------------------------------------------------------------------
+// Computed helpers
+// ---------------------------------------------------------------------------
+const allocatedDeployments = computed(() => {
+  const allocations = allocationsQuery.data.value
+  if (!allocations) return new Set<string>()
+  return new Set(allocations.map((a: any) => a.subgraphDeployment.ipfsHash))
+})
+
+// ---------------------------------------------------------------------------
 // Column definitions
 // ---------------------------------------------------------------------------
 const columnHelper = createColumnHelper<QueryDailyDataPoint>()
 
 const columns: ColumnDef<QueryDailyDataPoint, any>[] = [
-  // 1. Deployment (IPFS hash)
+  // 1. Deployment (IPFS hash + subgraph name)
   columnHelper.accessor(
     (row) => row.subgraphDeployment.id,
     {
       id: 'deployment',
       header: 'Deployment',
-      size: 180,
+      size: 220,
       cell: (info) => {
         const hash = info.getValue() as string
-        return h(
-          'span',
-          { class: 'hash-cell', title: hash },
-          shortenHash(hash),
-        )
+        const meta = metadataMap.value.get(hash)
+        const statusMap = statusQuery.data.value
+        const deploymentStatus = statusMap?.get(hash) ?? null
+        const network = meta?.network ?? null
+
+        const epochData = epochQuery.data.value
+        const epochBlock = epochData?.blockNumbers?.find(
+          (b: any) => b.network.alias === network
+        )?.blockNumber ?? null
+
+        return h(SubgraphNameCell, {
+          displayName: meta?.displayName ?? hash,
+          ipfsHash: hash,
+          imageUrl: meta?.image ?? null,
+          network,
+          health: deploymentStatus?.health ?? null,
+          synced: deploymentStatus?.synced ?? null,
+          denied: false,
+          isDeployed: !!deploymentStatus,
+          isAllocated: allocatedDeployments.value.has(hash),
+          deploymentStatus,
+          epochBlockNumber: epochBlock,
+          isOffchainSynced: false,
+          agentConnected: !!accountStore.activeAccount?.agentEndpoint,
+        })
       },
     },
   ),
@@ -118,14 +153,14 @@ const columns: ColumnDef<QueryDailyDataPoint, any>[] = [
   columnHelper.accessor('avg_query_fee', {
     id: 'avgQueryFee',
     header: 'Avg Query Fee',
-    size: 140,
+    size: 160,
     cell: (info) => {
       const wei = info.getValue() as string
       const grt = weiToGrt(wei)
       return h(
         'span',
-        { class: 'token-value' },
-        `${formatNumber(grt, 6)} GRT`,
+        { class: 'token-value', title: `${formatNumber(grt, 6)} GRT` },
+        `${abbreviateNumber(grt)} GRT`,
       )
     },
     sortingFn: (rowA, rowB) => {
@@ -169,7 +204,7 @@ const columns: ColumnDef<QueryDailyDataPoint, any>[] = [
     size: 130,
     cell: (info) => {
       const val = info.getValue() as number
-      return h('span', { class: 'metric-cell' }, formatNumber(val, 0))
+      return h('span', { class: 'metric-cell', title: formatNumber(val, 0) }, abbreviateNumber(val))
     },
   }),
 
@@ -183,8 +218,8 @@ const columns: ColumnDef<QueryDailyDataPoint, any>[] = [
       const grt = weiToGrt(wei)
       return h(
         'span',
-        { class: 'token-value' },
-        `${formatNumber(grt, 4)} GRT`,
+        { class: 'token-value', title: `${formatNumber(grt, 4)} GRT` },
+        `${abbreviateNumber(grt)} GRT`,
       )
     },
     sortingFn: (rowA, rowB) => {
@@ -194,6 +229,8 @@ const columns: ColumnDef<QueryDailyDataPoint, any>[] = [
     },
   }),
 ]
+
+const { visibleColumns } = useColumnPreferences('query-fees', columns)
 </script>
 
 <template>
@@ -247,7 +284,7 @@ const columns: ColumnDef<QueryDailyDataPoint, any>[] = [
     <div class="table-wrapper">
       <DataTable
         :data="filteredData"
-        :columns="columns"
+        :columns="visibleColumns"
         :loading="isLoading"
         table-height="100%"
         empty-message="No query fee data found. Ensure you have an API key configured."
@@ -380,7 +417,8 @@ const columns: ColumnDef<QueryDailyDataPoint, any>[] = [
     Menlo, Consolas, monospace;
   font-size: 0.75rem;
   color: var(--p-text-color);
-  overflow-x: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
   user-select: all;
   min-width: 0;

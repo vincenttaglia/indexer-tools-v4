@@ -14,6 +14,34 @@ Dashboard for [The Graph](https://thegraph.com/) indexers. Manage subgraph alloc
 - **Offchain Sync** — Monitor offchain subgraph sync status
 - **Settings** — Configure endpoints, indexer accounts, and dark mode
 
+## APR Optimizer
+
+The allocation wizard includes an optimizer that distributes a GRT budget across selected subgraphs to maximize total daily rewards.
+
+### How It Works
+
+The reward earned by allocating `a_i` GRT to subgraph `i` follows:
+
+```
+reward_i = (signal_i / totalSignal) * issuancePerDay * a_i / (stake_i + a_i)
+```
+
+This has diminishing returns — each additional GRT earns less. The optimizer uses **Lagrange multipliers** to find the exact allocation split that maximizes total rewards. The closed-form solution is:
+
+```
+a_i = sqrt(signal_i * stake_i) * scale - stake_i
+where scale = (budget + sum(stake_j)) / sum(sqrt(signal_j * stake_j))
+```
+
+Allocate proportionally to `sqrt(signal * stake)`. Subgraphs with high signal but low stake (under-allocated) get more. Subgraphs already saturated with stake get less. Zero iteration needed — this is the mathematically exact optimum.
+
+### Edge Cases
+
+- **Zero-signal subgraphs**: filtered out (earn zero rewards regardless)
+- **Zero-stake subgraphs**: get minimum allocation (marginal reward is infinite at a=0)
+- **Over-saturated subgraphs**: if the formula yields a negative allocation, it's fixed at minimum and the remaining budget is re-solved across the others
+- **Integer rounding**: uses the largest-remainder method (Hamilton's method) to round to whole GRT while ensuring allocations sum exactly to the budget
+
 ## Tech Stack
 
 - Vue 3 + TypeScript + Vite

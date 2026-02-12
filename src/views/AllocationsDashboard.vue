@@ -34,6 +34,7 @@ import {
   useEpochQuery,
   useAllocationComputations,
   useOtherIndexersQuery,
+  useColumnPreferences,
 } from '@/composables'
 import { useAllocationFilters } from '@/composables/useAllocationFilters'
 import type { AllocationDescriptor } from '@/composables'
@@ -45,7 +46,7 @@ import { useFilterStore, useSelectionStore, useChainStore, useAccountStore } fro
 import type { AllocationComputed, HealthStatus } from '@/types'
 
 // Formatting
-import { formatNumber } from '@/services/formatting/numbers'
+import { formatNumber, abbreviateNumber } from '@/services/formatting/numbers'
 import { weiToGrt } from '@/services/calculations/tokenMath'
 
 // ---------------------------------------------------------------------------
@@ -338,7 +339,7 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
   columnHelper.accessor((row) => row.allocatedTokens, {
     id: 'allocated',
     header: 'Allocated (GRT)',
-    size: 150,
+    size: 170,
     cell: (info) =>
       h(TokenCell, { value: info.getValue() as string, decimals: 0 }),
   }),
@@ -362,8 +363,8 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
       const grt = weiToGrt(String(val))
       return h(
         'span',
-        { class: 'token-value' },
-        `${formatNumber(grt, 0)} GRT`,
+        { class: 'token-value', title: `${formatNumber(grt, 2)} GRT` },
+        `${abbreviateNumber(grt)} GRT`,
       )
     },
   }),
@@ -408,8 +409,8 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
         const grt = Number(formatUnits(pr.value, 18))
         return h(
           'span',
-          { class: 'token-value' },
-          `${formatNumber(grt, 0)} GRT`,
+          { class: 'token-value', title: `${formatNumber(grt, 0)} GRT` },
+          `${abbreviateNumber(grt)} GRT`,
         )
       },
       sortingFn: (rowA, rowB) => {
@@ -447,8 +448,8 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
         const grt = Number(formatUnits(afterCut, 18))
         return h(
           'span',
-          { class: 'token-value' },
-          `${formatNumber(grt, 0)} GRT`,
+          { class: 'token-value', title: `${formatNumber(grt, 0)} GRT` },
+          `${abbreviateNumber(grt)} GRT`,
         )
       },
       sortingFn: (rowA, rowB) => {
@@ -474,7 +475,7 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
       cell: (info) => {
         const val = info.getValue() as number | null
         if (val === null) return h('span', { class: 'text-muted' }, '-')
-        return h('span', { class: 'token-value' }, formatNumber(val, 0))
+        return h('span', { class: 'token-value', title: formatNumber(val, 0) }, abbreviateNumber(val))
       },
     },
   ),
@@ -485,11 +486,11 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     {
       id: 'totalQueryFees',
       header: 'Query Fees (GRT)',
-      size: 130,
+      size: 160,
       cell: (info) => {
         const val = info.getValue() as number | null
         if (val === null) return h('span', { class: 'text-muted' }, '-')
-        return h('span', { class: 'token-value' }, `${formatNumber(val, 4)} GRT`)
+        return h('span', { class: 'token-value', title: `${formatNumber(val, 4)} GRT` }, `${abbreviateNumber(val)} GRT`)
       },
     },
   ),
@@ -593,6 +594,11 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     },
   }),
 ]
+
+// ---------------------------------------------------------------------------
+// Column preferences (visibility + ordering from settings)
+// ---------------------------------------------------------------------------
+const { visibleColumns } = useColumnPreferences('allocations', columns)
 </script>
 
 <template>
@@ -684,7 +690,7 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     <div class="table-wrapper">
       <DataTable
         :data="filteredAllocations"
-        :columns="columns"
+        :columns="visibleColumns"
         :loading="isLoading"
         :enable-selection="true"
         :selected-keys="selectedAllocations"

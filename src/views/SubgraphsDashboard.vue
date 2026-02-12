@@ -28,6 +28,7 @@ import {
   useOtherIndexersQuery,
   useSubgraphFilters,
   useSubgraphComputations,
+  useColumnPreferences,
 } from '@/composables'
 
 // Stores
@@ -37,7 +38,7 @@ import { useFilterStore, useSelectionStore, useChainStore, useWizardStore, useAc
 import type { SubgraphComputed, QueryFeeData, HealthStatus } from '@/types'
 
 // Formatting
-import { formatNumber } from '@/services/formatting/numbers'
+import { formatNumber, abbreviateNumber } from '@/services/formatting/numbers'
 import { weiToGrt } from '@/services/calculations'
 
 // ---------------------------------------------------------------------------
@@ -337,14 +338,14 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   columnHelper.accessor((row) => row.deployment.signalledTokens, {
     id: 'signal',
     header: 'Signal (GRT)',
-    size: 140,
+    size: 180,
     cell: (info) =>
       h(TokenCell, { value: info.getValue() as string, decimals: 0 }),
   }),
   columnHelper.accessor((row) => row.deployment.stakedTokens, {
     id: 'stake',
     header: 'Stake (GRT)',
-    size: 140,
+    size: 180,
     cell: (info) =>
       h(TokenCell, { value: info.getValue() as string, decimals: 0 }),
   }),
@@ -358,21 +359,21 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   columnHelper.accessor('dailyRewardsCut', {
     id: 'dailyRewardsCut',
     header: 'Daily Rewards (GRT)',
-    size: 160,
+    size: 180,
     cell: (info) => {
       const val = info.getValue() as number
       const grt = weiToGrt(String(val))
       return h(
         'span',
-        { class: 'token-value' },
-        `${formatNumber(grt, 0)} GRT`,
+        { class: 'token-value', title: `${formatNumber(grt, 2)} GRT` },
+        `${abbreviateNumber(grt)} GRT`,
       )
     },
   }),
   columnHelper.accessor('maxAllo', {
     id: 'maxAllo',
     header: 'Max Allo (GRT)',
-    size: 140,
+    size: 180,
     cell: (info) => {
       const val = info.getValue() as number
       if (val === Number.MIN_SAFE_INTEGER || !isFinite(val)) {
@@ -380,8 +381,8 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
       }
       return h(
         'span',
-        { class: 'token-value' },
-        `${formatNumber(val, 0)} GRT`,
+        { class: 'token-value', title: `${formatNumber(val, 0)} GRT` },
+        `${abbreviateNumber(val)} GRT`,
       )
     },
   }),
@@ -391,7 +392,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
     size: 110,
     cell: (info) => {
       const val = info.getValue() as number
-      return h('span', { class: 'token-value' }, val.toFixed(4))
+      return h('span', { class: 'token-value' }, formatNumber(val, 2))
     },
   }),
   columnHelper.accessor(
@@ -437,7 +438,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
       if (val === null || val === undefined) {
         return h('span', { class: 'text-muted' }, '?')
       }
-      return h('span', { class: 'token-value' }, formatNumber(val, 0))
+      return h('span', { class: 'token-value', title: formatNumber(val, 0) }, abbreviateNumber(val))
     },
   }),
   // QueryFees: Query Count
@@ -450,7 +451,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
       cell: (info) => {
         const val = info.getValue() as number | null
         if (val === null) return h('span', { class: 'text-muted' }, '-')
-        return h('span', { class: 'token-value' }, formatNumber(val, 0))
+        return h('span', { class: 'token-value', title: formatNumber(val, 0) }, abbreviateNumber(val))
       },
     },
   ),
@@ -460,11 +461,11 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
     {
       id: 'totalQueryFees',
       header: 'Query Fees (GRT)',
-      size: 130,
+      size: 160,
       cell: (info) => {
         const val = info.getValue() as number | null
         if (val === null) return h('span', { class: 'text-muted' }, '-')
-        return h('span', { class: 'token-value' }, `${formatNumber(val, 4)} GRT`)
+        return h('span', { class: 'token-value', title: `${formatNumber(val, 4)} GRT` }, `${abbreviateNumber(val)} GRT`)
       },
     },
   ),
@@ -483,6 +484,11 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
     },
   ),
 ]
+
+// ---------------------------------------------------------------------------
+// Column preferences (visibility + ordering from settings)
+// ---------------------------------------------------------------------------
+const { visibleColumns } = useColumnPreferences('subgraphs', columns)
 </script>
 
 <template>
@@ -640,7 +646,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
     <div class="table-wrapper">
       <DataTable
         :data="displaySubgraphs"
-        :columns="columns"
+        :columns="visibleColumns"
         :loading="isLoading"
         :enable-selection="true"
         :selected-keys="selectedSubgraphs"

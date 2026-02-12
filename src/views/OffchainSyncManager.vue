@@ -9,10 +9,14 @@ import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 
 // Project components
-import { DataTable, AddressCell } from '@/components/DataTable'
+import { DataTable } from '@/components/DataTable'
+import SubgraphNameCell from '@/components/SubgraphNameCell.vue'
 
 // Stores
 import { useAccountStore, useChainStore } from '@/stores'
+
+// Composables
+import { useStatusQuery, useSubgraphMetadataMap, useEpochQuery, useAllocationsQuery, useColumnPreferences } from '@/composables'
 
 // API
 import {
@@ -59,6 +63,20 @@ const indexingRulesQuery = useQuery({
 
 const offchainRules = computed<IndexingRule[]>(() => indexingRulesQuery.data.value ?? [])
 const isLoading = computed(() => indexingRulesQuery.isLoading.value)
+
+// ---------------------------------------------------------------------------
+// Enriched metadata queries
+// ---------------------------------------------------------------------------
+const { metadataMap } = useSubgraphMetadataMap()
+const statusQuery = useStatusQuery()
+const epochQuery = useEpochQuery()
+const allocationsQuery = useAllocationsQuery()
+
+const allocatedDeployments = computed(() => {
+  const allocations = allocationsQuery.data.value
+  if (!allocations) return new Set<string>()
+  return new Set(allocations.map((a: any) => a.subgraphDeployment.ipfsHash))
+})
 
 // ---------------------------------------------------------------------------
 // Add deployment input
@@ -137,7 +155,31 @@ const columns: ColumnDef<IndexingRule, any>[] = [
     size: 340,
     cell: (info) => {
       const hash = info.getValue() as string
-      return h(AddressCell, { address: hash })
+      const meta = metadataMap.value.get(hash)
+      const statusMap = statusQuery.data.value
+      const deploymentStatus = statusMap?.get(hash) ?? null
+      const network = meta?.network ?? null
+
+      const epochData = epochQuery.data.value
+      const epochBlock = epochData?.blockNumbers?.find(
+        (b: any) => b.network.alias === network
+      )?.blockNumber ?? null
+
+      return h(SubgraphNameCell, {
+        displayName: meta?.displayName ?? hash,
+        ipfsHash: hash,
+        imageUrl: meta?.image ?? null,
+        network,
+        health: deploymentStatus?.health ?? null,
+        synced: deploymentStatus?.synced ?? null,
+        denied: false,
+        isDeployed: !!deploymentStatus,
+        isAllocated: allocatedDeployments.value.has(hash),
+        deploymentStatus,
+        epochBlockNumber: epochBlock,
+        isOffchainSynced: true,
+        agentConnected: !!accountStore.activeAccount?.agentEndpoint,
+      })
     },
   }),
   columnHelper.accessor('identifierType', {
@@ -170,6 +212,8 @@ const columns: ColumnDef<IndexingRule, any>[] = [
     },
   }),
 ]
+
+const { visibleColumns } = useColumnPreferences('offchain-sync', columns)
 </script>
 
 <template>
@@ -250,7 +294,7 @@ const columns: ColumnDef<IndexingRule, any>[] = [
       <div class="table-wrapper">
         <DataTable
           :data="offchainRules"
-          :columns="columns"
+          :columns="visibleColumns"
           :loading="isLoading"
           :get-row-id="getRowId"
           table-height="100%"
