@@ -22,7 +22,11 @@ export function useActionsQuery(filter?: Ref<ActionFilter>) {
   const accountStore = useAccountStore()
   const { activeAccount } = storeToRefs(accountStore)
 
-  const agentEndpoint = computed(() => activeAccount.value?.agentEndpoint ?? '')
+  const agentEndpoint = computed(() => {
+    const ep = activeAccount.value?.agentEndpoint ?? ''
+    console.log('[useActionsQuery] agentEndpoint computed:', ep, 'activeAccount:', activeAccount.value?.address)
+    return ep
+  })
   const resolvedFilter = computed(() => filter?.value ?? {})
 
   return useQuery({

@@ -60,6 +60,7 @@ async function bootstrap() {
   // Load runtime config from /config.json (Docker env var injection).
   // Only applies defaults when the user has no existing localStorage data.
   const config = await loadRuntimeConfig()
+  console.log('[bootstrap] Runtime config loaded:', JSON.stringify(config))
 
   const settingsStore = useSettingsStore()
   if (!settingsStore.theGraphApiKey && config.theGraphApiKey) {
@@ -70,9 +71,13 @@ async function bootstrap() {
   }
 
   const accountStore = useAccountStore()
+  console.log('[bootstrap] Existing accounts in store:', accountStore.accounts.length, JSON.stringify(accountStore.accounts))
+  console.log('[bootstrap] Active account key:', accountStore.activeAccountKey)
+
   if (config.accounts?.length) {
     if (accountStore.accounts.length === 0) {
       // No existing accounts — add all from config
+      console.log('[bootstrap] No existing accounts, adding', config.accounts.length, 'from config')
       for (const account of config.accounts) {
         accountStore.addAccount(account)
       }
@@ -82,12 +87,14 @@ async function bootstrap() {
       // This handles the case where a user added an account via Settings
       // but didn't configure agent/graphman endpoints, and the Docker env
       // vars provide them.
+      console.log('[bootstrap] Merging config into existing accounts')
       for (const configAccount of config.accounts) {
         const key = `${configAccount.address.toLowerCase()}-${configAccount.chain}`
         const existing = accountStore.accounts.find(
           (a) => `${a.address.toLowerCase()}-${a.chain}` === key,
         )
         if (existing) {
+          console.log('[bootstrap] Found matching account:', key, 'agentEndpoint:', existing.agentEndpoint, '→', configAccount.agentEndpoint)
           if (!existing.agentEndpoint && configAccount.agentEndpoint) {
             existing.agentEndpoint = configAccount.agentEndpoint
           }
@@ -99,13 +106,20 @@ async function bootstrap() {
           }
         } else {
           // Account doesn't exist yet — add it
+          console.log('[bootstrap] No matching account for', key, '- adding new')
           accountStore.addAccount(configAccount)
         }
       }
     }
+  } else {
+    console.log('[bootstrap] No accounts in runtime config')
   }
 
+  console.log('[bootstrap] Final accounts:', JSON.stringify(accountStore.accounts))
+  console.log('[bootstrap] Active account:', JSON.stringify(accountStore.activeAccount))
+
   app.mount('#app')
+  console.log('[bootstrap] App mounted')
 }
 
 bootstrap()
