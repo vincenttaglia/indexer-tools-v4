@@ -544,13 +544,22 @@ function applyOptimizedAllocations() {
 }
 
 .control-input {
-  width: 160px;
+  width: 140px;
+  max-width: 140px;
 }
 
 :deep(.compact-input) {
   font-size: 0.8125rem !important;
   padding: 0.4rem 0.6rem !important;
   height: auto !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+:deep(.p-inputnumber) {
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 .control-actions {
@@ -652,10 +661,20 @@ function applyOptimizedAllocations() {
 
 .card-input {
   flex-shrink: 0;
-  width: 180px;
+  width: 150px;
+  max-width: 150px;
 }
 
 .amount-input {
+  max-width: 100%;
+}
+
+.amount-input :deep(.p-inputnumber) {
+  width: 100%;
+  max-width: 100%;
+}
+
+.amount-input :deep(input) {
   width: 100%;
 }
 
