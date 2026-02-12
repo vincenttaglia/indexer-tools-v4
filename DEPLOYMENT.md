@@ -142,6 +142,19 @@ docker pull ghcr.io/vincenttaglia/indexer-tools-v4:dev
 docker pull ghcr.io/vincenttaglia/indexer-tools-v4:v1.0.0
 ```
 
+## Kubernetes
+
+Kubernetes manifests are in the [`k8s/`](k8s/) directory with Kustomize support.
+
+```bash
+# Edit k8s/secret.yaml with your API keys and accounts, then:
+kubectl apply -k k8s/
+```
+
+This creates an `indexer-tools` namespace with a Deployment, Service, and Secret. An Ingress manifest is included but commented out in `kustomization.yaml` — uncomment it and set your hostname to expose the service.
+
+The same environment variables (`GRAPH_API_KEY`, `DRPC_API_KEY`, `DEFAULT_ACCOUNTS`) work identically to Docker Compose. The entrypoint generates the nginx proxy config at pod start.
+
 ## Development
 
 ```bash

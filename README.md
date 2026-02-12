@@ -137,3 +137,4 @@ docker/
 ## Documentation
 
 - [DEPLOYMENT.md](DEPLOYMENT.md) — Docker deployment, environment variables, per-account API proxy, integration with indexer stacks
+- [k8s/](k8s/) — Kubernetes manifests (Deployment, Service, Ingress, Secret) with Kustomize support
