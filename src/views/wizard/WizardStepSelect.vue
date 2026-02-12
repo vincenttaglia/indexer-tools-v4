@@ -13,6 +13,7 @@ import InputNumber from 'primevue/inputnumber'
 // Project components
 import { DataTable, TokenCell, PercentCell, HealthCell } from '@/components/DataTable'
 import StatusCheckDots from '@/components/StatusCheckDots.vue'
+import SubgraphNameCell from '@/components/SubgraphNameCell.vue'
 
 // Composables
 import {
@@ -29,7 +30,7 @@ import {
 } from '@/composables'
 
 // Stores
-import { useFilterStore, useWizardStore, useChainStore } from '@/stores'
+import { useFilterStore, useWizardStore, useChainStore, useAccountStore } from '@/stores'
 
 // Types
 import type { SubgraphComputed, QueryFeeData, HealthStatus } from '@/types'
@@ -44,6 +45,7 @@ import { weiToGrt } from '@/services/calculations'
 const filterStore = useFilterStore()
 const wizardStore = useWizardStore()
 const chainStore = useChainStore()
+const accountStore = useAccountStore()
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -299,20 +301,37 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
         const meta =
           versions?.[0]?.metadata?.subgraphVersion?.subgraph?.metadata
         const name = meta?.displayName ?? 'Unknown'
-        const hash = ipfsHash
+        const imageUrl = meta?.image ?? null
+        const network = row.deployment.manifest.network ?? null
+        const health = row.deploymentStatus?.health ?? null
+        const synced = row.statusChecks.synced
+        const denied = !!(row.deployment.deniedAt)
         const isDeployed = !!row.deploymentStatus
         const isAllocated = allocatedDeployments.value.has(ipfsHash) && !closingDeployments.value.has(ipfsHash)
-        const nameChildren: ReturnType<typeof h>[] = [name as any]
-        if (isDeployed) {
-          nameChildren.push(h('span', { class: 'deployed-dot', title: 'Deployed on your node' }))
-        }
-        if (isAllocated) {
-          nameChildren.push(h('span', { class: 'allocated-dot', title: 'Currently allocated' }))
-        }
-        return h('div', { class: 'name-cell' }, [
-          h('span', { class: 'name-primary' }, nameChildren),
-          h('span', { class: 'name-hash' }, hash),
-        ])
+
+        // Get epoch block for this network
+        const epochData = epochQuery.data.value
+        const epochBlock = epochData?.blockNumbers?.find(
+          (b) => b.network.alias === network
+        )?.blockNumber ?? null
+
+        const agentConnected = !!accountStore.activeAccount?.agentEndpoint
+
+        return h(SubgraphNameCell, {
+          displayName: name,
+          ipfsHash,
+          imageUrl,
+          network,
+          health,
+          synced,
+          denied,
+          isDeployed,
+          isAllocated,
+          deploymentStatus: row.deploymentStatus ?? null,
+          epochBlockNumber: epochBlock,
+          isOffchainSynced: false,
+          agentConnected,
+        })
       },
     },
   ),
@@ -849,52 +868,6 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
 }
 
 /* --- Cell styles --- */
-:deep(.name-cell) {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  overflow: hidden;
-  min-width: 0;
-  max-width: 100%;
-}
-
-:deep(.name-primary) {
-  font-weight: 500;
-  font-size: 0.8125rem;
-  color: var(--p-text-color);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-:deep(.deployed-dot) {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background-color: var(--p-green-400);
-  flex-shrink: 0;
-}
-
-:deep(.allocated-dot) {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background-color: var(--p-primary-400);
-  flex-shrink: 0;
-}
-
-:deep(.name-hash) {
-  font-size: 0.6875rem;
-  color: var(--p-text-muted-color);
-  font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono',
-    Menlo, Consolas, monospace;
-  overflow-x: auto;
-  white-space: nowrap;
-  user-select: all;
-}
 
 :deep(.network-cell) {
   font-size: 0.8125rem;

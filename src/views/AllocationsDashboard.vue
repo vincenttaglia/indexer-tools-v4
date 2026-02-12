@@ -21,6 +21,7 @@ import {
   DurationCell,
 } from '@/components/DataTable'
 import StatusCheckDots from '@/components/StatusCheckDots.vue'
+import SubgraphNameCell from '@/components/SubgraphNameCell.vue'
 
 // Composables
 import {
@@ -38,7 +39,7 @@ import { useAllocationFilters } from '@/composables/useAllocationFilters'
 import type { AllocationDescriptor } from '@/composables'
 
 // Stores
-import { useFilterStore, useSelectionStore, useChainStore } from '@/stores'
+import { useFilterStore, useSelectionStore, useChainStore, useAccountStore } from '@/stores'
 
 // Types
 import type { AllocationComputed, HealthStatus } from '@/types'
@@ -53,6 +54,7 @@ import { weiToGrt } from '@/services/calculations/tokenMath'
 const filterStore = useFilterStore()
 const selectionStore = useSelectionStore()
 const chainStore = useChainStore()
+const accountStore = useAccountStore()
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -281,12 +283,39 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
       size: 250,
       cell: (info) => {
         const row = info.row.original
+        const d = row.subgraphDeployment
         const name = getDeploymentName(row)
-        const hash = row.subgraphDeployment.ipfsHash
-        return h('div', { class: 'name-cell' }, [
-          h('span', { class: 'name-primary' }, name),
-          h('span', { class: 'name-hash' }, hash),
-        ])
+        const imageUrl = d.versions?.[0]?.subgraph?.metadata?.image ?? null
+        const ipfsHash = d.ipfsHash
+        const network = d.manifest.network ?? null
+        const health = row.deploymentStatus?.health ?? null
+        const synced = row.statusChecks.synced
+        const denied = !!(d.deniedAt)
+        const isDeployed = !!row.deploymentStatus
+
+        // Get epoch block for this network
+        const epochData = epochQuery.data.value
+        const epochBlock = epochData?.blockNumbers?.find(
+          (b) => b.network.alias === network
+        )?.blockNumber ?? null
+
+        const agentConnected = !!accountStore.activeAccount?.agentEndpoint
+
+        return h(SubgraphNameCell, {
+          displayName: name,
+          ipfsHash,
+          imageUrl,
+          network,
+          health,
+          synced,
+          denied,
+          isDeployed,
+          isAllocated: true,
+          deploymentStatus: row.deploymentStatus ?? null,
+          epochBlockNumber: epochBlock,
+          isOffchainSynced: false,
+          agentConnected,
+        })
       },
     },
   ),
@@ -848,33 +877,6 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
 }
 
 /* --- Cell styles --- */
-:deep(.name-cell) {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  overflow: hidden;
-  min-width: 0;
-  max-width: 100%;
-}
-
-:deep(.name-primary) {
-  font-weight: 500;
-  font-size: 0.8125rem;
-  color: var(--p-text-color);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-:deep(.name-hash) {
-  font-size: 0.6875rem;
-  color: var(--p-text-muted-color);
-  font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono',
-    Menlo, Consolas, monospace;
-  overflow-x: auto;
-  white-space: nowrap;
-  user-select: all;
-}
 
 :deep(.network-cell) {
   font-size: 0.8125rem;
