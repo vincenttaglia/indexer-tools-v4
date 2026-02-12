@@ -402,7 +402,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
     size: 110,
     cell: (info) => {
       const val = info.getValue() as number
-      return h('span', { class: 'token-value' }, val.toFixed(4))
+      return h('span', { class: 'token-value' }, formatNumber(val, 2))
     },
   }),
   columnHelper.accessor(
@@ -473,7 +473,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
       cell: (info) => {
         const val = info.getValue() as number | null
         if (val === null) return h('span', { class: 'text-muted' }, '-')
-        return h('span', { class: 'token-value' }, `${formatNumber(val, 4)} GRT`)
+        return h('span', { class: 'token-value' }, `${formatNumber(val, 2)} GRT`)
       },
     },
   ),

@@ -11,9 +11,10 @@ import SelectButton from 'primevue/selectbutton'
 
 // Project components
 import { DataTable } from '@/components/DataTable'
+import SubgraphNameCell from '@/components/SubgraphNameCell.vue'
 
 // Composables
-import { useActionsQuery, useColumnPreferences } from '@/composables'
+import { useActionsQuery, useColumnPreferences, useSubgraphMetadataMap, useStatusQuery, useEpochQuery, useAllocationsQuery } from '@/composables'
 
 // Stores
 import { useAccountStore, useSelectionStore } from '@/stores'
@@ -31,7 +32,7 @@ import {
 import type { Action, ActionStatus } from '@/types'
 
 // Formatting
-import { formatNumber } from '@/services/formatting/numbers'
+import { formatNumber, abbreviateNumber } from '@/services/formatting/numbers'
 
 // ---------------------------------------------------------------------------
 // Stores
@@ -71,6 +72,10 @@ const statusOptions: { label: string; value: StatusTab }[] = [
 // Query - fetch ALL actions (no filter), then filter client-side
 // ---------------------------------------------------------------------------
 const actionsQuery = useActionsQuery()
+const { metadataMap } = useSubgraphMetadataMap()
+const statusQuery = useStatusQuery()
+const epochQuery = useEpochQuery()
+const allocationsQuery = useAllocationsQuery()
 
 const allActions = computed<Action[]>(() => actionsQuery.data.value ?? [])
 
@@ -307,6 +312,15 @@ function typeSeverity(type: string): TagSeverity {
 }
 
 // ---------------------------------------------------------------------------
+// Allocated deployments set
+// ---------------------------------------------------------------------------
+const allocatedDeployments = computed(() => {
+  const allocations = allocationsQuery.data.value
+  if (!allocations) return new Set<string>()
+  return new Set(allocations.map((a: any) => a.subgraphDeployment.ipfsHash))
+})
+
+// ---------------------------------------------------------------------------
 // Column definitions
 // ---------------------------------------------------------------------------
 const columnHelper = createColumnHelper<Action>()
@@ -348,11 +362,35 @@ const columns: ColumnDef<Action, any>[] = [
   columnHelper.accessor('deploymentID', {
     id: 'deployment',
     header: 'Deployment',
-    size: 140,
+    size: 220,
     cell: (info) => {
-      const val = info.getValue() as string
-      if (!val) return h('span', { class: 'text-muted' }, '-')
-      return h('span', { class: 'mono-text hash-full', title: val }, val)
+      const hash = info.getValue() as string
+      if (!hash) return h('span', { class: 'text-muted' }, '-')
+      const meta = metadataMap.value.get(hash)
+      const statusMap = statusQuery.data.value
+      const deploymentStatus = statusMap?.get(hash) ?? null
+      const network = meta?.network ?? null
+
+      const epochData = epochQuery.data.value
+      const epochBlock = epochData?.blockNumbers?.find(
+        (b: any) => b.network.alias === network
+      )?.blockNumber ?? null
+
+      return h(SubgraphNameCell, {
+        displayName: meta?.displayName ?? hash,
+        ipfsHash: hash,
+        imageUrl: meta?.image ?? null,
+        network,
+        health: deploymentStatus?.health ?? null,
+        synced: deploymentStatus?.synced ?? null,
+        denied: false,
+        isDeployed: !!deploymentStatus,
+        isAllocated: allocatedDeployments.value.has(hash),
+        deploymentStatus,
+        epochBlockNumber: epochBlock,
+        isOffchainSynced: false,
+        agentConnected: !!accountStore.activeAccount?.agentEndpoint,
+      })
     },
   }),
   columnHelper.accessor('poi', {
@@ -374,7 +412,7 @@ const columns: ColumnDef<Action, any>[] = [
       if (!val || val === '0') return h('span', { class: 'text-muted' }, '-')
       const parsed = parseFloat(val)
       if (isNaN(parsed)) return h('span', { class: 'text-muted' }, '-')
-      return h('span', { class: 'token-value' }, `${formatNumber(parsed, 0)} GRT`)
+      return h('span', { class: 'token-value', title: `${formatNumber(parsed, 0)} GRT` }, `${abbreviateNumber(parsed)} GRT`)
     },
   }),
   columnHelper.accessor('priority', {
@@ -726,8 +764,8 @@ const { visibleColumns } = useColumnPreferences('actions', columns)
 }
 
 :deep(.hash-full) {
-  overflow-x: auto;
-  text-overflow: clip;
+  overflow: hidden;
+  text-overflow: ellipsis;
   user-select: all;
 }
 
@@ -739,6 +777,8 @@ const { visibleColumns } = useColumnPreferences('actions', columns)
 
 :deep(.text-ellipsis) {
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   min-width: 0;
   max-width: 100%;
   display: inline-block;
