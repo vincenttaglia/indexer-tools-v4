@@ -10,7 +10,7 @@ Open http://localhost:3000 and configure your API keys and indexer accounts in *
 
 ## Pre-configured Deployment
 
-Set environment variables in `docker-compose.yml` to pre-populate settings for new users (before they configure anything in the browser). Existing localStorage settings always take precedence.
+Set environment variables in `docker-compose.yml` to pre-populate settings. API keys are only applied as defaults when localStorage is empty. Proxy endpoints (`agentEndpoint`, `graphmanEndpoint`, `graphmanToken`) are always applied on each boot since the entrypoint regenerates proxy paths.
 
 ### API Keys
 
@@ -123,11 +123,20 @@ The entrypoint generates proxy paths automatically:
 
 ## Published Docker Images
 
-Images are published to GitHub Container Registry on every push to `main` and on version tags:
+Images are published to GitHub Container Registry:
+
+| Tag | Source |
+|-----|--------|
+| `latest` | `main` branch |
+| `dev` | `dev` branch |
+| `v1.0.0` | Version tags |
 
 ```bash
-# Latest from main
-docker pull ghcr.io/vincenttaglia/indexer-tools-v4:main
+# Latest stable
+docker pull ghcr.io/vincenttaglia/indexer-tools-v4:latest
+
+# Development
+docker pull ghcr.io/vincenttaglia/indexer-tools-v4:dev
 
 # Specific version
 docker pull ghcr.io/vincenttaglia/indexer-tools-v4:v1.0.0
@@ -181,7 +190,7 @@ npm run test:watch   # Run tests in watch mode
                        ▼
 ┌─────────────────────────────────────────────────────────┐
 │ Vue App Bootstrap (main.ts)                             │
-│ Applies config as defaults IF localStorage is empty     │
+│ API keys applied as defaults; proxy endpoints always set │
 └──────────────────────┬──────────────────────────────────┘
                        │
                        ▼
@@ -192,4 +201,4 @@ npm run test:watch   # Run tests in watch mode
 └─────────────────────────────────────────────────────────┘
 ```
 
-User changes in the Settings page update localStorage and take precedence over the Docker defaults on subsequent loads.
+User changes in the Settings page update localStorage and take precedence over Docker defaults for API keys. Proxy endpoints are always updated from the Docker environment on each container start to ensure proxy paths stay correct.
