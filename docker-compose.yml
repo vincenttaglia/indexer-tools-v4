@@ -1,6 +1,46 @@
 services:
   indexer-tools:
     build: .
+    # image: ghcr.io/vincenttaglia/indexer-tools-v4:latest  # Use this instead of build for published images
     ports:
       - "3000:80"
     restart: unless-stopped
+    environment:
+      # ── API Keys ──────────────────────────────────────────────────────
+      # Pre-configure API keys so users don't have to enter them manually.
+      # These are only applied as defaults when no localStorage config exists.
+
+      # The Graph Gateway API key (for subgraph queries)
+      # GRAPH_API_KEY: ""
+
+      # dRPC API key (for RPC calls to chain nodes)
+      # DRPC_API_KEY: ""
+
+      # ── Default Accounts ─────────────────────────────────────────────
+      # Pre-configure indexer accounts as a JSON array.
+      # Each account needs: address, chain, label.
+      # Optional: agentEndpoint, graphmanEndpoint, graphmanToken.
+      #
+      # DEFAULT_ACCOUNTS: >
+      #   [
+      #     {
+      #       "address": "0xYOUR_INDEXER_ADDRESS",
+      #       "chain": "arbitrum-one",
+      #       "label": "My Indexer",
+      #       "agentEndpoint": "http://indexer-agent:8000/",
+      #       "graphmanEndpoint": "http://graph-node:8050/",
+      #       "graphmanToken": "your-bearer-token"
+      #     }
+      #   ]
+
+      # ── API Proxy (optional) ─────────────────────────────────────────
+      # If the Agent or Graphman APIs are on an internal network that the
+      # user's browser can't reach directly, set these to enable nginx
+      # reverse proxying. The browser will connect to /api/agent/ and
+      # /api/graphman/ on this container, which forwards to the real APIs.
+      #
+      # When using the proxy, set the account's agentEndpoint to
+      # "/api/agent/" and graphmanEndpoint to "/api/graphman/".
+      #
+      # AGENT_PROXY_URL: "http://indexer-agent:8000/"
+      # GRAPHMAN_PROXY_URL: "http://graph-node:8050/"

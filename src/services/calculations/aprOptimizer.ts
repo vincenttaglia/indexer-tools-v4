@@ -106,7 +106,7 @@ export function optimizeAllocations(params: OptimizationParams): OptimizationRes
 
   // Single subgraph: give it everything
   if (candidates.length === 1) {
-    const sg = candidates[0]
+    const sg = candidates[0]!
     const amount = Math.max(budgetGrt, minAllocationGrt)
     return buildResult(
       candidates,

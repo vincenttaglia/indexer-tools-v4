@@ -63,7 +63,7 @@ export const useSettingsStore = defineStore('settings', () => {
     const config = columnPreferences.value[dashboardId]
     if (!config) return
     const [moved] = config.splice(fromIndex, 1)
-    config.splice(toIndex, 0, moved)
+    if (moved) config.splice(toIndex, 0, moved)
   }
 
   /** Reset a dashboard's columns to defaults */
