@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 // PrimeVue components
 import InputNumber from 'primevue/inputnumber'
@@ -27,7 +27,9 @@ import {
   calculateDailyRewardsCut,
   calculateProportion,
   weiToGrt,
+  optimizeAllocations,
 } from '@/services/calculations'
+import type { OptimizationResult } from '@/services/calculations'
 import { formatNumber, formatPercent } from '@/services/formatting/numbers'
 
 // Types
@@ -242,6 +244,40 @@ const totalAvailableGrt = computed<number>(() => {
 const remainingStake = computed<number>(() => {
   return totalAvailableGrt.value - wizardStore.totalAllocated
 })
+
+// ---------------------------------------------------------------------------
+// APR Optimizer
+// ---------------------------------------------------------------------------
+
+const optimizationResult = ref<OptimizationResult | null>(null)
+
+function applyOptimizedAllocations() {
+  const metrics = networkQuery.data.value
+  if (!metrics) return
+
+  const optimizable = selectedSubgraphsList.value.map((sg) => ({
+    ipfsHash: sg.deployment.ipfsHash,
+    signalledTokens: sg.deployment.signalledTokens,
+    stakedTokens: getEffectiveStakedTokens(sg),
+    displayName: getDisplayName(sg),
+  }))
+
+  const result = optimizeAllocations({
+    subgraphs: optimizable,
+    totalBudgetGrt: totalAvailableGrt.value,
+    totalTokensSignalled: metrics.totalTokensSignalled,
+    networkGRTIssuancePerBlock: metrics.networkGRTIssuancePerBlock,
+    blocksPerDay: chainStore.chainConfig.blocksPerDay,
+    indexingRewardCut: indexerQuery.data.value?.indexingRewardCut ?? 0,
+  })
+
+  // Apply optimized amounts to wizard
+  for (const entry of result.perSubgraph) {
+    wizardStore.setAmount(entry.ipfsHash, String(Math.floor(entry.allocationGrt)))
+  }
+
+  optimizationResult.value = result
+}
 </script>
 
 <template>
@@ -295,6 +331,14 @@ const remainingStake = computed<number>(() => {
             severity="secondary"
             outlined
             @click="wizardStore.applyMinimums(selectedSubgraphsList)"
+          />
+          <Button
+            label="Optimize Allocations"
+            icon="pi pi-sliders-h"
+            severity="secondary"
+            outlined
+            :disabled="selectedSubgraphsList.length === 0 || totalAvailableGrt <= 0"
+            @click="applyOptimizedAllocations"
           />
           <Button
             label="Reset"
@@ -424,6 +468,12 @@ const remainingStake = computed<number>(() => {
             :class="{ 'over-allocated': remainingStake < 0 }"
           >
             {{ formatNumber(remainingStake, 0) }} GRT
+          </span>
+        </div>
+        <div v-if="optimizationResult" class="summary-item optimize-result">
+          <span class="summary-label">Optimized Daily Rewards</span>
+          <span class="summary-value optimized-value">
+            {{ formatNumber(weiToGrt(String(optimizationResult.totalDailyRewardsCut)), 2) }} GRT/day
           </span>
         </div>
       </div>
@@ -643,5 +693,13 @@ const remainingStake = computed<number>(() => {
 
 .summary-value.over-allocated {
   color: var(--p-red-400);
+}
+
+.optimize-result {
+  margin-left: auto;
+}
+
+.optimized-value {
+  color: var(--p-primary-color);
 }
 </style>
