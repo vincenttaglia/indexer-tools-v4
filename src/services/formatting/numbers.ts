@@ -87,5 +87,8 @@ export function abbreviateNumber(value: number): string {
   if (absValue >= 1e3) {
     return `${sign}${(absValue / 1e3).toFixed(1)}K`
   }
-  return `${sign}${absValue}`
+  if (absValue < 0.01) {
+    return `${sign}0`
+  }
+  return `${sign}${absValue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 1 })}`
 }

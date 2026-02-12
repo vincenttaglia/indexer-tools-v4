@@ -343,7 +343,7 @@ const remainingStake = computed<number>(() => {
               </span>
               <span class="metric">
                 <span class="metric-label">Proportion:</span>
-                <span class="metric-value">{{ getCurrentProportion(sg).toFixed(2) }}</span>
+                <span class="metric-value">{{ formatNumber(getCurrentProportion(sg), 2) }}</span>
               </span>
             </div>
           </div>
@@ -389,10 +389,10 @@ const remainingStake = computed<number>(() => {
             <div class="preview-row">
               <span class="metric-label">New Prop:</span>
               <span class="metric-value">
-                {{ getNewProportion(
+                {{ formatNumber(getNewProportion(
                   sg,
                   wizardStore.allocationAmounts.get(sg.deployment.ipfsHash) ?? '0',
-                ).toFixed(2) }}
+                ), 2) }}
               </span>
             </div>
           </div>
