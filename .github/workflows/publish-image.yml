@@ -4,9 +4,9 @@ on:
   push:
     branches:
       - main
+      - development
     tags:
       - 'v*'
-  pull_request_target:
 
 jobs:
   build-and-publish:
@@ -19,8 +19,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
       - name: Docker meta
         id: docker_meta
@@ -28,10 +26,14 @@ jobs:
         with:
           images: ghcr.io/vincenttaglia/indexer-tools-v4
           tags: |
-            type=ref,event=branch
-            type=ref,event=pr
+            # main branch → :latest
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            # development branch → :dev
+            type=raw,value=dev,enable=${{ github.ref == 'refs/heads/development' }}
+            # version tags → :v1.0.0, :1.0
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            # git sha for traceability
             type=sha
 
       - name: Login to GitHub Container Registry
