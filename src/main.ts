@@ -70,9 +70,38 @@ async function bootstrap() {
   }
 
   const accountStore = useAccountStore()
-  if (accountStore.accounts.length === 0 && config.accounts?.length) {
-    for (const account of config.accounts) {
-      accountStore.addAccount(account)
+  if (config.accounts?.length) {
+    if (accountStore.accounts.length === 0) {
+      // No existing accounts — add all from config
+      for (const account of config.accounts) {
+        accountStore.addAccount(account)
+      }
+    } else {
+      // Existing accounts — merge endpoint config from runtime config into
+      // matching accounts (same address+chain) that are missing endpoints.
+      // This handles the case where a user added an account via Settings
+      // but didn't configure agent/graphman endpoints, and the Docker env
+      // vars provide them.
+      for (const configAccount of config.accounts) {
+        const key = `${configAccount.address.toLowerCase()}-${configAccount.chain}`
+        const existing = accountStore.accounts.find(
+          (a) => `${a.address.toLowerCase()}-${a.chain}` === key,
+        )
+        if (existing) {
+          if (!existing.agentEndpoint && configAccount.agentEndpoint) {
+            existing.agentEndpoint = configAccount.agentEndpoint
+          }
+          if (!existing.graphmanEndpoint && configAccount.graphmanEndpoint) {
+            existing.graphmanEndpoint = configAccount.graphmanEndpoint
+          }
+          if (!existing.graphmanToken && configAccount.graphmanToken) {
+            existing.graphmanToken = configAccount.graphmanToken
+          }
+        } else {
+          // Account doesn't exist yet — add it
+          accountStore.addAccount(configAccount)
+        }
+      }
     }
   }
 
