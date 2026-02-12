@@ -20,6 +20,7 @@ import {
   AddressCell,
   DurationCell,
 } from '@/components/DataTable'
+import StatusCheckDots from '@/components/StatusCheckDots.vue'
 
 // Composables
 import {
@@ -347,7 +348,12 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
       size: 180,
       cell: (info) => {
         const row = info.row.original
-        return h(DurationCell, { createdAt: row.createdAt })
+        return h(DurationCell, {
+          createdAt: row.createdAt,
+          createdAtEpoch: row.createdAtEpoch,
+          createdAtBlockNumber: row.createdAtBlockNumber,
+          createdAtBlockHash: row.createdAtBlockHash,
+        })
       },
     },
   ),
@@ -535,63 +541,10 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
       size: 200,
       cell: (info) => {
         const row = info.row.original
-        const sc = row.statusChecks
-
-        const indicators: ReturnType<typeof h>[] = []
-
-        // Synced indicator (EBO epoch check)
-        if (sc.synced !== null) {
-          indicators.push(
-            h('span', {
-              class: 'status-check',
-              title: sc.synced ? 'Synced to epoch' : 'Behind epoch',
-            }, [
-              h('span', { class: `dot ${sc.synced ? 'dot-green' : 'dot-red'}` }),
-              h('span', { class: 'check-label' }, 'Synced'),
-            ]),
-          )
-        }
-
-        // Other indexers health comparison
-        if (sc.healthyCount > 0 || sc.failedCount > 0) {
-          indicators.push(
-            h('span', {
-              class: 'status-check',
-              title: `Other indexers: ${sc.healthyCount} healthy, ${sc.failedCount} failed`,
-            }, [
-              h('span', { class: `dot ${sc.healthComparison ? 'dot-green' : 'dot-red'}` }),
-              h('span', { class: 'check-label' }, `${sc.healthyCount}/${sc.failedCount}`),
-            ]),
-          )
-        }
-
-        // Deterministic failure
-        if (sc.deterministicFailure !== null && sc.deterministicFailure) {
-          indicators.push(
-            h('span', {
-              class: 'status-check',
-              title: sc.closable
-                ? 'Deterministic failure - safe to close'
-                : 'Deterministic failure - not safe to close',
-            }, [
-              h('span', { class: `dot ${sc.closable ? 'dot-yellow' : 'dot-red'}` }),
-              h('span', { class: 'check-label' }, 'Det.'),
-            ]),
-          )
-        }
-
-        // Closable composite indicator
-        indicators.push(
-          h('span', {
-            class: 'status-check',
-            title: sc.closable ? 'Safe to close' : 'Not safe to close',
-          }, [
-            h('span', { class: `dot ${sc.closable ? 'dot-green' : 'dot-red'}` }),
-            h('span', { class: 'check-label' }, 'Close'),
-          ]),
-        )
-
-        return h('div', { class: 'status-indicators' }, indicators)
+        return h(StatusCheckDots, {
+          statusChecks: row.statusChecks,
+          fatalError: row.deploymentStatus?.fatalError ?? null,
+        })
       },
       sortingFn: (rowA, rowB) => {
         const a = rowA.original.statusChecks.closable ? 1 : 0
@@ -953,47 +906,6 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
 
 :deep(.status-red) {
   color: var(--p-red-400);
-}
-
-/* --- Status indicators with colored dots --- */
-:deep(.status-indicators) {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  overflow: hidden;
-}
-
-:deep(.status-check) {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-}
-
-:deep(.dot) {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-:deep(.dot-green) {
-  background-color: var(--p-green-400);
-}
-
-:deep(.dot-yellow) {
-  background-color: var(--p-yellow-400);
-}
-
-:deep(.dot-red) {
-  background-color: var(--p-red-400);
-}
-
-:deep(.check-label) {
-  font-size: 0.6875rem;
-  font-weight: 500;
-  color: var(--p-text-muted-color);
 }
 
 /* --- Pending rewards loading spinner --- */

@@ -8,7 +8,7 @@ import Button from 'primevue/button'
 import ToggleSwitch from 'primevue/toggleswitch'
 
 // Project components
-import { DataTable, HealthCell, AddressCell } from '@/components/DataTable'
+import { DataTable, HealthCell, AddressCell, ErrorDetailCell } from '@/components/DataTable'
 
 // Composables
 import { useStatusQuery } from '@/composables'
@@ -239,7 +239,7 @@ const columns: ColumnDef<DeploymentStatus, any>[] = [
     },
   ),
 
-  // 9. Fatal Error (truncated with tooltip)
+  // 9. Fatal Error (clickable with popover detail)
   columnHelper.accessor('fatalError', {
     id: 'fatalError',
     header: 'Fatal Error',
@@ -248,9 +248,7 @@ const columns: ColumnDef<DeploymentStatus, any>[] = [
       const err = info.getValue() as DeploymentStatus['fatalError']
       if (!err) return h('span', { class: 'text-muted' }, '-')
 
-      const msg = err.message
-      const truncated = msg.length > 40 ? msg.slice(0, 40) + '...' : msg
-      return h('span', { class: 'fatal-error', title: msg }, truncated)
+      return h(ErrorDetailCell, { fatalError: err })
     },
   }),
 ]
@@ -458,11 +456,4 @@ const columns: ColumnDef<DeploymentStatus, any>[] = [
   color: var(--p-red-400);
 }
 
-:deep(.fatal-error) {
-  font-size: 0.75rem;
-  color: var(--p-red-400);
-  cursor: help;
-  white-space: nowrap;
-  min-width: 0;
-}
 </style>
