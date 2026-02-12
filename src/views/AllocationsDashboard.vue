@@ -34,6 +34,7 @@ import {
   useEpochQuery,
   useAllocationComputations,
   useOtherIndexersQuery,
+  useColumnPreferences,
 } from '@/composables'
 import { useAllocationFilters } from '@/composables/useAllocationFilters'
 import type { AllocationDescriptor } from '@/composables'
@@ -593,6 +594,11 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     },
   }),
 ]
+
+// ---------------------------------------------------------------------------
+// Column preferences (visibility + ordering from settings)
+// ---------------------------------------------------------------------------
+const { visibleColumns } = useColumnPreferences('allocations', columns)
 </script>
 
 <template>
@@ -684,7 +690,7 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     <div class="table-wrapper">
       <DataTable
         :data="filteredAllocations"
-        :columns="columns"
+        :columns="visibleColumns"
         :loading="isLoading"
         :enable-selection="true"
         :selected-keys="selectedAllocations"

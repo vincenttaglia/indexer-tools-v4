@@ -14,6 +14,7 @@ import { CHAIN_OPTIONS } from '@/config/chains'
 import { accountKey } from '@/types'
 import type { ChainId } from '@/types'
 import type { IndexerAccount } from '@/types'
+import ColumnCustomizer from '@/components/ColumnCustomizer.vue'
 
 const settingsStore = useSettingsStore()
 const chainStore = useChainStore()
@@ -83,6 +84,59 @@ function getChainLabel(chainId: ChainId): string {
   const option = CHAIN_OPTIONS.find(o => o.id === chainId)
   return option?.label ?? chainId
 }
+// ---------------------------------------------------------------------------
+// Column metadata for the ColumnCustomizer sections
+// IDs must match the column `id` values in each dashboard view exactly.
+// ---------------------------------------------------------------------------
+const subgraphColumns = [
+  { id: 'name', label: 'Name' },
+  { id: 'network', label: 'Network' },
+  { id: 'signal', label: 'Signal (GRT)' },
+  { id: 'stake', label: 'Stake (GRT)' },
+  { id: 'apr', label: 'APR (%)' },
+  { id: 'dailyRewardsCut', label: 'Daily Rewards (GRT)' },
+  { id: 'maxAllo', label: 'Max Allocation (GRT)' },
+  { id: 'proportion', label: 'Proportion' },
+  { id: 'health', label: 'Health' },
+  { id: 'statusChecks', label: 'Status Checks' },
+  { id: 'entityCount', label: 'Entity Count' },
+  { id: 'queryCount', label: 'Queries' },
+  { id: 'totalQueryFees', label: 'Query Fees (GRT)' },
+  { id: 'avgGatewayLatency', label: 'Gateway Latency (ms)' },
+]
+
+const allocationColumns = [
+  { id: 'name', label: 'Name' },
+  { id: 'network', label: 'Network' },
+  { id: 'allocated', label: 'Allocated (GRT)' },
+  { id: 'apr', label: 'APR (%)' },
+  { id: 'dailyRewardsCut', label: 'Daily Rewards (GRT)' },
+  { id: 'duration', label: 'Duration' },
+  { id: 'pendingRewards', label: 'Pending Rewards (GRT)' },
+  { id: 'pendingRewardsCut', label: 'Pending Cut (GRT)' },
+  { id: 'queryCount', label: 'Queries' },
+  { id: 'totalQueryFees', label: 'Query Fees (GRT)' },
+  { id: 'avgLatency', label: 'Latency (ms)' },
+  { id: 'blocksBehind', label: 'Blocks Behind' },
+  { id: 'successRate', label: 'Success %' },
+  { id: 'health', label: 'Health' },
+  { id: 'status', label: 'Status' },
+  { id: 'allocationId', label: 'Allocation ID' },
+]
+
+const actionColumns = [
+  { id: 'id', label: 'ID' },
+  { id: 'type', label: 'Type' },
+  { id: 'status', label: 'Status' },
+  { id: 'deployment', label: 'Deployment' },
+  { id: 'poi', label: 'POI' },
+  { id: 'amount', label: 'Amount (GRT)' },
+  { id: 'priority', label: 'Priority' },
+  { id: 'source', label: 'Source / Reason' },
+  { id: 'createdAt', label: 'Created' },
+  { id: 'transaction', label: 'Transaction' },
+  { id: 'failureReason', label: 'Failure Reason' },
+]
 </script>
 
 <template>
@@ -158,7 +212,38 @@ function getChainLabel(chainId: ChainId): string {
       </template>
     </Card>
 
-    <!-- Section 4: Subgraph Lists -->
+    <!-- Section 4: Dashboard Columns -->
+    <Card class="settings-section">
+      <template #title>Dashboard Columns</template>
+      <template #subtitle>Customize which columns appear and their order in each dashboard</template>
+      <template #content>
+        <div class="column-sections">
+          <div class="column-section">
+            <h3 class="column-section-title">Subgraphs Dashboard</h3>
+            <ColumnCustomizer
+              dashboard-id="subgraphs"
+              :columns="subgraphColumns"
+            />
+          </div>
+          <div class="column-section">
+            <h3 class="column-section-title">Allocations Dashboard</h3>
+            <ColumnCustomizer
+              dashboard-id="allocations"
+              :columns="allocationColumns"
+            />
+          </div>
+          <div class="column-section">
+            <h3 class="column-section-title">Actions Manager</h3>
+            <ColumnCustomizer
+              dashboard-id="actions"
+              :columns="actionColumns"
+            />
+          </div>
+        </div>
+      </template>
+    </Card>
+
+    <!-- Section 5: Subgraph Lists -->
     <Card class="settings-section">
       <template #title>Subgraph Lists</template>
       <template #subtitle>Manage blacklist and synclist for subgraph filtering (comma or newline separated IPFS hashes)</template>
@@ -192,7 +277,7 @@ function getChainLabel(chainId: ChainId): string {
       </template>
     </Card>
 
-    <!-- Section 5: Indexer Accounts -->
+    <!-- Section 6: Indexer Accounts -->
     <Card class="settings-section">
       <template #title>Indexer Accounts</template>
       <template #subtitle>Manage your indexer accounts across different chains</template>
@@ -420,6 +505,26 @@ function getChainLabel(chainId: ChainId): string {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+/* Column customization sections */
+.column-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.column-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.column-section-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--p-text-color);
+  margin: 0;
 }
 
 /* Account list */
