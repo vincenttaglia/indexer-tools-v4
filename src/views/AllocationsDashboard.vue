@@ -338,7 +338,7 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
   columnHelper.accessor((row) => row.allocatedTokens, {
     id: 'allocated',
     header: 'Allocated (GRT)',
-    size: 150,
+    size: 170,
     cell: (info) =>
       h(TokenCell, { value: info.getValue() as string, decimals: 0 }),
   }),
@@ -485,7 +485,7 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     {
       id: 'totalQueryFees',
       header: 'Query Fees (GRT)',
-      size: 130,
+      size: 160,
       cell: (info) => {
         const val = info.getValue() as number | null
         if (val === null) return h('span', { class: 'text-muted' }, '-')

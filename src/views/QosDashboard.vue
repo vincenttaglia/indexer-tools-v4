@@ -171,7 +171,7 @@ const columns: ColumnDef<AllocationDailyDataPoint, any>[] = [
   columnHelper.accessor('avg_query_fee', {
     id: 'avgQueryFee',
     header: 'Avg Query Fee',
-    size: 140,
+    size: 160,
     cell: (info) => {
       const wei = info.getValue() as string
       const grt = weiToGrt(wei)
@@ -203,7 +203,7 @@ const columns: ColumnDef<AllocationDailyDataPoint, any>[] = [
   columnHelper.accessor('total_query_fees', {
     id: 'totalQueryFees',
     header: 'Total Query Fees',
-    size: 160,
+    size: 180,
     cell: (info) => {
       const wei = info.getValue() as string
       const grt = weiToGrt(wei)
@@ -422,7 +422,8 @@ const columns: ColumnDef<AllocationDailyDataPoint, any>[] = [
     Menlo, Consolas, monospace;
   font-size: 0.75rem;
   color: var(--p-text-color);
-  overflow-x: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
   user-select: all;
   min-width: 0;

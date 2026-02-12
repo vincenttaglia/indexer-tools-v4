@@ -721,8 +721,8 @@ const columns: ColumnDef<Action, any>[] = [
 }
 
 :deep(.hash-full) {
-  overflow-x: auto;
-  text-overflow: clip;
+  overflow: hidden;
+  text-overflow: ellipsis;
   user-select: all;
 }
 
@@ -734,6 +734,8 @@ const columns: ColumnDef<Action, any>[] = [
 
 :deep(.text-ellipsis) {
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   min-width: 0;
   max-width: 100%;
   display: inline-block;

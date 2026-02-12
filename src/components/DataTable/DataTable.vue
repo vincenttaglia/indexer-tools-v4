@@ -521,6 +521,8 @@ function handleRowClick(row: T) {
   flex-shrink: 0;
   flex-grow: 0;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .data-table-td.selection-col {

@@ -337,14 +337,14 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   columnHelper.accessor((row) => row.deployment.signalledTokens, {
     id: 'signal',
     header: 'Signal (GRT)',
-    size: 140,
+    size: 180,
     cell: (info) =>
       h(TokenCell, { value: info.getValue() as string, decimals: 0 }),
   }),
   columnHelper.accessor((row) => row.deployment.stakedTokens, {
     id: 'stake',
     header: 'Stake (GRT)',
-    size: 140,
+    size: 180,
     cell: (info) =>
       h(TokenCell, { value: info.getValue() as string, decimals: 0 }),
   }),
@@ -358,7 +358,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   columnHelper.accessor('dailyRewardsCut', {
     id: 'dailyRewardsCut',
     header: 'Daily Rewards (GRT)',
-    size: 160,
+    size: 180,
     cell: (info) => {
       const val = info.getValue() as number
       const grt = weiToGrt(String(val))
@@ -372,7 +372,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   columnHelper.accessor('maxAllo', {
     id: 'maxAllo',
     header: 'Max Allo (GRT)',
-    size: 140,
+    size: 180,
     cell: (info) => {
       const val = info.getValue() as number
       if (val === Number.MIN_SAFE_INTEGER || !isFinite(val)) {
@@ -391,7 +391,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
     size: 110,
     cell: (info) => {
       const val = info.getValue() as number
-      return h('span', { class: 'token-value' }, val.toFixed(4))
+      return h('span', { class: 'token-value' }, formatNumber(val, 4))
     },
   }),
   columnHelper.accessor(
@@ -460,7 +460,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
     {
       id: 'totalQueryFees',
       header: 'Query Fees (GRT)',
-      size: 130,
+      size: 160,
       cell: (info) => {
         const val = info.getValue() as number | null
         if (val === null) return h('span', { class: 'text-muted' }, '-')
