@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: indexer-tools
+  namespace: indexer-tools
+  labels:
+    app: indexer-tools
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: indexer-tools
+  template:
+    metadata:
+      labels:
+        app: indexer-tools
+    spec:
+      containers:
+        - name: indexer-tools
+          image: ghcr.io/vincenttaglia/indexer-tools-v4:latest
+          ports:
+            - containerPort: 80
+              name: http
+          envFrom:
+            - configMapRef:
+                name: indexer-tools
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
