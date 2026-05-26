@@ -165,8 +165,200 @@ const skeletonRows = computed(() =>
 )
 
 // --- Helpers ---
+const suppressNextClick = ref(false)
 function handleRowClick(row: T) {
+  if (suppressNextClick.value) return
   emit('row-click', row)
+}
+
+// ---------------------------------------------------------------------------
+// Drag-to-rubber-band multi-select
+//
+// Active when `enableSelection` is true. On pointer-down anywhere in the
+// container that isn't an interactive element (button/link/input/header),
+// start tracking; once the pointer moves past DRAG_THRESHOLD pixels, render
+// a rubber-band overlay and accumulate every row whose bounding rect has
+// intersected the band during this drag.
+//
+// Modifier semantics (file-manager style):
+//   - Plain drag         → ADD to existing selection (always additive)
+//   - Alt/Option + drag  → REMOVE from existing selection
+//
+// Multiple consecutive drags accumulate naturally. To deselect everything,
+// click the header checkbox or use a consumer-provided "Clear" affordance.
+// Auto-scrolls when the pointer nears the container's top/bottom edge.
+// ---------------------------------------------------------------------------
+const DRAG_THRESHOLD = 4
+const AUTO_SCROLL_ZONE = 32
+const AUTO_SCROLL_SPEED = 14
+
+const dragStart = ref<{ x: number; y: number } | null>(null)
+const dragCurrent = ref<{ x: number; y: number } | null>(null)
+const isDragging = ref(false)
+const dragSubtractive = ref(false)
+const draggedRowIds = ref<Set<string>>(new Set())
+const selectionAtDragStart = ref<Set<string>>(new Set())
+
+const rubberBandStyle = computed(() => {
+  if (!isDragging.value || !dragStart.value || !dragCurrent.value) return null
+  const left = Math.min(dragStart.value.x, dragCurrent.value.x)
+  const top = Math.min(dragStart.value.y, dragCurrent.value.y)
+  const width = Math.abs(dragCurrent.value.x - dragStart.value.x)
+  const height = Math.abs(dragCurrent.value.y - dragStart.value.y)
+  return {
+    left: `${left}px`,
+    top: `${top}px`,
+    width: `${width}px`,
+    height: `${height}px`,
+  }
+})
+
+function isInteractiveTarget(el: EventTarget | null): boolean {
+  let node = el as HTMLElement | null
+  while (node && node !== document.body) {
+    const tag = node.tagName
+    if (
+      tag === 'INPUT' ||
+      tag === 'BUTTON' ||
+      tag === 'A' ||
+      tag === 'LABEL' ||
+      tag === 'SELECT' ||
+      tag === 'TEXTAREA'
+    ) {
+      return true
+    }
+    if (node.dataset?.noDrag === 'true') return true
+    node = node.parentElement
+  }
+  return false
+}
+
+function isInTableHeader(el: EventTarget | null): boolean {
+  let node = el as HTMLElement | null
+  while (node && node !== document.body) {
+    if (node.classList?.contains('data-table-head')) return true
+    node = node.parentElement
+  }
+  return false
+}
+
+function onContainerPointerDown(ev: PointerEvent) {
+  if (!props.enableSelection) return
+  if (ev.button !== 0) return // left-click only
+  if (isInteractiveTarget(ev.target)) return
+  if (isInTableHeader(ev.target)) return
+
+  dragStart.value = { x: ev.clientX, y: ev.clientY }
+  dragCurrent.value = { x: ev.clientX, y: ev.clientY }
+  dragSubtractive.value = ev.altKey
+  draggedRowIds.value = new Set()
+
+  const baseline = new Set<string>()
+  for (const [id, sel] of Object.entries(rowSelection.value)) {
+    if (sel) baseline.add(id)
+  }
+  selectionAtDragStart.value = baseline
+}
+
+function commitDragSelection() {
+  // Start from the pre-drag baseline. In additive mode we ADD the dragged
+  // rows; in subtractive mode (Alt held) we REMOVE them.
+  const next: RowSelectionState = {}
+  for (const id of selectionAtDragStart.value) next[id] = true
+  if (dragSubtractive.value) {
+    for (const id of draggedRowIds.value) delete next[id]
+  } else {
+    for (const id of draggedRowIds.value) next[id] = true
+  }
+
+  // Avoid an extra emit when nothing changed.
+  const currentKeys = Object.keys(rowSelection.value).filter((k) => rowSelection.value[k])
+  const nextKeys = Object.keys(next)
+  if (
+    currentKeys.length === nextKeys.length &&
+    currentKeys.every((k) => next[k])
+  ) {
+    return
+  }
+
+  rowSelection.value = next
+  const selectedIds = new Set<string>()
+  for (const [id, sel] of Object.entries(next)) {
+    if (sel) selectedIds.add(id)
+  }
+  emit('selection-change', selectedIds)
+}
+
+function onContainerPointerMove(ev: PointerEvent) {
+  if (!dragStart.value) return
+  dragCurrent.value = { x: ev.clientX, y: ev.clientY }
+
+  if (!isDragging.value) {
+    const dx = ev.clientX - dragStart.value.x
+    const dy = ev.clientY - dragStart.value.y
+    if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return
+    isDragging.value = true
+    try {
+      ;(ev.currentTarget as HTMLElement | null)?.setPointerCapture?.(ev.pointerId)
+    } catch {
+      /* setPointerCapture is best-effort; ignore failures */
+    }
+  }
+
+  const container = tableContainerRef.value
+  if (!container) return
+
+  // Band rect in viewport coords.
+  const bandLeft = Math.min(dragStart.value.x, ev.clientX)
+  const bandTop = Math.min(dragStart.value.y, ev.clientY)
+  const bandRight = Math.max(dragStart.value.x, ev.clientX)
+  const bandBottom = Math.max(dragStart.value.y, ev.clientY)
+
+  // Accumulate intersected rows. Only currently-rendered virtual rows are
+  // checked, but the accumulated set survives scrolling, so rows that scroll
+  // out of view stay selected.
+  const rowEls = container.querySelectorAll<HTMLElement>('[data-row-id]')
+  rowEls.forEach((rowEl) => {
+    const r = rowEl.getBoundingClientRect()
+    if (
+      r.right >= bandLeft &&
+      r.left <= bandRight &&
+      r.bottom >= bandTop &&
+      r.top <= bandBottom
+    ) {
+      const id = rowEl.dataset.rowId
+      if (id) draggedRowIds.value.add(id)
+    }
+  })
+
+  commitDragSelection()
+
+  // Auto-scroll when near container edges.
+  const cRect = container.getBoundingClientRect()
+  if (ev.clientY < cRect.top + AUTO_SCROLL_ZONE) {
+    container.scrollTop -= AUTO_SCROLL_SPEED
+  } else if (ev.clientY > cRect.bottom - AUTO_SCROLL_ZONE) {
+    container.scrollTop += AUTO_SCROLL_SPEED
+  }
+}
+
+function onContainerPointerUp(ev: PointerEvent) {
+  if (isDragging.value) {
+    try {
+      ;(ev.currentTarget as HTMLElement | null)?.releasePointerCapture?.(ev.pointerId)
+    } catch {
+      /* ignore */
+    }
+    // The browser fires a synthetic click on pointerup; swallow it so the
+    // row's @click handler doesn't fire on the row we ended the drag on.
+    suppressNextClick.value = true
+    setTimeout(() => {
+      suppressNextClick.value = false
+    }, 0)
+  }
+  isDragging.value = false
+  dragStart.value = null
+  dragCurrent.value = null
 }
 
 </script>
@@ -175,7 +367,12 @@ function handleRowClick(row: T) {
   <div
     ref="tableContainerRef"
     class="data-table-container"
+    :class="{ 'is-dragging': isDragging }"
     :style="{ height: tableHeight }"
+    @pointerdown="onContainerPointerDown"
+    @pointermove="onContainerPointerMove"
+    @pointerup="onContainerPointerUp"
+    @pointercancel="onContainerPointerUp"
   >
     <table class="data-table">
       <thead class="data-table-head">
@@ -341,6 +538,7 @@ function handleRowClick(row: T) {
             :class="{
               selected: getRow(virtualRow.index).getIsSelected(),
             }"
+            :data-row-id="getRow(virtualRow.index).id"
             :style="{
               height: `${virtualRow.size}px`,
               transform: `translateY(${virtualRow.start}px)`,
@@ -387,6 +585,14 @@ function handleRowClick(row: T) {
         </template>
       </tbody>
     </table>
+
+    <!-- Drag-select rubber band overlay (viewport-fixed) -->
+    <div
+      v-if="rubberBandStyle"
+      class="drag-rubber-band"
+      :class="{ subtract: dragSubtractive }"
+      :style="rubberBandStyle"
+    />
   </div>
 </template>
 
@@ -492,8 +698,10 @@ function handleRowClick(row: T) {
   min-width: 100%;
   display: flex;
   align-items: center;
+  border-bottom: 1px solid var(--app-surface-100);
+  box-sizing: border-box;
   transition: background-color 150ms ease-out;
-  cursor: pointer;
+  cursor: default;
 }
 
 .data-table-row:hover {
@@ -513,7 +721,6 @@ function handleRowClick(row: T) {
   padding: 0 16px;
   font-size: 0.8125rem;
   color: var(--p-text-color);
-  border-bottom: 1px solid var(--app-surface-100);
   white-space: nowrap;
   display: flex;
   align-items: center;
@@ -604,5 +811,32 @@ function handleRowClick(row: T) {
   font-size: 0.8125rem;
   max-width: 320px;
   line-height: 1.5;
+}
+
+/* --- Drag rubber band --- */
+.drag-rubber-band {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1000;
+  background-color: color-mix(in srgb, var(--p-primary-color) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--p-primary-color) 55%, transparent);
+  border-radius: 2px;
+}
+
+/* Subtractive drag (Alt held) uses a red tint so the user can tell the
+   selection will shrink instead of grow. */
+.drag-rubber-band.subtract {
+  background-color: color-mix(in srgb, var(--p-red-400) 15%, transparent);
+  border-color: color-mix(in srgb, var(--p-red-400) 55%, transparent);
+}
+
+/* While dragging, suppress text-selection and the row hover that would
+   otherwise flicker as the band sweeps across. */
+.data-table-container.is-dragging {
+  user-select: none;
+}
+
+.data-table-container.is-dragging .data-table-row:hover {
+  background-color: inherit;
 }
 </style>
