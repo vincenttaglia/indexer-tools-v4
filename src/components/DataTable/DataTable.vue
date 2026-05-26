@@ -178,8 +178,14 @@ function handleRowClick(row: T) {
 // container that isn't an interactive element (button/link/input/header),
 // start tracking; once the pointer moves past DRAG_THRESHOLD pixels, render
 // a rubber-band overlay and accumulate every row whose bounding rect has
-// intersected the band during this drag. Shift/Ctrl/Meta makes the drag
-// additive to the existing selection; otherwise the drag replaces it.
+// intersected the band during this drag.
+//
+// Modifier semantics (file-manager style):
+//   - Plain drag         → ADD to existing selection (always additive)
+//   - Alt/Option + drag  → REMOVE from existing selection
+//
+// Multiple consecutive drags accumulate naturally. To deselect everything,
+// click the header checkbox or use a consumer-provided "Clear" affordance.
 // Auto-scrolls when the pointer nears the container's top/bottom edge.
 // ---------------------------------------------------------------------------
 const DRAG_THRESHOLD = 4
@@ -189,7 +195,7 @@ const AUTO_SCROLL_SPEED = 14
 const dragStart = ref<{ x: number; y: number } | null>(null)
 const dragCurrent = ref<{ x: number; y: number } | null>(null)
 const isDragging = ref(false)
-const dragAdditive = ref(false)
+const dragSubtractive = ref(false)
 const draggedRowIds = ref<Set<string>>(new Set())
 const selectionAtDragStart = ref<Set<string>>(new Set())
 
@@ -244,7 +250,7 @@ function onContainerPointerDown(ev: PointerEvent) {
 
   dragStart.value = { x: ev.clientX, y: ev.clientY }
   dragCurrent.value = { x: ev.clientX, y: ev.clientY }
-  dragAdditive.value = ev.shiftKey || ev.ctrlKey || ev.metaKey
+  dragSubtractive.value = ev.altKey
   draggedRowIds.value = new Set()
 
   const baseline = new Set<string>()
@@ -255,11 +261,15 @@ function onContainerPointerDown(ev: PointerEvent) {
 }
 
 function commitDragSelection() {
+  // Start from the pre-drag baseline. In additive mode we ADD the dragged
+  // rows; in subtractive mode (Alt held) we REMOVE them.
   const next: RowSelectionState = {}
-  if (dragAdditive.value) {
-    for (const id of selectionAtDragStart.value) next[id] = true
+  for (const id of selectionAtDragStart.value) next[id] = true
+  if (dragSubtractive.value) {
+    for (const id of draggedRowIds.value) delete next[id]
+  } else {
+    for (const id of draggedRowIds.value) next[id] = true
   }
-  for (const id of draggedRowIds.value) next[id] = true
 
   // Avoid an extra emit when nothing changed.
   const currentKeys = Object.keys(rowSelection.value).filter((k) => rowSelection.value[k])
@@ -580,6 +590,7 @@ function onContainerPointerUp(ev: PointerEvent) {
     <div
       v-if="rubberBandStyle"
       class="drag-rubber-band"
+      :class="{ subtract: dragSubtractive }"
       :style="rubberBandStyle"
     />
   </div>
@@ -809,6 +820,13 @@ function onContainerPointerUp(ev: PointerEvent) {
   background-color: color-mix(in srgb, var(--p-primary-color) 15%, transparent);
   border: 1px solid color-mix(in srgb, var(--p-primary-color) 55%, transparent);
   border-radius: 2px;
+}
+
+/* Subtractive drag (Alt held) uses a red tint so the user can tell the
+   selection will shrink instead of grow. */
+.drag-rubber-band.subtract {
+  background-color: color-mix(in srgb, var(--p-red-400) 15%, transparent);
+  border-color: color-mix(in srgb, var(--p-red-400) 55%, transparent);
 }
 
 /* While dragging, suppress text-selection and the row hover that would
