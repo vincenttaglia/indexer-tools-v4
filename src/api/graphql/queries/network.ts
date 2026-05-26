@@ -59,5 +59,17 @@ interface EpochResponse {
 
 export async function fetchLatestEpoch(client: GraphQLClient): Promise<Epoch | null> {
   const data = await client.request<EpochResponse>(EPOCH_QUERY)
-  return data.epoches[0] ?? null
+  const raw = data.epoches[0]
+  if (!raw) return null
+  // EBO returns blockNumber as a BigInt JSON string. Coerce so downstream
+  // `>=` comparisons against latestBlock are numeric, not lexicographic.
+  // See normalizeDeploymentStatus in api/status/client.ts for the matching
+  // boundary fix on the graph-node side.
+  return {
+    ...raw,
+    blockNumbers: (raw.blockNumbers ?? []).map((b) => ({
+      ...b,
+      blockNumber: Number(b.blockNumber),
+    })),
+  }
 }
