@@ -699,7 +699,7 @@ function onContainerPointerUp(ev: PointerEvent) {
   display: flex;
   align-items: center;
   transition: background-color 150ms ease-out;
-  cursor: pointer;
+  cursor: default;
 }
 
 .data-table-row:hover {
@@ -833,7 +833,6 @@ function onContainerPointerUp(ev: PointerEvent) {
    otherwise flicker as the band sweeps across. */
 .data-table-container.is-dragging {
   user-select: none;
-  cursor: crosshair;
 }
 
 .data-table-container.is-dragging .data-table-row:hover {
