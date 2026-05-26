@@ -11,7 +11,7 @@ import Textarea from 'primevue/textarea'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useChainStore } from '@/stores/chainStore'
 import { useAccountStore } from '@/stores/accountStore'
-import { CHAIN_OPTIONS } from '@/config/chains'
+import { CHAIN_OPTIONS, getChainLabel } from '@/config/chains'
 import { accountKey } from '@/types'
 import type { ChainId } from '@/types'
 import type { IndexerAccount } from '@/types'
@@ -81,10 +81,6 @@ function getAccountKey(account: IndexerAccount): string {
   return accountKey(account)
 }
 
-function getChainLabel(chainId: ChainId): string {
-  const option = CHAIN_OPTIONS.find(o => o.id === chainId)
-  return option?.label ?? chainId
-}
 // ---------------------------------------------------------------------------
 // Column metadata for the ColumnCustomizer sections
 // IDs must match the column `id` values in each dashboard view exactly.

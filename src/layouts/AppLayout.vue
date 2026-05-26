@@ -2,6 +2,7 @@
 import { onMounted, watch } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 import { useSettingsStore } from '@/stores'
+import AccountSwitcher from '@/components/AccountSwitcher.vue'
 
 const settingsStore = useSettingsStore()
 
@@ -66,6 +67,7 @@ watch(() => settingsStore.darkMode, (enabled) => {
       </nav>
 
       <div class="sidebar-footer">
+        <AccountSwitcher />
         <RouterLink to="/settings" class="nav-link">
           <i class="pi pi-cog" />
           <span>Settings</span>
@@ -136,6 +138,9 @@ watch(() => settingsStore.darkMode, (enabled) => {
   margin-top: auto;
   padding: 8px;
   border-top: 1px solid var(--app-surface-200);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .nav-link {
