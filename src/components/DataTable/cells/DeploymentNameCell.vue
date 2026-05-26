@@ -83,5 +83,12 @@ defineProps<{
   overflow-x: auto;
   white-space: nowrap;
   user-select: all;
+  /* Hide the horizontal scrollbar but keep the ability to scroll/copy. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.deployment-hash::-webkit-scrollbar {
+  display: none;
 }
 </style>
