@@ -41,12 +41,6 @@ function formatAddress(address: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`
 }
 
-/** Last 6 of the address, used on the resting trigger to save space. */
-function lastSix(address: string): string {
-  if (address.length <= 6) return address
-  return `…${address.slice(-6)}`
-}
-
 function selectAccount(account: IndexerAccount, event: Event): void {
   accountStore.setActive(getKey(account))
   popoverRef.value?.hide()
@@ -91,7 +85,7 @@ const triggerLabel = computed<string>(() => {
         <span class="trigger-label">{{ triggerLabel }}</span>
         <span v-if="activeAccount" class="trigger-meta">
           <span class="chain-pill">{{ CHAIN_ABBREV[activeAccount.chain] }}</span>
-          <span class="trigger-address">{{ lastSix(activeAccount.address) }}</span>
+          <span class="trigger-address">{{ formatAddress(activeAccount.address) }}</span>
         </span>
       </div>
       <i class="pi pi-angle-down trigger-chevron" />
