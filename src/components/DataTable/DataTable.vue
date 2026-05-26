@@ -698,6 +698,8 @@ function onContainerPointerUp(ev: PointerEvent) {
   min-width: 100%;
   display: flex;
   align-items: center;
+  border-bottom: 1px solid var(--app-surface-100);
+  box-sizing: border-box;
   transition: background-color 150ms ease-out;
   cursor: default;
 }
@@ -719,7 +721,6 @@ function onContainerPointerUp(ev: PointerEvent) {
   padding: 0 16px;
   font-size: 0.8125rem;
   color: var(--p-text-color);
-  border-bottom: 1px solid var(--app-surface-100);
   white-space: nowrap;
   display: flex;
   align-items: center;
