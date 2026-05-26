@@ -13,11 +13,18 @@ export interface ColumnConfig {
  * Persisted to localStorage so configuration survives page refresh.
  */
 export const useSettingsStore = defineStore('settings', () => {
-  /** User's The Graph Gateway API key (used for subgraph queries). */
-  const theGraphApiKey = ref('')
+  /**
+   * User's The Graph Gateway API key (used for subgraph queries).
+   *
+   * Defaults to `VITE_THEGRAPH_API_KEY` from `.env` when present, so a fresh
+   * browser session can boot with credentials already configured. The
+   * persistence plugin rehydrates from localStorage after this default, so
+   * any user-supplied value wins over the env default on subsequent loads.
+   */
+  const theGraphApiKey = ref(import.meta.env.VITE_THEGRAPH_API_KEY ?? '')
 
-  /** User's DRPC API key (used for RPC calls to chain nodes). */
-  const drpcApiKey = ref('')
+  /** User's DRPC API key (used for RPC calls to chain nodes). Same env-fallback semantics as theGraphApiKey. */
+  const drpcApiKey = ref(import.meta.env.VITE_DRPC_API_KEY ?? '')
 
   /** Whether dark mode is enabled. Defaults to true. */
   const darkMode = ref(true)
