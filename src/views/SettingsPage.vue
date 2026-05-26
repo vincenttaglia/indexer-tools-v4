@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue'
 import InputText from 'primevue/inputtext'
+import InputNumber from 'primevue/inputnumber'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
 import Card from 'primevue/card'
@@ -283,6 +284,98 @@ const offchainSyncColumns = [
               autoResize
             />
             <span class="field-hint">Only show these subgraphs when the synclist filter is active</span>
+          </div>
+        </div>
+      </template>
+    </Card>
+
+    <!-- Section 4b: Allocation Optimizer -->
+    <Card class="settings-section">
+      <template #title>Allocation Optimizer</template>
+      <template #subtitle>Configure how the wizard's "Optimize Allocations" button distributes GRT across the subgraphs you picked in Step 3</template>
+      <template #content>
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <span class="field-label">Use Water-Filling Optimizer</span>
+            <span class="field-hint">When off, the legacy closed-form (sqrt) solver is used. When on, marginal-reward iterative-greedy is used and the caps below apply.</span>
+          </div>
+          <ToggleSwitch v-model="settingsStore.useWaterfallOptimizer" />
+        </div>
+
+        <div class="form-grid" style="margin-top: 16px">
+          <div class="form-field">
+            <label for="max-alloc-pct" class="field-label">Max Allocation %</label>
+            <InputNumber
+              id="max-alloc-pct"
+              v-model="settingsStore.maxAllocationPct"
+              :min="0"
+              :max="1"
+              :minFractionDigits="0"
+              :maxFractionDigits="4"
+              :step="0.01"
+              class="field-input"
+              inputClass="field-input-inner"
+            />
+            <span class="field-hint">Fraction of budget [0&ndash;1]. 0 disables. Default 0.10 = 10%.</span>
+          </div>
+
+          <div class="form-field">
+            <label for="max-alloc-grt" class="field-label">Max Allocation (GRT)</label>
+            <InputNumber
+              id="max-alloc-grt"
+              v-model="settingsStore.maxAllocationGrt"
+              :min="0"
+              suffix=" GRT"
+              :minFractionDigits="0"
+              :maxFractionDigits="0"
+              class="field-input"
+              inputClass="field-input-inner"
+            />
+            <span class="field-hint">Absolute per-deployment cap. 0 disables.</span>
+          </div>
+
+          <div class="form-field">
+            <label for="risky-alloc-pct" class="field-label">Risky Allocation %</label>
+            <InputNumber
+              id="risky-alloc-pct"
+              v-model="settingsStore.riskyAllocationPct"
+              :min="0"
+              :max="1"
+              :minFractionDigits="0"
+              :maxFractionDigits="4"
+              :step="0.01"
+              class="field-input"
+              inputClass="field-input-inner"
+            />
+            <span class="field-hint">Tighter pct cap for risky deployments. Default 0.02 = 2%.</span>
+          </div>
+
+          <div class="form-field">
+            <label for="risky-alloc-grt" class="field-label">Risky Allocation (GRT)</label>
+            <InputNumber
+              id="risky-alloc-grt"
+              v-model="settingsStore.riskyAllocationGrt"
+              :min="0"
+              suffix=" GRT"
+              :minFractionDigits="0"
+              :maxFractionDigits="0"
+              class="field-input"
+              inputClass="field-input-inner"
+            />
+            <span class="field-hint">Tighter raw cap for risky deployments. 0 disables.</span>
+          </div>
+
+          <div class="form-field form-field--full">
+            <label for="risky-list" class="field-label">Risky Deployments</label>
+            <Textarea
+              id="risky-list"
+              v-model="settingsStore.optimizerRiskyDeployments"
+              placeholder="QmHash1, QmHash2..."
+              rows="3"
+              class="field-input"
+              autoResize
+            />
+            <span class="field-hint">Comma/newline-separated IPFS hashes. These deployments get the tighter risky caps.</span>
           </div>
         </div>
       </template>

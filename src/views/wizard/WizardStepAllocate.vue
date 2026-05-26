@@ -19,6 +19,7 @@ import {
 
 // Stores
 import { useWizardStore, useChainStore, useFilterStore } from '@/stores'
+import { useSettingsStore } from '@/stores/settingsStore'
 
 // Calculations & formatting
 import {
@@ -41,6 +42,17 @@ import type { SubgraphComputed, QueryFeeData } from '@/types'
 const wizardStore = useWizardStore()
 const chainStore = useChainStore()
 const filterStore = useFilterStore()
+const settingsStore = useSettingsStore()
+
+/** Parse a comma/newline-separated IPFS hash string into a Set. */
+function parseHashList(raw: string): Set<string> {
+  const out = new Set<string>()
+  for (const part of raw.split(/[,\n\r\s]+/)) {
+    const trimmed = part.trim()
+    if (trimmed.length > 0) out.add(trimmed)
+  }
+  return out
+}
 
 // ---------------------------------------------------------------------------
 // Queries
@@ -269,6 +281,12 @@ function applyOptimizedAllocations() {
     networkGRTIssuancePerBlock: metrics.networkGRTIssuancePerBlock,
     blocksPerDay: chainStore.chainConfig.blocksPerDay,
     indexingRewardCut: indexerQuery.data.value?.indexingRewardCut ?? 0,
+    useWaterfall: settingsStore.useWaterfallOptimizer,
+    maxAllocationPct: settingsStore.maxAllocationPct,
+    maxAllocationGrt: settingsStore.maxAllocationGrt,
+    riskyAllocationPct: settingsStore.riskyAllocationPct,
+    riskyAllocationGrt: settingsStore.riskyAllocationGrt,
+    riskyDeployments: parseHashList(settingsStore.optimizerRiskyDeployments),
   })
 
   // Apply optimized amounts to wizard

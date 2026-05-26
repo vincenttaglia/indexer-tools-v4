@@ -367,4 +367,202 @@ describe('aprOptimizer', () => {
       }
     })
   })
+
+  // =========================================================================
+  // Water-filling optimizer
+  // =========================================================================
+
+  describe('waterfall', () => {
+    function waterfallParams(
+      subgraphs: OptimizableSubgraph[],
+      totalBudgetGrt: number,
+      overrides: Partial<OptimizationParams> = {},
+    ): OptimizationParams {
+      return {
+        ...makeParams(subgraphs, totalBudgetGrt),
+        useWaterfall: true,
+        ...overrides,
+      }
+    }
+
+    describe('basic behavior', () => {
+      it('returns empty result for empty subgraphs', () => {
+        const result = optimizeAllocations(waterfallParams([], 1000))
+        expect(result.allocations.size).toBe(0)
+        expect(result.perSubgraph).toEqual([])
+      })
+
+      it('returns empty result for zero budget', () => {
+        const result = optimizeAllocations(
+          waterfallParams([makeSg('A', 100, 1000)], 0),
+        )
+        expect(result.allocations.size).toBe(0)
+      })
+
+      it('sum of allocations never exceeds the budget', () => {
+        const sgs = [
+          makeSg('A', 100, 1000),
+          makeSg('B', 200, 2000),
+          makeSg('C', 50, 500),
+        ]
+        const result = optimizeAllocations(waterfallParams(sgs, 100_000))
+        const sum = result.perSubgraph.reduce((s, e) => s + e.allocationGrt, 0)
+        expect(sum).toBeLessThanOrEqual(100_000)
+      })
+
+      it('all allocations are whole numbers', () => {
+        const sgs = [makeSg('A', 100, 1000), makeSg('B', 200, 2000)]
+        const result = optimizeAllocations(waterfallParams(sgs, 50_000))
+        for (const entry of result.perSubgraph) {
+          expect(entry.allocationGrt % 1).toBe(0)
+        }
+      })
+    })
+
+    describe('marginal-reward distribution', () => {
+      it('with equal R, higher-D deployment absorbs more capital at equilibrium', () => {
+        // Both have the same R (same signal). Under water-filling, both run
+        // until marginals equalize. The closed form of the equilibrium is:
+        //   sqrt(D_A) / (D_A + a) = sqrt(D_B) / (D_B + b)
+        // so the deployment with the larger D ends up with more allocation
+        // (it can absorb more capital before its marginal drops to the
+        // other's). Lower-D wins the *first* chunk via a higher A=0 marginal,
+        // then loses chunks back as A grows.
+        const sgs = [
+          makeSg('A', 100, 1000), // higher D
+          makeSg('B', 100, 500), // lower D
+        ]
+        const result = optimizeAllocations(waterfallParams(sgs, 100_000))
+        const a = result.allocations.get('A') ?? 0
+        const b = result.allocations.get('B') ?? 0
+        expect(a).toBeGreaterThan(b)
+        // Both still receive a meaningful share (no candidate is starved).
+        expect(b).toBeGreaterThan(20_000)
+      })
+
+      it('prefers deployment with higher signal share when D is equal', () => {
+        const sgs = [
+          makeSg('A', 100, 1000),
+          makeSg('B', 1000, 1000), // 10x signal
+        ]
+        const result = optimizeAllocations(waterfallParams(sgs, 100_000))
+        const a = result.allocations.get('A') ?? 0
+        const b = result.allocations.get('B') ?? 0
+        expect(b).toBeGreaterThan(a)
+      })
+
+      it('D=0 (zero other stake) deployment receives exactly one chunk', () => {
+        // budget=100_000 → chunkSize=100. D=0 candidate gets the Infinity
+        // sentinel at A=0, wins one chunk, then its marginal drops to 0.
+        const sgs = [
+          makeSg('A', 100, 0), // D=0
+          makeSg('B', 100, 1000),
+        ]
+        const result = optimizeAllocations(waterfallParams(sgs, 100_000))
+        expect(result.allocations.get('A')).toBe(100)
+        expect(result.allocations.get('B')).toBeGreaterThan(99_000)
+      })
+
+      it('zero-signal deployment receives no allocation', () => {
+        const sgs = [
+          makeSg('A', 0, 1000), // R=0 → skipped
+          makeSg('B', 100, 1000),
+        ]
+        const result = optimizeAllocations(waterfallParams(sgs, 10_000))
+        expect(result.allocations.get('A')).toBe(0)
+        expect(result.allocations.get('B')).toBe(10_000)
+      })
+    })
+
+    describe('caps', () => {
+      it('per-deployment pct cap is enforced', () => {
+        // pct=0.10 of 10_000 = 1000 cap per deployment.
+        const sgs = [makeSg('A', 100, 1000), makeSg('B', 200, 2000)]
+        const result = optimizeAllocations(
+          waterfallParams(sgs, 10_000, { maxAllocationPct: 0.10 }),
+        )
+        expect(result.allocations.get('A') ?? 0).toBeLessThanOrEqual(1000)
+        expect(result.allocations.get('B') ?? 0).toBeLessThanOrEqual(1000)
+      })
+
+      it('per-deployment raw GRT cap is enforced', () => {
+        const sgs = [makeSg('A', 100, 1000), makeSg('B', 200, 2000)]
+        const result = optimizeAllocations(
+          waterfallParams(sgs, 10_000, { maxAllocationGrt: 500 }),
+        )
+        expect(result.allocations.get('A') ?? 0).toBeLessThanOrEqual(500)
+        expect(result.allocations.get('B') ?? 0).toBeLessThanOrEqual(500)
+      })
+
+      it('tighter of pct cap and raw cap wins when both set', () => {
+        // pct=0.10 of 10_000 = 1000; raw=300. Tighter wins.
+        const sgs = [makeSg('A', 100, 1000), makeSg('B', 200, 2000)]
+        const result = optimizeAllocations(
+          waterfallParams(sgs, 10_000, {
+            maxAllocationPct: 0.10,
+            maxAllocationGrt: 300,
+          }),
+        )
+        expect(result.allocations.get('A') ?? 0).toBeLessThanOrEqual(300)
+        expect(result.allocations.get('B') ?? 0).toBeLessThanOrEqual(300)
+      })
+
+      it('risky deployments use the tighter risky caps when listed', () => {
+        const sgs = [makeSg('A', 100, 1000), makeSg('B', 200, 2000)]
+        const result = optimizeAllocations(
+          waterfallParams(sgs, 10_000, {
+            maxAllocationPct: 0.50, // 5000 cap for non-risky
+            riskyAllocationPct: 0.05, // 500 cap for risky
+            riskyDeployments: new Set(['B']),
+          }),
+        )
+        expect(result.allocations.get('A') ?? 0).toBeLessThanOrEqual(5000)
+        expect(result.allocations.get('B') ?? 0).toBeLessThanOrEqual(500)
+      })
+
+      it('with no caps configured, full budget can land on a single deployment', () => {
+        const sgs = [makeSg('A', 1000, 100)] // high signal, low D
+        const result = optimizeAllocations(waterfallParams(sgs, 50_000))
+        expect(result.allocations.get('A')).toBe(50_000)
+      })
+    })
+
+    describe('output integrity', () => {
+      it('allocations Map matches perSubgraph values', () => {
+        const sgs = [
+          makeSg('A', 100, 1000),
+          makeSg('B', 200, 2000),
+          makeSg('C', 50, 500),
+        ]
+        const result = optimizeAllocations(waterfallParams(sgs, 100_000))
+        for (const entry of result.perSubgraph) {
+          expect(result.allocations.get(entry.ipfsHash)).toBe(entry.allocationGrt)
+        }
+      })
+
+      it('produces non-negative daily rewards for every allocated deployment', () => {
+        const sgs = [makeSg('A', 100, 1000), makeSg('B', 200, 2000)]
+        const result = optimizeAllocations(waterfallParams(sgs, 100_000))
+        for (const entry of result.perSubgraph) {
+          if (entry.allocationGrt > 0) {
+            expect(entry.dailyRewardsCut).toBeGreaterThanOrEqual(0)
+            expect(entry.apr).toBeGreaterThanOrEqual(0)
+          }
+        }
+      })
+    })
+
+    describe('resolver', () => {
+      it('legacy path runs by default; waterfall path runs when flag is on', () => {
+        // Legacy filters zero-signal candidates out entirely; waterfall keeps
+        // them in perSubgraph with 0 allocation. Use this asymmetry to prove
+        // the resolver actually switched implementations.
+        const sgs = [makeSg('A', 0, 1000), makeSg('B', 100, 1000)]
+        const legacy = optimizeAllocations(makeParams(sgs, 10_000))
+        const waterfall = optimizeAllocations(waterfallParams(sgs, 10_000))
+        expect(legacy.perSubgraph.length).toBe(1)
+        expect(waterfall.perSubgraph.length).toBe(2)
+      })
+    })
+  })
 })

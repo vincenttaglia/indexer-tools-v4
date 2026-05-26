@@ -28,6 +28,28 @@ export const useSettingsStore = defineStore('settings', () => {
   /** Comma/newline-separated IPFS hashes of synclist subgraphs. */
   const subgraphSynclist = ref('')
 
+  // ---------------------------------------------------------------------------
+  // Allocation optimizer settings
+  // ---------------------------------------------------------------------------
+
+  /** When true, the wizard's "Optimize Allocations" button uses water-filling instead of the legacy closed-form solver. */
+  const useWaterfallOptimizer = ref(false)
+
+  /** Per-deployment cap as a fraction of the budget, in [0, 1]. 0 disables the pct cap. */
+  const maxAllocationPct = ref(0.10)
+
+  /** Per-deployment cap in absolute GRT. 0 disables the raw cap. */
+  const maxAllocationGrt = ref(0)
+
+  /** Tighter pct cap for deployments listed in `optimizerRiskyDeployments`. */
+  const riskyAllocationPct = ref(0.02)
+
+  /** Tighter raw GRT cap for deployments listed in `optimizerRiskyDeployments`. */
+  const riskyAllocationGrt = ref(0)
+
+  /** Comma/newline-separated IPFS hashes of deployments subject to the risky caps. */
+  const optimizerRiskyDeployments = ref('')
+
   /** Per-dashboard column configuration (visibility and order) */
   const columnPreferences = ref<Record<string, ColumnConfig[]>>({})
 
@@ -77,6 +99,12 @@ export const useSettingsStore = defineStore('settings', () => {
     darkMode,
     subgraphBlacklist,
     subgraphSynclist,
+    useWaterfallOptimizer,
+    maxAllocationPct,
+    maxAllocationGrt,
+    riskyAllocationPct,
+    riskyAllocationGrt,
+    optimizerRiskyDeployments,
     columnPreferences,
     getColumnConfig,
     setColumnVisibility,
