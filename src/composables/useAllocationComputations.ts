@@ -18,6 +18,7 @@ import {
   calculateDailyRewardsCut,
 } from '@/services/calculations'
 import { weiToGrt } from '@/services/calculations/tokenMath'
+import { isSyncedToEpoch } from '@/services/calculations/sync'
 
 /**
  * Inputs for the single-pass allocation computation composable.
@@ -186,9 +187,7 @@ function computeStatusChecks(
   if (epoch && deploymentStatus && network) {
     const eboBlock = epoch.blockNumbers.find(b => b.network.alias === network)
     const latestBlock = deploymentStatus.chains?.[0]?.latestBlock?.number
-    if (eboBlock && latestBlock != null) {
-      synced = latestBlock >= eboBlock.blockNumber
-    }
+    synced = isSyncedToEpoch(latestBlock, eboBlock?.blockNumber)
   }
 
   // Other indexers health comparison

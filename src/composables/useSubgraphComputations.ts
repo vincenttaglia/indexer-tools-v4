@@ -19,6 +19,7 @@ import {
   calculateMaxAllocation,
   calculateProportion,
 } from '@/services/calculations'
+import { isSyncedToEpoch } from '@/services/calculations/sync'
 
 /**
  * Inputs for the single-pass subgraph computation composable.
@@ -233,9 +234,7 @@ function computeDeploymentStatusChecks(
   if (epoch && deploymentStatus && network) {
     const eboBlock = epoch.blockNumbers.find(b => b.network.alias === network)
     const latestBlock = deploymentStatus.chains?.[0]?.latestBlock?.number
-    if (eboBlock && latestBlock != null) {
-      synced = latestBlock >= eboBlock.blockNumber
-    }
+    synced = isSyncedToEpoch(latestBlock, eboBlock?.blockNumber)
   }
 
   // Other indexers health comparison
