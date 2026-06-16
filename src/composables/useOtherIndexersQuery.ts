@@ -11,6 +11,8 @@ import type { OtherIndexerDetail, DeploymentStatus } from '@/types'
 export interface OtherIndexersHealth {
   healthyCount: number
   failedCount: number
+  /** Highest entity count reported by any other indexer for this deployment, or null if none reported one */
+  maxEntityCount: number | null
   details: OtherIndexerDetail[]
 }
 
@@ -83,16 +85,25 @@ export function useOtherIndexersQuery() {
         // Aggregate results
         for (const { url, statuses } of results) {
           for (const [ipfsHash, status] of statuses) {
-            const existing = aggregation.get(ipfsHash) ?? { healthyCount: 0, failedCount: 0, details: [] }
+            const existing = aggregation.get(ipfsHash) ?? { healthyCount: 0, failedCount: 0, maxEntityCount: null, details: [] }
             if (status.health === 'healthy') {
               existing.healthyCount++
             } else if (status.health === 'failed') {
               existing.failedCount++
             }
+            const parsedEntityCount = status.entityCount != null ? parseInt(status.entityCount, 10) : NaN
+            const entityCount = Number.isFinite(parsedEntityCount) ? parsedEntityCount : null
+            if (entityCount !== null) {
+              existing.maxEntityCount =
+                existing.maxEntityCount === null
+                  ? entityCount
+                  : Math.max(existing.maxEntityCount, entityCount)
+            }
             existing.details.push({
               url,
               health: status.health,
               latestBlock: status.chains?.[0]?.latestBlock?.number ?? null,
+              entityCount,
               fatalError: status.fatalError ? {
                 message: status.fatalError.message,
                 deterministic: status.fatalError.deterministic,
