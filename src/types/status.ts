@@ -31,6 +31,7 @@ export interface OtherIndexerDetail {
   url: string
   health: HealthStatus
   latestBlock: number | null
+  entityCount: number | null
   fatalError: {
     message: string
     deterministic: boolean

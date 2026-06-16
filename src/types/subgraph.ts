@@ -47,6 +47,8 @@ export interface SubgraphComputed extends SubgraphRaw {
   currentlyAllocated: boolean
   deploymentStatus: import('./status').DeploymentStatus | null
   entityCount: number | null
+  /** True when entityCount came from other indexers rather than the indexer's own status */
+  entityCountFromOthers: boolean
   queryFees: import('./qos').QueryFeeData | null
   statusChecks: import('./allocation').DeploymentStatusChecks
 }
