@@ -125,8 +125,8 @@ function applyStatusFilter(
   status: DeploymentStatus | undefined,
 ): boolean {
   if (filter === 'all') return !!status
-  // 'closable' is handled post-computation using statusChecks.closable
-  if (filter === 'closable') return true
+  // 'closable'/'not-closable' are handled post-computation using statusChecks.closable
+  if (filter === 'closable' || filter === 'not-closable') return true
   if (!status) return false
 
   switch (filter) {
