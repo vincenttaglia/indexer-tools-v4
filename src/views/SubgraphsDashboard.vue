@@ -442,7 +442,14 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
       if (val === null || val === undefined) {
         return h('span', { class: 'text-muted' }, '?')
       }
-      return h('span', { class: 'token-value', title: formatNumber(val, 0) }, abbreviateNumber(val))
+      const fromOthers = info.row.original.entityCountFromOthers
+      const title = fromOthers
+        ? `${formatNumber(val, 0)} (from other indexers)`
+        : formatNumber(val, 0)
+      return h('span', { class: 'token-value', title }, [
+        abbreviateNumber(val),
+        fromOthers ? h('span', { class: 'text-muted', style: 'margin-left:2px' }, '*') : null,
+      ])
     },
   }),
   // QueryFees: Query Count
