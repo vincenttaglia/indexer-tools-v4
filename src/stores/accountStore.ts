@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { IndexerAccount } from '@/types'
 import { accountKey } from '@/types'
+import { useChainStore } from './chainStore'
 
 /**
  * Manages indexer accounts.
@@ -37,7 +38,7 @@ export const useAccountStore = defineStore('accounts', () => {
 
     // Auto-activate the first account added
     if (accounts.value.length === 1) {
-      activeAccountKey.value = key
+      setActive(key)
     }
   }
 
@@ -47,17 +48,23 @@ export const useAccountStore = defineStore('accounts', () => {
 
     if (activeAccountKey.value === key) {
       const firstAccount = accounts.value[0]
-      activeAccountKey.value = firstAccount != null
-        ? accountKey(firstAccount)
-        : null
+      if (firstAccount != null) {
+        setActive(accountKey(firstAccount))
+      } else {
+        activeAccountKey.value = null
+      }
     }
   }
 
-  /** Set the active account by composite key. */
+  /**
+   * Set the active account by composite key. Also switches the selected chain
+   * to match the account's chain, so the network follows the account.
+   */
   function setActive(key: string): void {
-    const exists = accounts.value.some((a) => accountKey(a) === key)
-    if (exists) {
+    const account = accounts.value.find((a) => accountKey(a) === key)
+    if (account != null) {
       activeAccountKey.value = key
+      useChainStore().selectedChain = account.chain
     }
   }
 
