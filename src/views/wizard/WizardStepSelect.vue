@@ -115,6 +115,7 @@ const statusFilterOptions = [
   { label: 'No Filter', value: 'none' },
   { label: 'All Statuses', value: 'all' },
   { label: 'Closable', value: 'closable' },
+  { label: 'Not Closable', value: 'not-closable' },
   { label: 'Healthy', value: 'healthy' },
   { label: 'Syncing', value: 'syncing' },
   { label: 'Failed', value: 'failed' },
@@ -167,8 +168,11 @@ const { computed: computedSubgraphs } = useSubgraphComputations({
 // ---------------------------------------------------------------------------
 const displaySubgraphs = computed(() => {
   const statusFilter = filterStore.subgraphFilters.statusFilter
-  if (statusFilter !== 'closable') return computedSubgraphs.value
-  return computedSubgraphs.value.filter((sg) => sg.statusChecks.closable)
+  if (statusFilter === 'closable')
+    return computedSubgraphs.value.filter((sg) => sg.statusChecks.closable)
+  if (statusFilter === 'not-closable')
+    return computedSubgraphs.value.filter((sg) => !sg.statusChecks.closable)
+  return computedSubgraphs.value
 })
 
 // ---------------------------------------------------------------------------

@@ -139,6 +139,7 @@ const statusFilterOptions = [
   { label: 'No Filter', value: 'none' },
   { label: 'All Statuses', value: 'all' },
   { label: 'Closable', value: 'closable' },
+  { label: 'Not Closable', value: 'not-closable' },
   { label: 'Healthy', value: 'healthy' },
   { label: 'Syncing', value: 'syncing' },
   { label: 'Failed', value: 'failed' },
