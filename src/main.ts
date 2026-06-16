@@ -6,6 +6,9 @@ import PrimeVue from 'primevue/config'
 import { definePreset } from '@primeuix/styled'
 import Aura from '@primevue/themes/aura'
 import router from '@/router'
+import { loadRuntimeConfig } from '@/config/runtimeConfig'
+import { useSettingsStore } from '@/stores/settingsStore'
+import { useAccountStore } from '@/stores/accountStore'
 
 const PurplePreset = definePreset(Aura, {
   semantic: {
@@ -20,37 +23,84 @@ const PurplePreset = definePreset(Aura, {
 import App from '@/App.vue'
 import '@/styles/main.css'
 
-const app = createApp(App)
+async function bootstrap() {
+  const app = createApp(App)
 
-// Pinia (client state: settings, filters, wizard, selections)
-const pinia = createPinia()
-pinia.use(piniaPluginPersistedstate)
-app.use(pinia)
+  // Pinia (client state: settings, filters, wizard, selections)
+  const pinia = createPinia()
+  pinia.use(piniaPluginPersistedstate)
+  app.use(pinia)
 
-// TanStack Query (server state: all fetched data)
-app.use(VueQueryPlugin, {
-  queryClientConfig: {
-    defaultOptions: {
-      queries: {
-        staleTime: Infinity,
-        retry: 2,
-        refetchOnWindowFocus: false,
+  // TanStack Query (server state: all fetched data)
+  app.use(VueQueryPlugin, {
+    queryClientConfig: {
+      defaultOptions: {
+        queries: {
+          staleTime: Infinity,
+          retry: 2,
+          refetchOnWindowFocus: false,
+        },
       },
     },
-  },
-})
+  })
 
-// PrimeVue (UI components)
-app.use(PrimeVue, {
-  theme: {
-    preset: PurplePreset,
-    options: {
-      darkModeSelector: '.app-dark',
+  // PrimeVue (UI components)
+  app.use(PrimeVue, {
+    theme: {
+      preset: PurplePreset,
+      options: {
+        darkModeSelector: '.app-dark',
+      },
     },
-  },
-})
+  })
 
-// Router
-app.use(router)
+  // Router
+  app.use(router)
 
-app.mount('#app')
+  // Load runtime config from /config.json (Docker env var injection).
+  // Only applies defaults when the user has no existing localStorage data.
+  const config = await loadRuntimeConfig()
+
+  const settingsStore = useSettingsStore()
+  if (!settingsStore.theGraphApiKey && config.theGraphApiKey) {
+    settingsStore.theGraphApiKey = config.theGraphApiKey
+  }
+  if (!settingsStore.drpcApiKey && config.drpcApiKey) {
+    settingsStore.drpcApiKey = config.drpcApiKey
+  }
+
+  const accountStore = useAccountStore()
+  if (config.accounts?.length) {
+    for (const configAccount of config.accounts) {
+      const key = `${configAccount.address.toLowerCase()}-${configAccount.chain}`
+      const existing = accountStore.accounts.find(
+        (a) => `${a.address.toLowerCase()}-${a.chain}` === key,
+      )
+      if (existing) {
+        // Always apply endpoint config from Docker env vars — they are the
+        // authoritative source for proxy paths (regenerated each boot).
+        if (configAccount.agentEndpoint) {
+          existing.agentEndpoint = configAccount.agentEndpoint
+        }
+        if (configAccount.graphmanEndpoint) {
+          existing.graphmanEndpoint = configAccount.graphmanEndpoint
+        }
+        if (configAccount.graphmanToken) {
+          existing.graphmanToken = configAccount.graphmanToken
+        }
+      } else {
+        accountStore.addAccount(configAccount)
+      }
+    }
+
+    // Ensure an account is active after config loading
+    if (!accountStore.activeAccountKey && accountStore.accounts.length > 0) {
+      const firstKey = `${accountStore.accounts[0]!.address.toLowerCase()}-${accountStore.accounts[0]!.chain}`
+      accountStore.setActive(firstKey)
+    }
+  }
+
+  app.mount('#app')
+}
+
+bootstrap()

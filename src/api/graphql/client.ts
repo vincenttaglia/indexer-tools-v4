@@ -31,13 +31,17 @@ const agentJsonSerializer = {
  * @returns A configured GraphQLClient instance
  */
 export function createGraphQLClient(url: string, token?: string): GraphQLClient {
+  // graphql-request uses new URL(endpoint) which requires absolute URLs.
+  // Resolve relative paths (e.g. "/api/agent/0/") against the current origin.
+  const resolvedUrl = url.startsWith('/') ? `${window.location.origin}${url}` : url
+
   const headers: Record<string, string> = {}
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
   }
 
-  return new GraphQLClient(url, {
+  return new GraphQLClient(resolvedUrl, {
     headers,
     jsonSerializer: agentJsonSerializer,
   })

@@ -83,3 +83,20 @@ export const CHAIN_OPTIONS: Array<{ id: ChainId; label: string }> = [
   { id: 'sepolia', label: 'Sepolia Testnet' },
   { id: 'arbitrum-sepolia', label: 'Arbitrum Sepolia' },
 ]
+
+/**
+ * Returns the human-readable label for a chain id, falling back to the id
+ * itself if the chain is not in CHAIN_OPTIONS.
+ */
+export function getChainLabel(chainId: ChainId): string {
+  const option = CHAIN_OPTIONS.find((o) => o.id === chainId)
+  return option?.label ?? chainId
+}
+
+/** Compact 3-7 character codes used in pill badges (e.g. sidebar account switcher). */
+export const CHAIN_ABBREV: Record<ChainId, string> = {
+  mainnet: 'ETH',
+  'arbitrum-one': 'ARB',
+  sepolia: 'SEP',
+  'arbitrum-sepolia': 'ARB-SEP',
+}

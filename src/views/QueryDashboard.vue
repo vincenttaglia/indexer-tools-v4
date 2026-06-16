@@ -11,7 +11,7 @@ import { DataTable } from '@/components/DataTable'
 import SubgraphNameCell from '@/components/SubgraphNameCell.vue'
 
 // Composables
-import { useQueryFeesQuery, useSubgraphMetadataMap, useStatusQuery, useEpochQuery, useAllocationsQuery, useColumnPreferences } from '@/composables'
+import { useQueryFeesQuery, useSubgraphMetadataMap, useStatusQuery, useEpochQuery, useAllocationsQuery, useColumnPreferences, useOffchainSync } from '@/composables'
 
 // Stores
 import { useFilterStore, useChainStore, useAccountStore } from '@/stores'
@@ -39,6 +39,7 @@ const { metadataMap } = useSubgraphMetadataMap()
 const statusQuery = useStatusQuery()
 const epochQuery = useEpochQuery()
 const allocationsQuery = useAllocationsQuery()
+const offchainSync = useOffchainSync()
 
 // ---------------------------------------------------------------------------
 // Loading state
@@ -74,11 +75,6 @@ function refreshAll() {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-/** Shorten an IPFS hash for display */
-function shortenHash(hash: string): string {
-  return hash
-}
 
 /** Color class for success rate values (0-1 range) */
 function successRateColorClass(rate: number): string {
@@ -134,8 +130,10 @@ const columns: ColumnDef<QueryDailyDataPoint, any>[] = [
           isAllocated: allocatedDeployments.value.has(hash),
           deploymentStatus,
           epochBlockNumber: epochBlock,
-          isOffchainSynced: false,
+          isOffchainSynced: offchainSync.isOffchainSynced(hash),
           agentConnected: !!accountStore.activeAccount?.agentEndpoint,
+          onAddOffchainSync: () => offchainSync.addOffchainSync(hash),
+          onRemoveOffchainSync: () => offchainSync.removeOffchainSync(hash),
         })
       },
     },

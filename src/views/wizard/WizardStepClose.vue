@@ -599,7 +599,7 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     header: 'Allocation ID',
     size: 160,
     cell: (info) => {
-      return h(AddressCell, { address: info.getValue() as string })
+      return h(AddressCell, { address: info.getValue() as string, truncate: false })
     },
   }),
 ]

@@ -5,8 +5,15 @@ const props = withDefaults(
   defineProps<{
     address: string
     explorerUrl?: string
+    /**
+     * When true (default), display `0x1234…aBcd` and reveal full address
+     * on hover. When false, display the full address in a scrollable
+     * monospace span with the scrollbar hidden — matches the deployment
+     * hash treatment in row cells.
+     */
+    truncate?: boolean
   }>(),
-  { explorerUrl: undefined },
+  { explorerUrl: undefined, truncate: true },
 )
 
 const copied = ref(false)
@@ -15,6 +22,8 @@ const shortened = computed(() => {
   if (!props.address || props.address.length < 10) return props.address
   return `${props.address.slice(0, 6)}...${props.address.slice(-4)}`
 })
+
+const display = computed(() => (props.truncate ? shortened.value : props.address))
 
 const fullExplorerUrl = computed(() => {
   if (!props.explorerUrl) return null
@@ -38,19 +47,19 @@ async function copyToClipboard() {
 </script>
 
 <template>
-  <span class="address-cell">
+  <span class="address-cell" :class="{ 'address-cell--full': !truncate }">
     <a
       v-if="fullExplorerUrl"
       :href="fullExplorerUrl"
       target="_blank"
       rel="noopener noreferrer"
       class="address-link"
-      :title="address"
+      :title="truncate ? address : undefined"
     >
-      {{ shortened }}
+      {{ display }}
     </a>
-    <span v-else class="address-text" :title="address">
-      {{ shortened }}
+    <span v-else class="address-text" :title="truncate ? address : undefined">
+      {{ display }}
     </span>
     <button
       class="copy-btn"
@@ -100,6 +109,22 @@ async function copyToClipboard() {
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
+}
+
+/* Full-text variant: scrollable text + select-all, scrollbar hidden. */
+.address-cell--full .address-link,
+.address-cell--full .address-text {
+  overflow-x: auto;
+  white-space: nowrap;
+  user-select: all;
+  min-width: 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.address-cell--full .address-link::-webkit-scrollbar,
+.address-cell--full .address-text::-webkit-scrollbar {
+  display: none;
 }
 
 .address-link {

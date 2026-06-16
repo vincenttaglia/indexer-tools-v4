@@ -1,6 +1,40 @@
 services:
   indexer-tools:
     build: .
+    # image: ghcr.io/vincenttaglia/indexer-tools-v4:latest  # Use this instead of build for published images
     ports:
       - "3000:80"
     restart: unless-stopped
+    # ── Environment Variables ────────────────────────────────────────
+    # Uncomment and configure as needed. See DEPLOYMENT.md for details.
+    #
+    # environment:
+    #   # The Graph Gateway API key (for subgraph queries)
+    #   GRAPH_API_KEY: ""
+    #
+    #   # dRPC API key (for RPC calls to chain nodes)
+    #   DRPC_API_KEY: ""
+    #
+    #   # Pre-configure indexer accounts as a JSON array.
+    #   # HTTP(S) endpoints are automatically proxied through nginx so the
+    #   # browser can reach internal Docker network services. Each account
+    #   # gets its own proxy path (/api/agent/0/, /api/graphman/0/, etc.).
+    #   DEFAULT_ACCOUNTS: >
+    #     [
+    #       {
+    #         "address": "0xINDEXER_A",
+    #         "chain": "arbitrum-one",
+    #         "label": "Indexer A",
+    #         "agentEndpoint": "http://indexer-agent-a:8000/",
+    #         "graphmanEndpoint": "http://graph-node-a:8050/",
+    #         "graphmanToken": "token-a"
+    #       },
+    #       {
+    #         "address": "0xINDEXER_B",
+    #         "chain": "arbitrum-one",
+    #         "label": "Indexer B",
+    #         "agentEndpoint": "http://indexer-agent-b:8000/",
+    #         "graphmanEndpoint": "http://graph-node-b:8050/",
+    #         "graphmanToken": "token-b"
+    #       }
+    #     ]
