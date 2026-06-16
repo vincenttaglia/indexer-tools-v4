@@ -29,6 +29,7 @@ import {
   useSubgraphFilters,
   useSubgraphComputations,
   useColumnPreferences,
+  useOffchainSync,
 } from '@/composables'
 
 // Stores
@@ -61,6 +62,7 @@ const indexerQuery = useIndexerQuery()
 const queryFeesQuery = useQueryFeesQuery()
 const epochQuery = useEpochQuery()
 const otherIndexersQuery = useOtherIndexersQuery()
+const offchainSync = useOffchainSync()
 
 // ---------------------------------------------------------------------------
 // Derived state
@@ -320,8 +322,10 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
           isAllocated,
           deploymentStatus: row.deploymentStatus ?? null,
           epochBlockNumber: epochBlock,
-          isOffchainSynced: false,
+          isOffchainSynced: offchainSync.isOffchainSynced(ipfsHash),
           agentConnected,
+          onAddOffchainSync: () => offchainSync.addOffchainSync(ipfsHash),
+          onRemoveOffchainSync: () => offchainSync.removeOffchainSync(ipfsHash),
         })
       },
     },

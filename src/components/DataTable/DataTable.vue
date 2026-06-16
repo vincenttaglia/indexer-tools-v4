@@ -250,7 +250,7 @@ function onContainerPointerDown(ev: PointerEvent) {
 
   dragStart.value = { x: ev.clientX, y: ev.clientY }
   dragCurrent.value = { x: ev.clientX, y: ev.clientY }
-  dragSubtractive.value = ev.altKey
+  dragSubtractive.value = ev.altKey || ev.ctrlKey
   draggedRowIds.value = new Set()
 
   const baseline = new Set<string>()
@@ -262,7 +262,7 @@ function onContainerPointerDown(ev: PointerEvent) {
 
 function commitDragSelection() {
   // Start from the pre-drag baseline. In additive mode we ADD the dragged
-  // rows; in subtractive mode (Alt held) we REMOVE them.
+  // rows; in subtractive mode (Alt or Ctrl held) we REMOVE them.
   const next: RowSelectionState = {}
   for (const id of selectionAtDragStart.value) next[id] = true
   if (dragSubtractive.value) {
@@ -823,7 +823,7 @@ function onContainerPointerUp(ev: PointerEvent) {
   border-radius: 2px;
 }
 
-/* Subtractive drag (Alt held) uses a red tint so the user can tell the
+/* Subtractive drag (Alt or Ctrl held) uses a red tint so the user can tell the
    selection will shrink instead of grow. */
 .drag-rubber-band.subtract {
   background-color: color-mix(in srgb, var(--p-red-400) 15%, transparent);

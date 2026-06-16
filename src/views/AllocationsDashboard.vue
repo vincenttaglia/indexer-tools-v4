@@ -35,6 +35,7 @@ import {
   useAllocationComputations,
   useOtherIndexersQuery,
   useColumnPreferences,
+  useOffchainSync,
 } from '@/composables'
 import { useAllocationFilters } from '@/composables/useAllocationFilters'
 import type { AllocationDescriptor } from '@/composables'
@@ -66,6 +67,7 @@ const statusQuery = useStatusQuery()
 const indexerQuery = useIndexerQuery()
 const qosQuery = useQosDailyDataQuery()
 const epochQuery = useEpochQuery()
+const offchainSync = useOffchainSync()
 
 // ---------------------------------------------------------------------------
 // Other indexers status (manually triggered)
@@ -314,8 +316,10 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
           isAllocated: true,
           deploymentStatus: row.deploymentStatus ?? null,
           epochBlockNumber: epochBlock,
-          isOffchainSynced: false,
+          isOffchainSynced: offchainSync.isOffchainSynced(ipfsHash),
           agentConnected,
+          onAddOffchainSync: () => offchainSync.addOffchainSync(ipfsHash),
+          onRemoveOffchainSync: () => offchainSync.removeOffchainSync(ipfsHash),
         })
       },
     },
