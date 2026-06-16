@@ -12,7 +12,7 @@ import { DataTable, HealthCell, ErrorDetailCell } from '@/components/DataTable'
 import SubgraphNameCell from '@/components/SubgraphNameCell.vue'
 
 // Composables
-import { useStatusQuery, useSubgraphMetadataMap, useEpochQuery, useAllocationsQuery, useColumnPreferences } from '@/composables'
+import { useStatusQuery, useSubgraphMetadataMap, useEpochQuery, useAllocationsQuery, useColumnPreferences, useOffchainSync } from '@/composables'
 
 // Stores
 import { useAccountStore } from '@/stores'
@@ -30,6 +30,7 @@ const statusQuery = useStatusQuery()
 const { metadataMap } = useSubgraphMetadataMap()
 const epochQuery = useEpochQuery()
 const allocationsQuery = useAllocationsQuery()
+const offchainSync = useOffchainSync()
 const accountStore = useAccountStore()
 
 // ---------------------------------------------------------------------------
@@ -166,8 +167,10 @@ const columns: ColumnDef<DeploymentStatus, any>[] = [
         isAllocated: allocatedDeployments.value.has(hash),
         deploymentStatus: row,
         epochBlockNumber: epochBlock,
-        isOffchainSynced: false,
+        isOffchainSynced: offchainSync.isOffchainSynced(hash),
         agentConnected: !!accountStore.activeAccount?.agentEndpoint,
+        onAddOffchainSync: () => offchainSync.addOffchainSync(hash),
+        onRemoveOffchainSync: () => offchainSync.removeOffchainSync(hash),
       })
     },
   }),
