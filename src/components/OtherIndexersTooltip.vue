@@ -63,6 +63,9 @@ const problemIndexers = computed(() =>
           <span v-if="indexer.latestBlock !== null" class="detail-item">
             Block: {{ formatNumber(indexer.latestBlock, 0) }}
           </span>
+          <span v-if="indexer.entityCount !== null" class="detail-item">
+            Entities: {{ formatNumber(indexer.entityCount, 0) }}
+          </span>
           <span
             v-if="indexer.fatalError"
             class="detail-item detail-error"

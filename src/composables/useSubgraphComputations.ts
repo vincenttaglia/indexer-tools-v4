@@ -167,11 +167,19 @@ export function useSubgraphComputations(inputs: ComputationInputs) {
       // Status from indexer graph-node status endpoint
       const deploymentStatus = statuses.get(d.ipfsHash) ?? null
 
-      // Entity count from the deployment status
+      // Entity count from the indexer's own deployment status. When the user's
+      // own indexer hasn't reported one (not syncing this deployment, or "fetch
+      // other indexers" was run instead), fall back to the highest entity count
+      // reported by any other indexer for this deployment.
+      const ownEntityCountRaw =
+        deploymentStatus !== null ? parseInt(deploymentStatus.entityCount, 10) : NaN
+      const ownEntityCount = Number.isFinite(ownEntityCountRaw) ? ownEntityCountRaw : null
+      const otherMaxEntityCount = otherIndexers?.get(d.ipfsHash)?.maxEntityCount ?? null
       const entityCount =
-        deploymentStatus !== null
-          ? parseInt(deploymentStatus.entityCount, 10)
-          : null
+        ownEntityCount !== null
+          ? ownEntityCount
+          : otherMaxEntityCount
+      const entityCountFromOthers = ownEntityCount === null && otherMaxEntityCount !== null
 
       // Query fee data from the QoS/gateway API
       const queryFeeData = fees.get(d.ipfsHash) ?? null
@@ -198,6 +206,7 @@ export function useSubgraphComputations(inputs: ComputationInputs) {
         currentlyAllocated,
         deploymentStatus,
         entityCount,
+        entityCountFromOthers,
         queryFees: queryFeeData,
         statusChecks,
       }
