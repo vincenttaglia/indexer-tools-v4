@@ -170,8 +170,8 @@ const statusFilterOptions = [
 // Rewards filter options (3-way)
 // ---------------------------------------------------------------------------
 const rewardsFilterOptions = [
-  { label: 'Exclude', value: 0 },
   { label: 'Include', value: 1 },
+  { label: 'Exclude', value: 0 },
   { label: 'Only', value: 2 },
 ]
 
@@ -180,8 +180,8 @@ const rewardsFilterOptions = [
 // ---------------------------------------------------------------------------
 const allocationFilterOptions = [
   { label: 'Include', value: 'none' },
+  { label: 'Exclude', value: 'hide' },
   { label: 'Only', value: 'only' },
-  { label: 'Hide', value: 'hide' },
 ]
 
 // ---------------------------------------------------------------------------
