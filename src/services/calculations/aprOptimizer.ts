@@ -1,17 +1,14 @@
 /**
  * APR Optimizer entry point.
  *
- * Holds the public types for the optimizer and a resolver that picks
- * between the legacy closed-form solver and the iterative-greedy water-
- * filling solver based on the `useWaterfall` flag in params (typically
- * sourced from settingsStore.useWaterfallOptimizer).
+ * Holds the public types for the optimizer and re-exports the iterative-greedy
+ * water-filling solver as `optimizeAllocations`.
  *
- * Wizard call site (`WizardStepAllocate.vue`) imports `optimizeAllocations`
- * from `@/services/calculations`; that name stays stable while the
- * underlying algorithm can be swapped per-call.
+ * The wizard call site (`WizardStepAllocate.vue`) imports `optimizeAllocations`
+ * from `@/services/calculations`; that name stays stable while the underlying
+ * algorithm lives in `aprOptimizer.waterfall.ts`.
  */
 
-import { optimizeAllocationsLegacy } from './aprOptimizer.legacy'
 import { optimizeAllocationsWaterfall } from './aprOptimizer.waterfall'
 
 export interface OptimizableSubgraph {
@@ -29,9 +26,6 @@ export interface OptimizationParams {
   blocksPerDay: number
   indexingRewardCut: number // 0-1000000 (parts per million)
   minAllocationGrt?: number // minimum per subgraph, default 0
-
-  /** When true, use the water-filling solver instead of the legacy closed-form solver. */
-  useWaterfall?: boolean
 
   /** Per-deployment cap as a fraction of the budget, in [0, 1]. Ignored when 0. */
   maxAllocationPct?: number
@@ -58,10 +52,7 @@ export interface OptimizationResult {
 }
 
 export function optimizeAllocations(params: OptimizationParams): OptimizationResult {
-  if (params.useWaterfall) {
-    return optimizeAllocationsWaterfall(params)
-  }
-  return optimizeAllocationsLegacy(params)
+  return optimizeAllocationsWaterfall(params)
 }
 
-export { optimizeAllocationsLegacy, optimizeAllocationsWaterfall }
+export { optimizeAllocationsWaterfall }

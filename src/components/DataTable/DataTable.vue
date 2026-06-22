@@ -405,14 +405,35 @@ function onContainerPointerUp(ev: PointerEvent) {
             <template v-if="!header.isPlaceholder">
               <!-- Selection checkbox in header -->
               <template v-if="header.column.id === '_selection'">
-                <input
-                  type="checkbox"
-                  class="row-checkbox"
-                  :checked="table.getIsAllRowsSelected()"
-                  :indeterminate="table.getIsSomeRowsSelected()"
-                  @change="table.getToggleAllRowsSelectedHandler()($event)"
-                  @click.stop
-                />
+                <div
+                  class="selection-header"
+                  v-tooltip.bottom="'Drag across rows to select. Hold Alt or Ctrl while dragging to unselect.'"
+                >
+                  <input
+                    type="checkbox"
+                    class="row-checkbox"
+                    :checked="table.getIsAllRowsSelected()"
+                    :indeterminate="table.getIsSomeRowsSelected()"
+                    @change="table.getToggleAllRowsSelectedHandler()($event)"
+                    @click.stop
+                  />
+                  <svg
+                    class="selection-hint-icon"
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="16" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                  </svg>
+                </div>
               </template>
               <template v-else>
                 <div class="th-content">
@@ -665,6 +686,27 @@ function onContainerPointerUp(ev: PointerEvent) {
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+/* Selection header: checkbox + an info affordance that reveals the
+   drag-select / Alt-Ctrl-unselect tooltip on hover. */
+.selection-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  cursor: help;
+}
+
+.selection-hint-icon {
+  color: var(--app-surface-400);
+  opacity: 0.7;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.selection-header:hover .selection-hint-icon {
+  opacity: 1;
+  color: var(--p-primary-500);
 }
 
 /* --- Sort indicators --- */

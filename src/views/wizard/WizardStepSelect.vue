@@ -1,14 +1,18 @@
 <script setup lang="ts">
-import { computed, h, watchEffect } from 'vue'
+import { computed, h, watchEffect, watch, ref } from 'vue'
+import { watchDebounced } from '@vueuse/core'
 import { createColumnHelper, type ColumnDef } from '@tanstack/vue-table'
 
 // PrimeVue components
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
+import SelectButton from 'primevue/selectbutton'
 import MultiSelect from 'primevue/multiselect'
 import ToggleSwitch from 'primevue/toggleswitch'
 import InputNumber from 'primevue/inputnumber'
+import InputGroup from 'primevue/inputgroup'
+import InputGroupAddon from 'primevue/inputgroupaddon'
 
 // Project components
 import { DataTable, TokenCell, PercentCell, HealthCell } from '@/components/DataTable'
@@ -91,6 +95,41 @@ const networkOptions = computed(() => {
   return [...networks].sort()
 })
 
+// Network MultiSelect binds to a local ref so checkbox toggles feel instant;
+// the value is debounced into the store, which drives the expensive re-filter
+// and per-subgraph recompute. Rapid multi-selects then coalesce into one pass.
+const selectedNetworks = ref<string[]>([...filterStore.subgraphFilters.networks])
+watchDebounced(
+  selectedNetworks,
+  (val) => {
+    filterStore.subgraphFilters.networks = [...val]
+  },
+  { debounce: 250 },
+)
+// Keep the local copy in sync if the store value changes elsewhere (e.g. reset).
+watch(
+  () => filterStore.subgraphFilters.networks,
+  (val) => {
+    if (val.join(' ') !== selectedNetworks.value.join(' ')) {
+      selectedNetworks.value = [...val]
+    }
+  },
+)
+
+// Network MultiSelect: after selecting an option, clear the typed search and
+// return focus to the filter input so the user can keep typing the next network.
+const networkSelect = ref<{ filterValue: string | null; $refs: Record<string, { $el?: HTMLElement }> } | null>(null)
+function handleNetworkChange() {
+  const ms = networkSelect.value
+  if (!ms) return
+  const input = ms.$refs.filterInput?.$el
+  // Refocus synchronously first so focus isn't queued behind the list re-render
+  // that clearing the filter triggers, then clear and re-assert after paint.
+  input?.focus()
+  ms.filterValue = ''
+  requestAnimationFrame(() => input?.focus())
+}
+
 /** Transform QueryDailyDataPoint[] into Map<string, QueryFeeData> */
 const queryFeesMap = computed<Map<string, QueryFeeData> | undefined>(() => {
   const points = queryFeesQuery.data.value
@@ -127,9 +166,15 @@ const statusFilterOptions = [
 // Rewards filter options (3-way)
 // ---------------------------------------------------------------------------
 const rewardsFilterOptions = [
-  { label: 'Exclude Denied', value: 0 },
-  { label: 'Include Denied', value: 1 },
-  { label: 'Only Denied', value: 2 },
+  { label: 'Exclude', value: 0 },
+  { label: 'Include', value: 1 },
+  { label: 'Only', value: 2 },
+]
+
+const allocationFilterOptions = [
+  { label: 'Include', value: 'none' },
+  { label: 'Only', value: 'only' },
+  { label: 'Hide', value: 'hide' },
 ]
 
 // ---------------------------------------------------------------------------
@@ -146,7 +191,6 @@ const { filtered: filteredSubgraphs } = useSubgraphFilters(
 // Computation inputs
 // ---------------------------------------------------------------------------
 const targetApr = computed(() => filterStore.subgraphFilters.targetApr)
-const newAllocation = computed(() => String(filterStore.subgraphFilters.newAllocation))
 
 const { computed: computedSubgraphs } = useSubgraphComputations({
   subgraphs: filteredSubgraphs,
@@ -157,7 +201,6 @@ const { computed: computedSubgraphs } = useSubgraphComputations({
   indexingRewardCut: computed(() => indexerQuery.data.value?.indexingRewardCut ?? 0),
   blocksPerDay: computed(() => chainStore.chainConfig.blocksPerDay),
   targetApr,
-  newAllocation,
   closingAllocations: computed(() => wizardStore.closingAllocations),
   epochData: computed(() => epochQuery.data.value),
   otherIndexersStatus: computed(() => otherIndexersQuery.data.value),
@@ -550,16 +593,6 @@ const { visibleColumns } = useColumnPreferences('subgraphs', columns)
       </div>
 
       <div class="filter-group filter-select">
-        <label class="filter-label">Rewards</label>
-        <Select
-          v-model="filterStore.subgraphFilters.rewardsFilter"
-          :options="rewardsFilterOptions"
-          optionLabel="label"
-          optionValue="value"
-        />
-      </div>
-
-      <div class="filter-group filter-select">
         <label class="filter-label">Status</label>
         <Select
           v-model="filterStore.subgraphFilters.statusFilter"
@@ -572,76 +605,92 @@ const { visibleColumns } = useColumnPreferences('subgraphs', columns)
       <div class="filter-group filter-select">
         <label class="filter-label">Network</label>
         <MultiSelect
-          v-model="filterStore.subgraphFilters.networks"
+          ref="networkSelect"
+          v-model="selectedNetworks"
           :options="networkOptions"
           placeholder="All"
           :maxSelectedLabels="2"
           selectedItemsLabel="{0} networks"
+          filter
+          filterPlaceholder="Search networks..."
+          :resetFilterOnHide="true"
+          :autoFilterFocus="true"
+          :showToggleAll="false"
+          :virtualScrollerOptions="{ itemSize: 38 }"
+          panelClass="network-multiselect-panel"
+          @change="handleNetworkChange"
+        >
+          <template #header>
+            <button
+              type="button"
+              class="network-deselect-all"
+              :disabled="selectedNetworks.length === 0"
+              @click="selectedNetworks = []"
+            >
+              Deselect all
+            </button>
+          </template>
+        </MultiSelect>
+      </div>
+
+      <div class="filter-group filter-segmented">
+        <label class="filter-label">Allocations</label>
+        <SelectButton
+          v-model="filterStore.subgraphFilters.allocationFilter"
+          :options="allocationFilterOptions"
+          optionLabel="label"
+          optionValue="value"
+          :allowEmpty="false"
+          fluid
         />
       </div>
 
-      <div class="filter-group filter-number">
-        <label class="filter-label">Min Signal</label>
-        <div class="toggle-input">
-          <ToggleSwitch v-model="filterStore.subgraphFilters.hideSmallSignal" />
-          <InputNumber
-            v-if="filterStore.subgraphFilters.hideSmallSignal"
-            v-model="filterStore.subgraphFilters.minSignal"
-            placeholder="GRT"
-            :min="0"
-            suffix=" GRT"
-          />
-        </div>
-      </div>
-
-      <div class="filter-group filter-number">
-        <label class="filter-label">Max Signal</label>
-        <InputNumber
-          v-model="filterStore.subgraphFilters.maxSignal"
-          placeholder="0 = off"
-          :min="0"
-          suffix=" GRT"
+      <div class="filter-group filter-segmented">
+        <label class="filter-label">Denied Rewards</label>
+        <SelectButton
+          v-model="filterStore.subgraphFilters.rewardsFilter"
+          :options="rewardsFilterOptions"
+          optionLabel="label"
+          optionValue="value"
+          :allowEmpty="false"
+          fluid
         />
       </div>
 
       <div class="filter-group filter-number">
         <label class="filter-label">Target APR</label>
-        <InputNumber
-          v-model="filterStore.subgraphFilters.targetApr"
-          :min="0"
-          :maxFractionDigits="4"
-          suffix="%"
-        />
+        <InputGroup>
+          <InputNumber
+            v-model="filterStore.subgraphFilters.targetApr"
+            :min="0"
+            :maxFractionDigits="4"
+          />
+          <InputGroupAddon>%</InputGroupAddon>
+        </InputGroup>
       </div>
 
       <div class="filter-group filter-number">
-        <label class="filter-label">New Allocation</label>
-        <InputNumber
-          v-model="filterStore.subgraphFilters.newAllocation"
-          :min="0"
-          suffix=" GRT"
-        />
+        <label class="filter-label">Min Signal</label>
+        <InputGroup>
+          <InputNumber
+            v-model="filterStore.subgraphFilters.minSignal"
+            placeholder="0 = off"
+            :min="0"
+          />
+          <InputGroupAddon>GRT</InputGroupAddon>
+        </InputGroup>
       </div>
 
-      <div class="filter-toggle">
-        <label class="toggle-label">
-          <ToggleSwitch v-model="filterStore.subgraphFilters.onlyDeployed" />
-          <span>Only Deployed</span>
-        </label>
-      </div>
-
-      <div class="filter-toggle">
-        <label class="toggle-label">
-          <ToggleSwitch v-model="filterStore.subgraphFilters.onlyAllocated" />
-          <span>Only Allocated</span>
-        </label>
-      </div>
-
-      <div class="filter-toggle">
-        <label class="toggle-label">
-          <ToggleSwitch v-model="filterStore.subgraphFilters.hideCurrentlyAllocated" />
-          <span>Hide Allocated</span>
-        </label>
+      <div class="filter-group filter-number">
+        <label class="filter-label">Max Signal</label>
+        <InputGroup>
+          <InputNumber
+            v-model="filterStore.subgraphFilters.maxSignal"
+            placeholder="0 = off"
+            :min="0"
+          />
+          <InputGroupAddon>GRT</InputGroupAddon>
+        </InputGroup>
       </div>
 
       <div class="filter-toggle">
@@ -799,9 +848,13 @@ const { visibleColumns } = useColumnPreferences('subgraphs', columns)
   width: 100%;
 }
 
+.filter-number :deep(.p-inputgroup) {
+  width: 150px;
+}
+
 .filter-number :deep(.p-inputnumber) {
   display: inline-flex;
-  width: 120px;
+  flex: 1 1 auto;
 }
 
 .filter-number :deep(.p-inputnumber-input) {
@@ -809,11 +862,16 @@ const { visibleColumns } = useColumnPreferences('subgraphs', columns)
   min-width: 0;
 }
 
-.toggle-input {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 35px;
+/* Compact, muted unit add-on so it reads as a label, not a control */
+.filter-number :deep(.p-inputgroupaddon) {
+  padding-inline: 8px;
+  font-size: 0.8125rem;
+  color: var(--p-text-muted-color);
+  min-width: auto;
+}
+
+.filter-segmented {
+  min-width: 260px;
 }
 
 .filter-toggle {
@@ -899,4 +957,32 @@ const { visibleColumns } = useColumnPreferences('subgraphs', columns)
   white-space: nowrap;
 }
 
+</style>
+
+<!-- Non-scoped: the MultiSelect panel is teleported to <body>, so the header
+     slot button can't be reached by scoped styles. -->
+<style>
+.network-multiselect-panel .network-deselect-all {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: center;
+  color: var(--p-primary-color);
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.network-multiselect-panel .network-deselect-all:hover:not(:disabled) {
+  background-color: var(--p-content-hover-background);
+}
+
+.network-multiselect-panel .network-deselect-all:disabled {
+  color: var(--p-text-muted-color);
+  opacity: 0.5;
+  cursor: default;
+}
 </style>

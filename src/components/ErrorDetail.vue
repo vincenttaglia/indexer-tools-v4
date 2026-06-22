@@ -131,7 +131,7 @@ async function copyToClipboard(text: string, field: string) {
 }
 
 .error-message-box {
-  background-color: var(--p-surface-100);
+  background-color: var(--app-surface-100);
   border-radius: 4px;
   padding: 6px 8px;
   color: var(--p-text-color);

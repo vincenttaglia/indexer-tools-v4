@@ -1,13 +1,13 @@
 /**
- * Legacy APR optimization algorithm.
+ * Closed-form APR optimization algorithm (no longer wired into the app).
  *
  * Closed-form analytical solution derived from Lagrange multipliers.
  * Maximizes total daily rewards by allocating proportionally to
  * sqrt(signal * stake). Single-pass, no iteration.
  *
- * Kept for behavior parity while the water-filling optimizer is gated
- * behind the `useWaterfall` flag. Delete this file once the water-filling
- * optimizer has been validated against real allocation cycles.
+ * The app uses the water-filling optimizer (see `aprOptimizer.waterfall.ts`)
+ * exclusively. This implementation is retained for reference and is not
+ * imported anywhere.
  */
 
 import { calculateSubgraphDailyRewards, calculateDailyRewardsCut } from './rewards'

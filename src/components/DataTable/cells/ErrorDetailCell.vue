@@ -52,6 +52,6 @@ function getPreview(): string {
 }
 
 .error-cell:hover {
-  background-color: var(--p-surface-100);
+  background-color: var(--app-surface-100);
 }
 </style>

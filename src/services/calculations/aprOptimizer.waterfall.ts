@@ -20,8 +20,8 @@
  * cap and an absolute GRT cap (whichever is tighter). Deployments
  * flagged as risky use tighter caps.
  *
- * Inputs match the legacy optimizer's `OptimizationParams` with optional
- * cap fields. Output matches `OptimizationResult` exactly.
+ * Inputs are the shared `OptimizationParams` (with optional cap fields) and
+ * output is `OptimizationResult`, both defined in `aprOptimizer.ts`.
  */
 
 import { calculateSubgraphDailyRewards, calculateDailyRewardsCut } from './rewards'
@@ -168,7 +168,7 @@ function computeMarginal(R: number, D: number, A: number): number {
 }
 
 // ---------------------------------------------------------------------------
-// Result builder (shared shape with legacy optimizer)
+// Result builder (shared OptimizationResult shape)
 // ---------------------------------------------------------------------------
 
 interface NetworkContext {

@@ -113,7 +113,7 @@ function toggleError(event: Event) {
 }
 
 .status-check-interactive:hover {
-  background-color: var(--p-surface-100);
+  background-color: var(--app-surface-100);
 }
 
 .dot {
