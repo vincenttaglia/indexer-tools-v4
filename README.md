@@ -49,6 +49,20 @@ Open http://localhost:3000. API keys and accounts can also be configured in **Se
 
 HTTP endpoints in `DEFAULT_ACCOUNTS` are automatically proxied through nginx so the browser can reach services on internal Docker networks. See [DEPLOYMENT.md](DEPLOYMENT.md) for multi-account setups, proxy details, and integration with existing indexer stacks.
 
+## Quick Start (Kubernetes / Helm)
+
+A Helm chart is published at [vincenttaglia/helm-charts](https://github.com/vincenttaglia/helm-charts/tree/main/charts/indexer-tools-v4):
+
+```bash
+helm repo add vincenttaglia https://vincenttaglia.github.io/helm-charts
+helm repo update
+
+helm install indexer-tools vincenttaglia/indexer-tools-v4 \
+  --namespace indexer-tools --create-namespace
+```
+
+API keys are read from a Kubernetes Secret (`existingSecret`), accounts from `config.defaultAccounts`, and ingress/resources/autoscaling from values — all optional, since keys and accounts can also be set in **Settings** at runtime. Run `helm show values vincenttaglia/indexer-tools-v4` for the full options list. See [DEPLOYMENT.md](DEPLOYMENT.md#kubernetes) for a worked values file and the raw-manifest alternative in [`k8s/`](k8s/).
+
 ## Docker Images
 
 Images are published to GitHub Container Registry:
@@ -145,4 +159,5 @@ docker/
 ## Documentation
 
 - [DEPLOYMENT.md](DEPLOYMENT.md) — Docker deployment, environment variables, per-account API proxy, integration with indexer stacks
-- [k8s/](k8s/) — Kubernetes manifests (Deployment, Service, Ingress, Secret) with Kustomize support
+- [Helm chart](https://github.com/vincenttaglia/helm-charts/tree/main/charts/indexer-tools-v4) — Kubernetes deployment via Helm (recommended for clusters)
+- [k8s/](k8s/) — Raw Kubernetes manifests (Deployment, Service, Ingress, ConfigMap) with Kustomize support
