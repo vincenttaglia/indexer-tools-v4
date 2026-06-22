@@ -294,7 +294,7 @@ function healthLabel(): string {
   font-size: 0.6875rem;
   color: var(--p-text-muted-color);
   font-weight: 500;
-  background-color: var(--p-surface-100);
+  background-color: var(--app-surface-100);
   padding: 1px 6px;
   border-radius: 4px;
   width: fit-content;
@@ -418,7 +418,7 @@ function healthLabel(): string {
 .progress-track {
   height: 6px;
   border-radius: 3px;
-  background-color: var(--p-surface-200);
+  background-color: var(--app-surface-200);
   overflow: hidden;
 }
 
