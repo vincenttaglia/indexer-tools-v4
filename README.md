@@ -67,29 +67,37 @@ docker pull ghcr.io/vincenttaglia/indexer-tools-v4:latest
 
 The allocation wizard includes an optimizer that distributes a GRT budget across selected subgraphs to maximize total daily rewards.
 
+The reward earned by allocating `a` GRT to a deployment follows:
+
+```
+reward = (signal / totalSignal) * issuancePerDay * a / (D + a)
+where D = other indexers' stake on the deployment
+```
+
+This has diminishing returns — each additional GRT earns less, since your own allocation dilutes its own reward share.
+
 ### How It Works
 
-The reward earned by allocating `a_i` GRT to subgraph `i` follows:
+A **water-filling** allocator walks the budget in 1000 chunks, handing each chunk to the deployment with the highest **marginal** reward at its current allocation:
 
 ```
-reward_i = (signal_i / totalSignal) * issuancePerDay * a_i / (stake_i + a_i)
+d(reward)/dA = R * D / (D + A)^2
+where R = (signal / totalSignal) * issuancePerDay   (reward pool)
+      D = other indexers' stake on the deployment
+      A = amount already allocated this run
 ```
 
-This has diminishing returns — each additional GRT earns less. The optimizer uses **Lagrange multipliers** to find the exact allocation split that maximizes total rewards. The closed-form solution is:
+Allocating to the steepest marginal at each step drives the budget toward the deployments where it earns the most, and naturally tapers off a deployment as it saturates. The chunked approach (1000 discrete steps) is approximate rather than closed-form, which is what lets it honor the per-deployment constraints below.
 
-```
-a_i = sqrt(signal_i * stake_i) * scale - stake_i
-where scale = (budget + sum(stake_j)) / sum(sqrt(signal_j * stake_j))
-```
+### Constraints
 
-Allocate proportionally to `sqrt(signal * stake)`. Subgraphs with high signal but low stake (under-allocated) get more. Subgraphs already saturated with stake get less. Zero iteration needed — this is the mathematically exact optimum.
+- **Per-deployment caps** — `min(maxAllocationPct × budget, maxAllocationGrt)`, whichever is tighter; a deployment stops receiving chunks once it hits its cap
+- **Risky-deployment caps** — deployments flagged risky use the tighter `riskyAllocationPct` / `riskyAllocationGrt` caps instead
+- **Minimum allocation** — any funded deployment below `minAllocationGrt` is bumped up to the floor (within its cap and remaining budget)
+- **Zero-other-stake deployments** — win a single chunk first (marginal is infinite at A=0), then fall back into the normal ranking
+- **Zero-signal deployments** — kept in the results but receive nothing (they earn zero rewards regardless)
 
-### Edge Cases
-
-- **Zero-signal subgraphs**: filtered out (earn zero rewards regardless)
-- **Zero-stake subgraphs**: get minimum allocation (marginal reward is infinite at a=0)
-- **Over-saturated subgraphs**: if the formula yields a negative allocation, it's fixed at minimum and the remaining budget is re-solved across the others
-- **Integer rounding**: uses the largest-remainder method (Hamilton's method) to round to whole GRT while ensuring allocations sum exactly to the budget
+The caps and risky-deployment settings are configured on the **Settings** page.
 
 ## Development
 

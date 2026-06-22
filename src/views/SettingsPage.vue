@@ -288,17 +288,9 @@ const offchainSyncColumns = [
     <!-- Section 4b: Allocation Optimizer -->
     <Card class="settings-section">
       <template #title>Allocation Optimizer</template>
-      <template #subtitle>Configure how the wizard's "Optimize Allocations" button distributes GRT across the subgraphs you picked in Step 3</template>
+      <template #subtitle>Configure how the wizard's "Optimize Allocations" button distributes your GRT budget across the subgraphs you picked in Step 3. The optimizer hands the budget out in chunks to whichever deployment has the highest marginal reward, respecting the per-deployment caps below.</template>
       <template #content>
-        <div class="toggle-row">
-          <div class="toggle-info">
-            <span class="field-label">Use Water-Filling Optimizer</span>
-            <span class="field-hint">When off, the legacy closed-form (sqrt) solver is used. When on, marginal-reward iterative-greedy is used and the caps below apply.</span>
-          </div>
-          <ToggleSwitch v-model="settingsStore.useWaterfallOptimizer" />
-        </div>
-
-        <div class="form-grid" style="margin-top: 16px">
+        <div class="form-grid">
           <div class="form-field">
             <label for="max-alloc-pct" class="field-label">Max Allocation %</label>
             <InputNumber

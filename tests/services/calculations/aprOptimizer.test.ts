@@ -202,9 +202,9 @@ describe('aprOptimizer', () => {
 
       const result = optimizeAllocations(makeParams(subgraphs, 100000))
 
-      // Zero-signal subgraph should be excluded entirely (filtered out)
-      const noSignal = result.perSubgraph.find((s) => s.ipfsHash === 'QmNoSignal')
-      expect(noSignal).toBeUndefined()
+      // Zero-signal subgraph is kept in the result but receives nothing
+      const noSignal = result.perSubgraph.find((s) => s.ipfsHash === 'QmNoSignal')!
+      expect(noSignal.allocationGrt).toBe(0)
 
       // The signalled subgraph gets everything
       const signalled = result.perSubgraph.find((s) => s.ipfsHash === 'QmSignal')!
@@ -279,9 +279,12 @@ describe('aprOptimizer', () => {
 
       const result = optimizeAllocations(makeParams(subgraphs, 200000, minAllocationGrt))
 
-      // Both subgraphs should have at least the minimum
+      // Any funded deployment is bumped up to at least the minimum; deployments
+      // that receive no allocation stay at 0.
       for (const entry of result.perSubgraph) {
-        expect(entry.allocationGrt).toBeGreaterThanOrEqual(minAllocationGrt)
+        if (entry.allocationGrt > 0) {
+          expect(entry.allocationGrt).toBeGreaterThanOrEqual(minAllocationGrt)
+        }
       }
     })
 
@@ -380,7 +383,6 @@ describe('aprOptimizer', () => {
     ): OptimizationParams {
       return {
         ...makeParams(subgraphs, totalBudgetGrt),
-        useWaterfall: true,
         ...overrides,
       }
     }
@@ -552,17 +554,5 @@ describe('aprOptimizer', () => {
       })
     })
 
-    describe('resolver', () => {
-      it('legacy path runs by default; waterfall path runs when flag is on', () => {
-        // Legacy filters zero-signal candidates out entirely; waterfall keeps
-        // them in perSubgraph with 0 allocation. Use this asymmetry to prove
-        // the resolver actually switched implementations.
-        const sgs = [makeSg('A', 0, 1000), makeSg('B', 100, 1000)]
-        const legacy = optimizeAllocations(makeParams(sgs, 10_000))
-        const waterfall = optimizeAllocations(waterfallParams(sgs, 10_000))
-        expect(legacy.perSubgraph.length).toBe(1)
-        expect(waterfall.perSubgraph.length).toBe(2)
-      })
-    })
   })
 })

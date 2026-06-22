@@ -281,7 +281,6 @@ function applyOptimizedAllocations() {
     networkGRTIssuancePerBlock: metrics.networkGRTIssuancePerBlock,
     blocksPerDay: chainStore.chainConfig.blocksPerDay,
     indexingRewardCut: indexerQuery.data.value?.indexingRewardCut ?? 0,
-    useWaterfall: settingsStore.useWaterfallOptimizer,
     maxAllocationPct: settingsStore.maxAllocationPct,
     maxAllocationGrt: settingsStore.maxAllocationGrt,
     riskyAllocationPct: settingsStore.riskyAllocationPct,
