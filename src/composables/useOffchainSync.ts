@@ -1,5 +1,6 @@
 import { computed } from 'vue'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
+import { useToast } from 'primevue/usetoast'
 import { storeToRefs } from 'pinia'
 import { useAccountStore, useChainStore } from '@/stores'
 import {
@@ -24,7 +25,12 @@ export function useOffchainSync() {
   const accountStore = useAccountStore()
   const chainStore = useChainStore()
   const queryClient = useQueryClient()
+  const toast = useToast()
   const { activeAccount } = storeToRefs(accountStore)
+
+  function errorMessage(err: unknown) {
+    return err instanceof Error ? err.message : 'Unknown error'
+  }
 
   const agentEndpoint = computed(() => activeAccount.value?.agentEndpoint ?? '')
   const hasAgent = computed(() => !!agentEndpoint.value)
@@ -70,6 +76,20 @@ export function useOffchainSync() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['indexing-rules'] })
+      toast.add({
+        severity: 'success',
+        summary: 'Offchain sync added',
+        detail: 'The deployment will now be synced offchain.',
+        life: 4000,
+      })
+    },
+    onError: (err) => {
+      toast.add({
+        severity: 'error',
+        summary: 'Failed to add offchain sync',
+        detail: errorMessage(err),
+        life: 6000,
+      })
     },
   })
 
@@ -83,16 +103,42 @@ export function useOffchainSync() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['indexing-rules'] })
+      toast.add({
+        severity: 'success',
+        summary: 'Offchain sync removed',
+        detail: 'The deployment will no longer be synced offchain.',
+        life: 4000,
+      })
+    },
+    onError: (err) => {
+      toast.add({
+        severity: 'error',
+        summary: 'Failed to remove offchain sync',
+        detail: errorMessage(err),
+        life: 6000,
+      })
     },
   })
 
+  function noAgentToast() {
+    toast.add({
+      severity: 'warn',
+      summary: 'No agent endpoint',
+      detail: 'Configure your indexer agent endpoint in Settings first.',
+      life: 5000,
+    })
+  }
+
   function addOffchainSync(ipfsHash: string) {
-    if (!hasAgent.value) return
+    if (!hasAgent.value) return noAgentToast()
+    // Avoid enqueueing a duplicate request on rapid double-clicks.
+    if (addMutation.isPending.value) return
     addMutation.mutate(ipfsHash)
   }
 
   function removeOffchainSync(ipfsHash: string) {
-    if (!hasAgent.value) return
+    if (!hasAgent.value) return noAgentToast()
+    if (removeMutation.isPending.value) return
     removeMutation.mutate(ipfsHash)
   }
 

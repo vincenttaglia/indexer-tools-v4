@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { VueQueryPlugin } from '@tanstack/vue-query'
 import PrimeVue from 'primevue/config'
+import ToastService from 'primevue/toastservice'
 import { definePreset } from '@primeuix/styled'
 import Aura from '@primevue/themes/aura'
 import router from '@/router'
@@ -53,6 +54,7 @@ async function bootstrap() {
       },
     },
   })
+  app.use(ToastService)
 
   // Router
   app.use(router)
