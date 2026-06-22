@@ -166,15 +166,15 @@ const statusFilterOptions = [
 // Rewards filter options (3-way)
 // ---------------------------------------------------------------------------
 const rewardsFilterOptions = [
-  { label: 'Exclude', value: 0 },
   { label: 'Include', value: 1 },
+  { label: 'Exclude', value: 0 },
   { label: 'Only', value: 2 },
 ]
 
 const allocationFilterOptions = [
   { label: 'Include', value: 'none' },
+  { label: 'Exclude', value: 'hide' },
   { label: 'Only', value: 'only' },
-  { label: 'Hide', value: 'hide' },
 ]
 
 // ---------------------------------------------------------------------------
@@ -261,8 +261,6 @@ const totals = computed(() => {
 
   let totalSignal = 0
   let totalStake = 0
-  let totalDailyRewardsCut = 0
-  let totalMaxAllo = 0
   let aprWeightedSum = 0
   let aprWeightDenom = 0
 
@@ -271,11 +269,6 @@ const totals = computed(() => {
     const stakeGrt = weiToGrt(sg.deployment.stakedTokens)
     totalSignal += signalGrt
     totalStake += stakeGrt
-    totalDailyRewardsCut += sg.dailyRewardsCut
-
-    if (isFinite(sg.maxAllo) && sg.maxAllo !== Number.MIN_SAFE_INTEGER && sg.maxAllo > 0) {
-      totalMaxAllo += sg.maxAllo
-    }
 
     if (isFinite(sg.apr) && signalGrt > 0) {
       aprWeightedSum += sg.apr * signalGrt
@@ -284,15 +277,12 @@ const totals = computed(() => {
   }
 
   const avgApr = aprWeightDenom > 0 ? aprWeightedSum / aprWeightDenom : 0
-  const dailyRewardsCutGrt = weiToGrt(String(totalDailyRewardsCut))
 
   return {
     count: subs.length,
     totalSignal,
     totalStake,
     avgApr,
-    dailyRewardsCutGrt,
-    totalMaxAllo,
   }
 })
 
@@ -736,14 +726,6 @@ const { visibleColumns } = useColumnPreferences('subgraphs', columns)
         <span class="total-item">
           <span class="total-key">Avg APR:</span>
           <strong>{{ formatNumber(totals.avgApr, 2) }}%</strong>
-        </span>
-        <span class="total-item">
-          <span class="total-key">Daily (Cut):</span>
-          <strong>{{ formatNumber(totals.dailyRewardsCutGrt, 0) }} GRT</strong>
-        </span>
-        <span class="total-item">
-          <span class="total-key">Max Allo:</span>
-          <strong>{{ formatNumber(totals.totalMaxAllo, 0) }} GRT</strong>
         </span>
       </div>
     </div>
