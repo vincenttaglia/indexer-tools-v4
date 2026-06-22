@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import { VueQueryPlugin } from '@tanstack/vue-query'
 import PrimeVue from 'primevue/config'
+import Tooltip from 'primevue/tooltip'
 import { definePreset } from '@primeuix/styled'
 import Aura from '@primevue/themes/aura'
 import router from '@/router'
@@ -53,6 +54,7 @@ async function bootstrap() {
       },
     },
   })
+  app.directive('tooltip', Tooltip)
 
   // Router
   app.use(router)
