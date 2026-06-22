@@ -11,6 +11,8 @@ import SelectButton from 'primevue/selectbutton'
 import MultiSelect from 'primevue/multiselect'
 import ToggleSwitch from 'primevue/toggleswitch'
 import InputNumber from 'primevue/inputnumber'
+import InputGroup from 'primevue/inputgroup'
+import InputGroupAddon from 'primevue/inputgroupaddon'
 
 // Project components
 import { DataTable, TokenCell, PercentCell, HealthCell } from '@/components/DataTable'
@@ -637,32 +639,38 @@ const { visibleColumns } = useColumnPreferences('subgraphs', columns)
 
       <div class="filter-group filter-number">
         <label class="filter-label">Target APR</label>
-        <InputNumber
-          v-model="filterStore.subgraphFilters.targetApr"
-          :min="0"
-          :maxFractionDigits="4"
-          suffix="%"
-        />
+        <InputGroup>
+          <InputNumber
+            v-model="filterStore.subgraphFilters.targetApr"
+            :min="0"
+            :maxFractionDigits="4"
+          />
+          <InputGroupAddon>%</InputGroupAddon>
+        </InputGroup>
       </div>
 
       <div class="filter-group filter-number">
         <label class="filter-label">Min Signal</label>
-        <InputNumber
-          v-model="filterStore.subgraphFilters.minSignal"
-          placeholder="0 = off"
-          :min="0"
-          suffix=" GRT"
-        />
+        <InputGroup>
+          <InputNumber
+            v-model="filterStore.subgraphFilters.minSignal"
+            placeholder="0 = off"
+            :min="0"
+          />
+          <InputGroupAddon>GRT</InputGroupAddon>
+        </InputGroup>
       </div>
 
       <div class="filter-group filter-number">
         <label class="filter-label">Max Signal</label>
-        <InputNumber
-          v-model="filterStore.subgraphFilters.maxSignal"
-          placeholder="0 = off"
-          :min="0"
-          suffix=" GRT"
-        />
+        <InputGroup>
+          <InputNumber
+            v-model="filterStore.subgraphFilters.maxSignal"
+            placeholder="0 = off"
+            :min="0"
+          />
+          <InputGroupAddon>GRT</InputGroupAddon>
+        </InputGroup>
       </div>
 
       <div class="filter-toggle">
@@ -806,14 +814,26 @@ const { visibleColumns } = useColumnPreferences('subgraphs', columns)
   width: 100%;
 }
 
+.filter-number :deep(.p-inputgroup) {
+  width: 150px;
+}
+
 .filter-number :deep(.p-inputnumber) {
   display: inline-flex;
-  width: 120px;
+  flex: 1 1 auto;
 }
 
 .filter-number :deep(.p-inputnumber-input) {
   width: 100%;
   min-width: 0;
+}
+
+/* Compact, muted unit add-on so it reads as a label, not a control */
+.filter-number :deep(.p-inputgroupaddon) {
+  padding-inline: 8px;
+  font-size: 0.8125rem;
+  color: var(--p-text-muted-color);
+  min-width: auto;
 }
 
 .filter-segmented {
