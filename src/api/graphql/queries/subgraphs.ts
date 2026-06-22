@@ -20,7 +20,7 @@ export const SUBGRAPH_DEPLOYMENTS_QUERY = gql`
       orderBy: "id"
       where: {
         id_gt: $cursor
-        deployment_: { signalledTokens_gt: $minSignal }
+        deployment_: { signalledTokens_gte: $minSignal }
         network_in: $networks
       }
     ) {
@@ -70,7 +70,7 @@ export const SUBGRAPH_DEPLOYMENTS_NO_NETWORK_FILTER_QUERY = gql`
       orderBy: "id"
       where: {
         id_gt: $cursor
-        deployment_: { signalledTokens_gt: $minSignal }
+        deployment_: { signalledTokens_gte: $minSignal }
       }
     ) {
       id

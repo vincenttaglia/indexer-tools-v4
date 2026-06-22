@@ -40,7 +40,6 @@ export interface SubgraphRaw {
 export interface SubgraphComputed extends SubgraphRaw {
   proportion: number
   apr: number
-  newApr: number
   dailyRewards: number
   dailyRewardsCut: number
   maxAllo: number

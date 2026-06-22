@@ -109,7 +109,6 @@ const selectedRawSubgraphs = computed(() => {
 })
 
 const targetApr = computed(() => filterStore.subgraphFilters.targetApr)
-const newAllocation = computed(() => String(filterStore.subgraphFilters.newAllocation))
 
 const { computed: selectedSubgraphsList } = useSubgraphComputations({
   subgraphs: selectedRawSubgraphs,
@@ -120,7 +119,6 @@ const { computed: selectedSubgraphsList } = useSubgraphComputations({
   indexingRewardCut: computed(() => indexerQuery.data.value?.indexingRewardCut ?? 0),
   blocksPerDay: computed(() => chainStore.chainConfig.blocksPerDay),
   targetApr,
-  newAllocation,
   closingAllocations: computed(() => wizardStore.closingAllocations),
 })
 

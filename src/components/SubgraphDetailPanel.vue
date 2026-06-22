@@ -262,6 +262,9 @@ function healthLabel(): string {
   width: 360px;
   max-height: 500px;
   overflow-y: auto;
+  /* Inset the content so the avatar's box-shadow ring isn't clipped against
+     the panel's scroll edges on the top/left sides. */
+  padding: 3px;
 }
 
 /* Header */

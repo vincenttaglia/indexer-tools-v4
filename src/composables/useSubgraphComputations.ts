@@ -13,7 +13,6 @@ import type {
 import type { OtherIndexersHealth } from './useOtherIndexersQuery'
 import {
   calculateApr,
-  calculateNewApr,
   calculateSubgraphDailyRewards,
   calculateDailyRewardsCut,
   calculateMaxAllocation,
@@ -43,8 +42,6 @@ interface ComputationInputs {
   blocksPerDay: Ref<number>
   /** Target APR percentage for max allocation calculation (e.g. 10 for 10%) */
   targetApr: Ref<number>
-  /** New allocation amount in GRT (as a string, NOT wei) for projected calculations */
-  newAllocation: Ref<string>
   /**
    * Optional: allocations being closed (from wizard Step 1).
    * When provided, the allocatedTokens of matching closing allocations are subtracted
@@ -97,7 +94,6 @@ export function useSubgraphComputations(inputs: ComputationInputs) {
     const rewardCut = inputs.indexingRewardCut.value
     const bpd = inputs.blocksPerDay.value
     const targetApr = inputs.targetApr.value
-    const newAllocation = inputs.newAllocation.value
 
     // Build closing tokens lookup if closing allocations are provided
     const closingTokensMap = inputs.closingAllocations?.value
@@ -133,29 +129,6 @@ export function useSubgraphComputations(inputs: ComputationInputs) {
         blocksPerDay: bpd,
       })
 
-      // New APR (projected APR if a new allocation of `newAllocation` GRT is added)
-      const newApr = calculateNewApr({
-        signalledTokens: d.signalledTokens,
-        stakedTokens: effectiveStakedTokens,
-        totalTokensSignalled: metrics.totalTokensSignalled,
-        networkGRTIssuancePerBlock: metrics.networkGRTIssuancePerBlock,
-        blocksPerDay: bpd,
-        newAllocation,
-      })
-
-      // Daily rewards for a hypothetical new allocation
-      const dailyRewards = calculateSubgraphDailyRewards({
-        signalledTokens: d.signalledTokens,
-        stakedTokens: effectiveStakedTokens,
-        totalTokensSignalled: metrics.totalTokensSignalled,
-        networkGRTIssuancePerBlock: metrics.networkGRTIssuancePerBlock,
-        blocksPerDay: bpd,
-        newAllocation,
-      })
-
-      // Daily rewards after indexer cut (indexingRewardCut is the fraction the indexer keeps)
-      const dailyRewardsCut = calculateDailyRewardsCut(dailyRewards, rewardCut)
-
       // Max allocation to achieve target APR
       const maxAllo = calculateMaxAllocation({
         targetApr,
@@ -165,6 +138,23 @@ export function useSubgraphComputations(inputs: ComputationInputs) {
         networkGRTIssuancePerBlock: metrics.networkGRTIssuancePerBlock,
         blocksPerDay: bpd,
       })
+
+      // The hypothetical allocation used for projected daily rewards is the
+      // max efficient allocation for the target APR (clamped at 0 when over-allocated).
+      const projectedAllocation = String(Math.max(0, maxAllo))
+
+      // Daily rewards for the max efficient allocation
+      const dailyRewards = calculateSubgraphDailyRewards({
+        signalledTokens: d.signalledTokens,
+        stakedTokens: effectiveStakedTokens,
+        totalTokensSignalled: metrics.totalTokensSignalled,
+        networkGRTIssuancePerBlock: metrics.networkGRTIssuancePerBlock,
+        blocksPerDay: bpd,
+        newAllocation: projectedAllocation,
+      })
+
+      // Daily rewards after indexer cut (indexingRewardCut is the fraction the indexer keeps)
+      const dailyRewardsCut = calculateDailyRewardsCut(dailyRewards, rewardCut)
 
       // Proportion: signal-to-stake ratio relative to network averages
       const proportion = calculateProportion({
@@ -201,7 +191,6 @@ export function useSubgraphComputations(inputs: ComputationInputs) {
       return {
         ...sg,
         apr,
-        newApr,
         dailyRewards,
         dailyRewardsCut,
         maxAllo,

@@ -3,11 +3,8 @@ import { defineStore } from 'pinia'
 
 export interface SubgraphFilters {
   search: string
-  hideSmallSignal: boolean
   rewardsFilter: 0 | 1 | 2 // 0=Exclude Denied, 1=Include, 2=Only Denied
-  onlyAllocated: boolean
-  hideCurrentlyAllocated: boolean
-  onlyDeployed: boolean
+  allocationFilter: 'none' | 'only' | 'hide' // none=no filter, only=only allocated, hide=hide allocated
   minSignal: number
   maxSignal: number // 0 = disabled
   networks: string[] // empty = all networks
@@ -15,7 +12,6 @@ export interface SubgraphFilters {
   activateBlacklist: boolean
   activateSynclist: boolean
   targetApr: number
-  newAllocation: number
 }
 
 export interface AllocationFilters {
@@ -36,11 +32,8 @@ export interface QueryFeeFilters {
 
 const SUBGRAPH_DEFAULTS: SubgraphFilters = {
   search: '',
-  hideSmallSignal: false,
   rewardsFilter: 0,
-  onlyAllocated: false,
-  hideCurrentlyAllocated: false,
-  onlyDeployed: false,
+  allocationFilter: 'none',
   minSignal: 0,
   maxSignal: 0,
   networks: [],
@@ -48,7 +41,6 @@ const SUBGRAPH_DEFAULTS: SubgraphFilters = {
   activateBlacklist: false,
   activateSynclist: false,
   targetApr: 10,
-  newAllocation: 100000,
 }
 
 const ALLOCATION_DEFAULTS: AllocationFilters = {

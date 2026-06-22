@@ -6,6 +6,7 @@ import { createColumnHelper, type ColumnDef } from '@tanstack/vue-table'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import Select from 'primevue/select'
+import SelectButton from 'primevue/selectbutton'
 import MultiSelect from 'primevue/multiselect'
 import ToggleSwitch from 'primevue/toggleswitch'
 import InputNumber from 'primevue/inputnumber'
@@ -126,9 +127,15 @@ const statusFilterOptions = [
 // Rewards filter options (3-way)
 // ---------------------------------------------------------------------------
 const rewardsFilterOptions = [
-  { label: 'Exclude Denied', value: 0 },
-  { label: 'Include Denied', value: 1 },
-  { label: 'Only Denied', value: 2 },
+  { label: 'Exclude', value: 0 },
+  { label: 'Include', value: 1 },
+  { label: 'Only', value: 2 },
+]
+
+const allocationFilterOptions = [
+  { label: 'Include', value: 'none' },
+  { label: 'Only', value: 'only' },
+  { label: 'Hide', value: 'hide' },
 ]
 
 // ---------------------------------------------------------------------------
@@ -145,7 +152,6 @@ const { filtered: filteredSubgraphs } = useSubgraphFilters(
 // Computation inputs
 // ---------------------------------------------------------------------------
 const targetApr = computed(() => filterStore.subgraphFilters.targetApr)
-const newAllocation = computed(() => String(filterStore.subgraphFilters.newAllocation))
 
 const { computed: computedSubgraphs } = useSubgraphComputations({
   subgraphs: filteredSubgraphs,
@@ -156,7 +162,6 @@ const { computed: computedSubgraphs } = useSubgraphComputations({
   indexingRewardCut: computed(() => indexerQuery.data.value?.indexingRewardCut ?? 0),
   blocksPerDay: computed(() => chainStore.chainConfig.blocksPerDay),
   targetApr,
-  newAllocation,
   closingAllocations: computed(() => wizardStore.closingAllocations),
   epochData: computed(() => epochQuery.data.value),
   otherIndexersStatus: computed(() => otherIndexersQuery.data.value),
@@ -542,16 +547,6 @@ const { visibleColumns } = useColumnPreferences('subgraphs', columns)
       </div>
 
       <div class="filter-group filter-select">
-        <label class="filter-label">Rewards</label>
-        <Select
-          v-model="filterStore.subgraphFilters.rewardsFilter"
-          :options="rewardsFilterOptions"
-          optionLabel="label"
-          optionValue="value"
-        />
-      </div>
-
-      <div class="filter-group filter-select">
         <label class="filter-label">Status</label>
         <Select
           v-model="filterStore.subgraphFilters.statusFilter"
@@ -572,27 +567,27 @@ const { visibleColumns } = useColumnPreferences('subgraphs', columns)
         />
       </div>
 
-      <div class="filter-group filter-number">
-        <label class="filter-label">Min Signal</label>
-        <div class="toggle-input">
-          <ToggleSwitch v-model="filterStore.subgraphFilters.hideSmallSignal" />
-          <InputNumber
-            v-if="filterStore.subgraphFilters.hideSmallSignal"
-            v-model="filterStore.subgraphFilters.minSignal"
-            placeholder="GRT"
-            :min="0"
-            suffix=" GRT"
-          />
-        </div>
+      <div class="filter-group filter-segmented">
+        <label class="filter-label">Allocations</label>
+        <SelectButton
+          v-model="filterStore.subgraphFilters.allocationFilter"
+          :options="allocationFilterOptions"
+          optionLabel="label"
+          optionValue="value"
+          :allowEmpty="false"
+          fluid
+        />
       </div>
 
-      <div class="filter-group filter-number">
-        <label class="filter-label">Max Signal</label>
-        <InputNumber
-          v-model="filterStore.subgraphFilters.maxSignal"
-          placeholder="0 = off"
-          :min="0"
-          suffix=" GRT"
+      <div class="filter-group filter-segmented">
+        <label class="filter-label">Denied Rewards</label>
+        <SelectButton
+          v-model="filterStore.subgraphFilters.rewardsFilter"
+          :options="rewardsFilterOptions"
+          optionLabel="label"
+          optionValue="value"
+          :allowEmpty="false"
+          fluid
         />
       </div>
 
@@ -607,33 +602,23 @@ const { visibleColumns } = useColumnPreferences('subgraphs', columns)
       </div>
 
       <div class="filter-group filter-number">
-        <label class="filter-label">New Allocation</label>
+        <label class="filter-label">Min Signal</label>
         <InputNumber
-          v-model="filterStore.subgraphFilters.newAllocation"
+          v-model="filterStore.subgraphFilters.minSignal"
+          placeholder="0 = off"
           :min="0"
           suffix=" GRT"
         />
       </div>
 
-      <div class="filter-toggle">
-        <label class="toggle-label">
-          <ToggleSwitch v-model="filterStore.subgraphFilters.onlyDeployed" />
-          <span>Only Deployed</span>
-        </label>
-      </div>
-
-      <div class="filter-toggle">
-        <label class="toggle-label">
-          <ToggleSwitch v-model="filterStore.subgraphFilters.onlyAllocated" />
-          <span>Only Allocated</span>
-        </label>
-      </div>
-
-      <div class="filter-toggle">
-        <label class="toggle-label">
-          <ToggleSwitch v-model="filterStore.subgraphFilters.hideCurrentlyAllocated" />
-          <span>Hide Allocated</span>
-        </label>
+      <div class="filter-group filter-number">
+        <label class="filter-label">Max Signal</label>
+        <InputNumber
+          v-model="filterStore.subgraphFilters.maxSignal"
+          placeholder="0 = off"
+          :min="0"
+          suffix=" GRT"
+        />
       </div>
 
       <div class="filter-toggle">
@@ -801,11 +786,8 @@ const { visibleColumns } = useColumnPreferences('subgraphs', columns)
   min-width: 0;
 }
 
-.toggle-input {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 35px;
+.filter-segmented {
+  min-width: 260px;
 }
 
 .filter-toggle {

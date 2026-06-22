@@ -63,8 +63,8 @@ export function useSubgraphFilters(
         return false
       }
 
-      // Hide small signal (below minimum signal threshold in GRT)
-      if (filters.hideSmallSignal && filters.minSignal > 0) {
+      // Min signal: filter out subgraphs below a minimum signal threshold in GRT
+      if (filters.minSignal > 0) {
         const signalGrt = weiToGrt(deployment.signalledTokens)
         if (signalGrt < filters.minSignal) return false
       }
@@ -75,19 +75,12 @@ export function useSubgraphFilters(
         if (signalGrt > filters.maxSignal) return false
       }
 
-      // Only show subgraphs the indexer is currently allocated to
-      if (filters.onlyAllocated) {
+      // Allocation filter: 'only' = only currently allocated, 'hide' = hide currently
+      // allocated (except those being closed in the wizard), 'none' = no filter.
+      if (filters.allocationFilter === 'only') {
         if (!allocatedDeployments.value.has(ipfsHash)) return false
-      }
-
-      // Hide currently allocated subgraphs (except those being closed in wizard)
-      if (filters.hideCurrentlyAllocated) {
+      } else if (filters.allocationFilter === 'hide') {
         if (allocatedDeployments.value.has(ipfsHash) && !closingDeployments?.value?.has(ipfsHash)) return false
-      }
-
-      // Only show subgraphs the indexer has deployed on their graph-node
-      if (filters.onlyDeployed) {
-        if (!statuses?.value?.has(ipfsHash)) return false
       }
 
       // Network filter (multi-select: empty = all networks)
