@@ -91,7 +91,7 @@ services:
   indexer-tools:
     image: ghcr.io/vincenttaglia/indexer-tools-v4:latest
     ports:
-      - "3000:80"
+      - "3000:8080"
     restart: unless-stopped
     environment:
       GRAPH_API_KEY: "your-graph-api-key"
@@ -127,19 +127,20 @@ Images are published to GitHub Container Registry:
 
 | Tag | Source |
 |-----|--------|
-| `latest` | `main` branch |
+| `latest` | Newest stable release (semver tag) |
+| `4.0.0`, `4.0` | Version tags |
+| `main` | `main` branch |
 | `dev` | `dev` branch |
-| `v1.0.0` | Version tags |
 
 ```bash
-# Latest stable
+# Latest stable release
 docker pull ghcr.io/vincenttaglia/indexer-tools-v4:latest
 
 # Development
 docker pull ghcr.io/vincenttaglia/indexer-tools-v4:dev
 
 # Specific version
-docker pull ghcr.io/vincenttaglia/indexer-tools-v4:v1.0.0
+docker pull ghcr.io/vincenttaglia/indexer-tools-v4:4.0.0
 ```
 
 ## Kubernetes
