@@ -23,12 +23,16 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/vincenttaglia/indexer-tools-v4
+          # latest=auto → :latest is applied only to the newest, non-prerelease
+          # semver tag (e.g. v1.2.0, not v1.2.0-rc.1). Branch pushes never get :latest.
+          flavor: |
+            latest=auto
           tags: |
-            # main branch → :latest
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+            # main branch → :main
+            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
             # development branch → :dev
             type=raw,value=dev,enable=${{ github.ref == 'refs/heads/dev' }}
-            # version tags → :v1.0.0, :1.0
+            # version tags → :1.0.0, :1.0  (+ :latest via latest=auto)
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             # git sha for traceability

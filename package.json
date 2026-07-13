@@ -2,6 +2,7 @@
   "name": "indexer-tools-v4",
   "private": true,
   "version": "4.0.0",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",

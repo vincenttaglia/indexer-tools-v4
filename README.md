@@ -1,5 +1,10 @@
 # Indexer Tools v4
 
+[![CI](https://github.com/vincenttaglia/indexer-tools-v4/actions/workflows/ci.yml/badge.svg)](https://github.com/vincenttaglia/indexer-tools-v4/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/vincenttaglia/indexer-tools-v4?sort=semver)](https://github.com/vincenttaglia/indexer-tools-v4/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![GHCR](https://img.shields.io/badge/ghcr.io-indexer--tools--v4-blue?logo=docker)](https://github.com/vincenttaglia/indexer-tools-v4/pkgs/container/indexer-tools-v4)
+
 Dashboard for [The Graph](https://thegraph.com/) indexers. Manage subgraph allocations, monitor QoS metrics, track query fees, and queue indexer-agent actions — all from a single interface.
 
 ## Features
@@ -27,7 +32,7 @@ services:
   indexer-tools:
     image: ghcr.io/vincenttaglia/indexer-tools-v4:latest
     ports:
-      - "3000:80"
+      - "3000:8080"
     restart: unless-stopped
     environment:
       GRAPH_API_KEY: "your-graph-api-key"
@@ -69,9 +74,10 @@ Images are published to GitHub Container Registry:
 
 | Tag | Source |
 |-----|--------|
-| `latest` | `main` branch |
+| `latest` | Newest stable release (semver tag) |
+| `4.0.0`, `4.0` | Version tags |
+| `main` | `main` branch |
 | `dev` | `dev` branch |
-| `v1.0.0` | Version tags |
 
 ```bash
 docker pull ghcr.io/vincenttaglia/indexer-tools-v4:latest
@@ -161,3 +167,7 @@ docker/
 - [DEPLOYMENT.md](DEPLOYMENT.md) — Docker deployment, environment variables, per-account API proxy, integration with indexer stacks
 - [Helm chart](https://github.com/vincenttaglia/helm-charts/tree/main/charts/indexer-tools-v4) — Kubernetes deployment via Helm (recommended for clusters)
 - [k8s/](k8s/) — Raw Kubernetes manifests (Deployment, Service, Ingress, ConfigMap) with Kustomize support
+
+## License
+
+[MIT](LICENSE) © Vincent Taglia

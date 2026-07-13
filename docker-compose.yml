@@ -3,7 +3,7 @@ services:
     build: .
     # image: ghcr.io/vincenttaglia/indexer-tools-v4:latest  # Use this instead of build for published images
     ports:
-      - "3000:80"
+      - "3000:8080"
     restart: unless-stopped
     # ── Environment Variables ────────────────────────────────────────
     # Uncomment and configure as needed. See DEPLOYMENT.md for details.
