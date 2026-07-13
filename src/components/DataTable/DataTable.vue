@@ -405,42 +405,26 @@ function onContainerPointerUp(ev: PointerEvent) {
             <template v-if="!header.isPlaceholder">
               <!-- Selection checkbox in header -->
               <template v-if="header.column.id === '_selection'">
-                <div
-                  class="selection-header"
-                  v-tooltip.bottom="'Drag across rows to select. Hold Alt or Ctrl while dragging to unselect.'"
-                >
+                <div class="selection-header">
                   <input
                     type="checkbox"
                     class="row-checkbox"
+                    v-tooltip.bottom="'Drag across rows to select. Hold Alt or Ctrl while dragging to unselect.'"
                     :checked="table.getIsAllRowsSelected()"
                     :indeterminate="table.getIsSomeRowsSelected()"
                     @change="table.getToggleAllRowsSelectedHandler()($event)"
                     @click.stop
                   />
-                  <svg
-                    class="selection-hint-icon"
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="16" x2="12" y2="12" />
-                    <line x1="12" y1="8" x2="12.01" y2="8" />
-                  </svg>
                 </div>
               </template>
               <template v-else>
                 <div class="th-content">
-                  <FlexRender
-                    :render="header.column.columnDef.header"
-                    :props="header.getContext()"
-                  />
+                  <span class="th-label">
+                    <FlexRender
+                      :render="header.column.columnDef.header"
+                      :props="header.getContext()"
+                    />
+                  </span>
                   <span v-if="header.column.getCanSort()" class="sort-indicator">
                     <svg
                       v-if="header.column.getIsSorted() === 'asc'"
@@ -686,6 +670,18 @@ function onContainerPointerUp(ev: PointerEvent) {
   display: flex;
   align-items: center;
   gap: 4px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Header label truncates so the sort chevron after it is never clipped. */
+.th-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 0 1 auto;
 }
 
 /* Selection header: checkbox + an info affordance that reveals the
@@ -693,20 +689,6 @@ function onContainerPointerUp(ev: PointerEvent) {
 .selection-header {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  cursor: help;
-}
-
-.selection-hint-icon {
-  color: var(--app-surface-400);
-  opacity: 0.7;
-  flex-shrink: 0;
-  transition: opacity 0.15s ease, color 0.15s ease;
-}
-
-.selection-header:hover .selection-hint-icon {
-  opacity: 1;
-  color: var(--p-primary-500);
 }
 
 /* --- Sort indicators --- */
