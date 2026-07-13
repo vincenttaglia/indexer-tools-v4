@@ -402,7 +402,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
   }),
   columnHelper.accessor('dailyRewardsCut', {
     id: 'dailyRewardsCut',
-    header: 'Daily Rewards (GRT)',
+    header: 'Daily Rewards',
     size: 180,
     cell: (info) => {
       const val = info.getValue() as number
@@ -445,7 +445,7 @@ const columns: ColumnDef<SubgraphComputed, any>[] = [
     {
       id: 'health',
       header: 'Health',
-      size: 120,
+      size: 140,
       cell: (info) => {
         const val = info.getValue() as HealthStatus | null
         return h(HealthCell, { status: val })

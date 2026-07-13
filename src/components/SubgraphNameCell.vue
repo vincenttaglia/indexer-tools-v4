@@ -44,7 +44,7 @@ function togglePanel(event: Event) {
     />
     <div class="name-text">
       <span class="name-primary">
-        {{ displayName }}
+        <span class="name-label">{{ displayName }}</span>
         <span v-if="isDeployed" class="deployed-dot" title="Deployed on your node" />
         <span v-if="isAllocated" class="allocated-dot" title="Currently allocated" />
       </span>
@@ -93,12 +93,20 @@ function togglePanel(event: Event) {
   font-weight: 500;
   font-size: 0.8125rem;
   color: var(--p-text-color);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Name text truncates; the status dots after it must never be clipped. */
+.name-label {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  min-width: 0;
+  flex: 0 1 auto;
 }
 
 .deployed-dot {

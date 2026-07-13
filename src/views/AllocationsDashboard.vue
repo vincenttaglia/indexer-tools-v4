@@ -559,7 +559,7 @@ const columns: ColumnDef<AllocationComputed, any>[] = [
     {
       id: 'health',
       header: 'Health',
-      size: 100,
+      size: 140,
       cell: (info) => {
         const val = info.getValue() as HealthStatus | null
         return h(HealthCell, { status: val })
