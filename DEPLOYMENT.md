@@ -91,7 +91,7 @@ services:
   indexer-tools:
     image: ghcr.io/vincenttaglia/indexer-tools-v4:latest
     ports:
-      - "3000:80"
+      - "3000:8080"
     restart: unless-stopped
     environment:
       GRAPH_API_KEY: "your-graph-api-key"
@@ -127,33 +127,100 @@ Images are published to GitHub Container Registry:
 
 | Tag | Source |
 |-----|--------|
-| `latest` | `main` branch |
+| `latest` | Newest stable release (semver tag) |
+| `4.0.0`, `4.0` | Version tags |
+| `main` | `main` branch |
 | `dev` | `dev` branch |
-| `v1.0.0` | Version tags |
 
 ```bash
-# Latest stable
+# Latest stable release
 docker pull ghcr.io/vincenttaglia/indexer-tools-v4:latest
 
 # Development
 docker pull ghcr.io/vincenttaglia/indexer-tools-v4:dev
 
 # Specific version
-docker pull ghcr.io/vincenttaglia/indexer-tools-v4:v1.0.0
+docker pull ghcr.io/vincenttaglia/indexer-tools-v4:4.0.0
 ```
 
 ## Kubernetes
 
-Kubernetes manifests are in the [`k8s/`](k8s/) directory with Kustomize support.
+Two options are supported: the **Helm chart** (recommended for clusters) or the **raw manifests** in [`k8s/`](k8s/).
+
+The same environment variables (`GRAPH_API_KEY`, `DRPC_API_KEY`, `DEFAULT_ACCOUNTS`) work identically to Docker Compose — the entrypoint generates the nginx proxy config at pod start.
+
+### Helm (recommended)
+
+The chart is published at [vincenttaglia/helm-charts](https://github.com/vincenttaglia/helm-charts/tree/main/charts/indexer-tools-v4) and served from a GitHub Pages Helm repo.
 
 ```bash
-# Edit k8s/secret.yaml with your API keys and accounts, then:
+helm repo add vincenttaglia https://vincenttaglia.github.io/helm-charts
+helm repo update
+helm search repo vincenttaglia/indexer-tools-v4
+
+helm install indexer-tools vincenttaglia/indexer-tools-v4 \
+  --namespace indexer-tools --create-namespace
+```
+
+The chart starts with no API keys and no accounts — you can configure both in **Settings** at runtime. To pre-configure, use a values file.
+
+**API keys** are read from a Kubernetes Secret (the chart does not take keys inline, to keep them out of values/ConfigMaps). Create the Secret, then point the chart at it:
+
+```bash
+kubectl create secret generic indexer-tools-secrets \
+  --namespace indexer-tools \
+  --from-literal=GRAPH_API_KEY="your-graph-api-key" \
+  --from-literal=DRPC_API_KEY="your-drpc-api-key"
+```
+
+```yaml
+# values.yaml
+existingSecret: indexer-tools-secrets
+# secretKeys maps the chart's env vars to keys inside that Secret
+# (defaults shown — override only if your Secret uses different field names):
+secretKeys:
+  graphApiKey: GRAPH_API_KEY
+  drpcApiKey: DRPC_API_KEY
+
+config:
+  # JSON array string; HTTP endpoints are auto-proxied to /api/agent/<i>/ at pod start
+  defaultAccounts: |
+    [
+      {
+        "address": "0xYOUR_INDEXER_ADDRESS",
+        "chain": "arbitrum-one",
+        "label": "My Indexer",
+        "agentEndpoint": "http://indexer-agent:8000/",
+        "graphmanEndpoint": "http://graph-node:8050/",
+        "graphmanToken": "your-bearer-token"
+      }
+    ]
+
+ingress:
+  enabled: false        # set true and configure hosts/tls to expose the service
+
+# resources and autoscaling have sensible defaults (50m/64Mi requests,
+# 200m/128Mi limits, autoscaling off) — override as needed.
+```
+
+```bash
+helm upgrade --install indexer-tools vincenttaglia/indexer-tools-v4 \
+  --namespace indexer-tools --create-namespace \
+  -f values.yaml
+```
+
+> The key names above (`existingSecret`, `secretKeys`, `config.defaultAccounts`, `ingress`) reflect the chart's structure, but **`helm show values vincenttaglia/indexer-tools-v4` is the authoritative reference** — run it for exact keys, defaults, and the full ingress/resources/autoscaling schema.
+
+### Raw manifests (Kustomize)
+
+```bash
+# Edit k8s/configmap.yaml with your API keys and accounts, then:
 kubectl apply -k k8s/
 ```
 
-This creates an `indexer-tools` namespace with a Deployment, Service, and Secret. An Ingress manifest is included but commented out in `kustomization.yaml` — uncomment it and set your hostname to expose the service.
+This creates an `indexer-tools` namespace with a Deployment, Service, and ConfigMap. An Ingress manifest is included but commented out in `kustomization.yaml` — uncomment it and set your hostname to expose the service.
 
-The same environment variables (`GRAPH_API_KEY`, `DRPC_API_KEY`, `DEFAULT_ACCOUNTS`) work identically to Docker Compose. The entrypoint generates the nginx proxy config at pod start.
+> **Note:** the manifests put `GRAPH_API_KEY` / `DRPC_API_KEY` in a ConfigMap, which is convenient but not secret-grade. For sensitive deployments, move those keys into a Kubernetes Secret (or use the Helm chart's `existingSecret`).
 
 ## Development
 

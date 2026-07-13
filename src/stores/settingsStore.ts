@@ -39,9 +39,6 @@ export const useSettingsStore = defineStore('settings', () => {
   // Allocation optimizer settings
   // ---------------------------------------------------------------------------
 
-  /** When true, the wizard's "Optimize Allocations" button uses water-filling instead of the legacy closed-form solver. */
-  const useWaterfallOptimizer = ref(false)
-
   /** Per-deployment cap as a fraction of the budget, in [0, 1]. 0 disables the pct cap. */
   const maxAllocationPct = ref(0.10)
 
@@ -106,7 +103,6 @@ export const useSettingsStore = defineStore('settings', () => {
     darkMode,
     subgraphBlacklist,
     subgraphSynclist,
-    useWaterfallOptimizer,
     maxAllocationPct,
     maxAllocationGrt,
     riskyAllocationPct,

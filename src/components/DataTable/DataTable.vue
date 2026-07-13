@@ -405,21 +405,26 @@ function onContainerPointerUp(ev: PointerEvent) {
             <template v-if="!header.isPlaceholder">
               <!-- Selection checkbox in header -->
               <template v-if="header.column.id === '_selection'">
-                <input
-                  type="checkbox"
-                  class="row-checkbox"
-                  :checked="table.getIsAllRowsSelected()"
-                  :indeterminate="table.getIsSomeRowsSelected()"
-                  @change="table.getToggleAllRowsSelectedHandler()($event)"
-                  @click.stop
-                />
+                <div class="selection-header">
+                  <input
+                    type="checkbox"
+                    class="row-checkbox"
+                    v-tooltip.bottom="'Drag across rows to select. Hold Alt or Ctrl while dragging to unselect.'"
+                    :checked="table.getIsAllRowsSelected()"
+                    :indeterminate="table.getIsSomeRowsSelected()"
+                    @change="table.getToggleAllRowsSelectedHandler()($event)"
+                    @click.stop
+                  />
+                </div>
               </template>
               <template v-else>
                 <div class="th-content">
-                  <FlexRender
-                    :render="header.column.columnDef.header"
-                    :props="header.getContext()"
-                  />
+                  <span class="th-label">
+                    <FlexRender
+                      :render="header.column.columnDef.header"
+                      :props="header.getContext()"
+                    />
+                  </span>
                   <span v-if="header.column.getCanSort()" class="sort-indicator">
                     <svg
                       v-if="header.column.getIsSorted() === 'asc'"
@@ -665,6 +670,25 @@ function onContainerPointerUp(ev: PointerEvent) {
   display: flex;
   align-items: center;
   gap: 4px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Header label truncates so the sort chevron after it is never clipped. */
+.th-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+
+/* Selection header: checkbox + an info affordance that reveals the
+   drag-select / Alt-Ctrl-unselect tooltip on hover. */
+.selection-header {
+  display: inline-flex;
+  align-items: center;
 }
 
 /* --- Sort indicators --- */

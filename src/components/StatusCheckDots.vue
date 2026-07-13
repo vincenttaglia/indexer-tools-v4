@@ -93,7 +93,7 @@ function toggleError(event: Event) {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   overflow: hidden;
 }
 
@@ -113,7 +113,7 @@ function toggleError(event: Event) {
 }
 
 .status-check-interactive:hover {
-  background-color: var(--p-surface-100);
+  background-color: var(--app-surface-100);
 }
 
 .dot {

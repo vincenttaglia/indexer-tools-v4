@@ -205,7 +205,7 @@ const columns: ColumnDef<DeploymentStatus, any>[] = [
   columnHelper.accessor('health', {
     id: 'health',
     header: 'Health',
-    size: 120,
+    size: 140,
     cell: (info) => {
       const val = info.getValue() as HealthStatus
       return h(HealthCell, { status: val })

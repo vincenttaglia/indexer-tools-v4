@@ -38,13 +38,19 @@ export function useSubgraphFilters(
     const raw = subgraphs.value ?? []
     const filters = filterStore.subgraphFilters
 
+    // Hoist work that is constant across rows out of the per-row loop:
+    // parse the blacklist/synclist once, and build a Set for network lookups.
+    const search = filters.search ? filters.search.toLowerCase() : ''
+    const networkSet = filters.networks.length > 0 ? new Set(filters.networks) : null
+    const blacklist = filters.activateBlacklist ? parseHashList(settingsStore.subgraphBlacklist) : null
+    const synclist = filters.activateSynclist ? parseHashList(settingsStore.subgraphSynclist) : null
+
     return raw.filter((sg) => {
       const deployment = sg.deployment
       const ipfsHash = deployment.ipfsHash
 
       // Search filter: match against display name, IPFS hash, or subgraph ID
-      if (filters.search) {
-        const search = filters.search.toLowerCase()
+      if (search) {
         const name =
           deployment.versions?.[0]?.metadata?.subgraphVersion?.subgraph
             ?.metadata?.displayName ?? ''
@@ -63,8 +69,8 @@ export function useSubgraphFilters(
         return false
       }
 
-      // Hide small signal (below minimum signal threshold in GRT)
-      if (filters.hideSmallSignal && filters.minSignal > 0) {
+      // Min signal: filter out subgraphs below a minimum signal threshold in GRT
+      if (filters.minSignal > 0) {
         const signalGrt = weiToGrt(deployment.signalledTokens)
         if (signalGrt < filters.minSignal) return false
       }
@@ -75,24 +81,17 @@ export function useSubgraphFilters(
         if (signalGrt > filters.maxSignal) return false
       }
 
-      // Only show subgraphs the indexer is currently allocated to
-      if (filters.onlyAllocated) {
+      // Allocation filter: 'only' = only currently allocated, 'hide' = hide currently
+      // allocated (except those being closed in the wizard), 'none' = no filter.
+      if (filters.allocationFilter === 'only') {
         if (!allocatedDeployments.value.has(ipfsHash)) return false
-      }
-
-      // Hide currently allocated subgraphs (except those being closed in wizard)
-      if (filters.hideCurrentlyAllocated) {
+      } else if (filters.allocationFilter === 'hide') {
         if (allocatedDeployments.value.has(ipfsHash) && !closingDeployments?.value?.has(ipfsHash)) return false
       }
 
-      // Only show subgraphs the indexer has deployed on their graph-node
-      if (filters.onlyDeployed) {
-        if (!statuses?.value?.has(ipfsHash)) return false
-      }
-
       // Network filter (multi-select: empty = all networks)
-      if (filters.networks.length > 0) {
-        if (!deployment.manifest.network || !filters.networks.includes(deployment.manifest.network)) return false
+      if (networkSet) {
+        if (!deployment.manifest.network || !networkSet.has(deployment.manifest.network)) return false
       }
 
       // Status filter
@@ -102,16 +101,10 @@ export function useSubgraphFilters(
       }
 
       // Blacklist
-      if (filters.activateBlacklist) {
-        const blacklist = parseHashList(settingsStore.subgraphBlacklist)
-        if (blacklist.has(ipfsHash)) return false
-      }
+      if (blacklist && blacklist.has(ipfsHash)) return false
 
       // Synclist
-      if (filters.activateSynclist) {
-        const synclist = parseHashList(settingsStore.subgraphSynclist)
-        if (!synclist.has(ipfsHash)) return false
-      }
+      if (synclist && !synclist.has(ipfsHash)) return false
 
       return true
     })

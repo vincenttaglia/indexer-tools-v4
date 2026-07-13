@@ -1,5 +1,10 @@
 # Indexer Tools v4
 
+[![CI](https://github.com/vincenttaglia/indexer-tools-v4/actions/workflows/ci.yml/badge.svg)](https://github.com/vincenttaglia/indexer-tools-v4/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/vincenttaglia/indexer-tools-v4?sort=semver)](https://github.com/vincenttaglia/indexer-tools-v4/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![GHCR](https://img.shields.io/badge/ghcr.io-indexer--tools--v4-blue?logo=docker)](https://github.com/vincenttaglia/indexer-tools-v4/pkgs/container/indexer-tools-v4)
+
 Dashboard for [The Graph](https://thegraph.com/) indexers. Manage subgraph allocations, monitor QoS metrics, track query fees, and queue indexer-agent actions — all from a single interface.
 
 ## Features
@@ -27,7 +32,7 @@ services:
   indexer-tools:
     image: ghcr.io/vincenttaglia/indexer-tools-v4:latest
     ports:
-      - "3000:80"
+      - "3000:8080"
     restart: unless-stopped
     environment:
       GRAPH_API_KEY: "your-graph-api-key"
@@ -49,15 +54,30 @@ Open http://localhost:3000. API keys and accounts can also be configured in **Se
 
 HTTP endpoints in `DEFAULT_ACCOUNTS` are automatically proxied through nginx so the browser can reach services on internal Docker networks. See [DEPLOYMENT.md](DEPLOYMENT.md) for multi-account setups, proxy details, and integration with existing indexer stacks.
 
+## Quick Start (Kubernetes / Helm)
+
+A Helm chart is published at [vincenttaglia/helm-charts](https://github.com/vincenttaglia/helm-charts/tree/main/charts/indexer-tools-v4):
+
+```bash
+helm repo add vincenttaglia https://vincenttaglia.github.io/helm-charts
+helm repo update
+
+helm install indexer-tools vincenttaglia/indexer-tools-v4 \
+  --namespace indexer-tools --create-namespace
+```
+
+API keys are read from a Kubernetes Secret (`existingSecret`), accounts from `config.defaultAccounts`, and ingress/resources/autoscaling from values — all optional, since keys and accounts can also be set in **Settings** at runtime. Run `helm show values vincenttaglia/indexer-tools-v4` for the full options list. See [DEPLOYMENT.md](DEPLOYMENT.md#kubernetes) for a worked values file and the raw-manifest alternative in [`k8s/`](k8s/).
+
 ## Docker Images
 
 Images are published to GitHub Container Registry:
 
 | Tag | Source |
 |-----|--------|
-| `latest` | `main` branch |
+| `latest` | Newest stable release (semver tag) |
+| `4.0.0`, `4.0` | Version tags |
+| `main` | `main` branch |
 | `dev` | `dev` branch |
-| `v1.0.0` | Version tags |
 
 ```bash
 docker pull ghcr.io/vincenttaglia/indexer-tools-v4:latest
@@ -67,29 +87,37 @@ docker pull ghcr.io/vincenttaglia/indexer-tools-v4:latest
 
 The allocation wizard includes an optimizer that distributes a GRT budget across selected subgraphs to maximize total daily rewards.
 
+The reward earned by allocating `a` GRT to a deployment follows:
+
+```
+reward = (signal / totalSignal) * issuancePerDay * a / (D + a)
+where D = other indexers' stake on the deployment
+```
+
+This has diminishing returns — each additional GRT earns less, since your own allocation dilutes its own reward share.
+
 ### How It Works
 
-The reward earned by allocating `a_i` GRT to subgraph `i` follows:
+A **water-filling** allocator walks the budget in 1000 chunks, handing each chunk to the deployment with the highest **marginal** reward at its current allocation:
 
 ```
-reward_i = (signal_i / totalSignal) * issuancePerDay * a_i / (stake_i + a_i)
+d(reward)/dA = R * D / (D + A)^2
+where R = (signal / totalSignal) * issuancePerDay   (reward pool)
+      D = other indexers' stake on the deployment
+      A = amount already allocated this run
 ```
 
-This has diminishing returns — each additional GRT earns less. The optimizer uses **Lagrange multipliers** to find the exact allocation split that maximizes total rewards. The closed-form solution is:
+Allocating to the steepest marginal at each step drives the budget toward the deployments where it earns the most, and naturally tapers off a deployment as it saturates. The chunked approach (1000 discrete steps) is approximate rather than closed-form, which is what lets it honor the per-deployment constraints below.
 
-```
-a_i = sqrt(signal_i * stake_i) * scale - stake_i
-where scale = (budget + sum(stake_j)) / sum(sqrt(signal_j * stake_j))
-```
+### Constraints
 
-Allocate proportionally to `sqrt(signal * stake)`. Subgraphs with high signal but low stake (under-allocated) get more. Subgraphs already saturated with stake get less. Zero iteration needed — this is the mathematically exact optimum.
+- **Per-deployment caps** — `min(maxAllocationPct × budget, maxAllocationGrt)`, whichever is tighter; a deployment stops receiving chunks once it hits its cap
+- **Risky-deployment caps** — deployments flagged risky use the tighter `riskyAllocationPct` / `riskyAllocationGrt` caps instead
+- **Minimum allocation** — any funded deployment below `minAllocationGrt` is bumped up to the floor (within its cap and remaining budget)
+- **Zero-other-stake deployments** — win a single chunk first (marginal is infinite at A=0), then fall back into the normal ranking
+- **Zero-signal deployments** — kept in the results but receive nothing (they earn zero rewards regardless)
 
-### Edge Cases
-
-- **Zero-signal subgraphs**: filtered out (earn zero rewards regardless)
-- **Zero-stake subgraphs**: get minimum allocation (marginal reward is infinite at a=0)
-- **Over-saturated subgraphs**: if the formula yields a negative allocation, it's fixed at minimum and the remaining budget is re-solved across the others
-- **Integer rounding**: uses the largest-remainder method (Hamilton's method) to round to whole GRT while ensuring allocations sum exactly to the budget
+The caps and risky-deployment settings are configured on the **Settings** page.
 
 ## Development
 
@@ -137,4 +165,9 @@ docker/
 ## Documentation
 
 - [DEPLOYMENT.md](DEPLOYMENT.md) — Docker deployment, environment variables, per-account API proxy, integration with indexer stacks
-- [k8s/](k8s/) — Kubernetes manifests (Deployment, Service, Ingress, Secret) with Kustomize support
+- [Helm chart](https://github.com/vincenttaglia/helm-charts/tree/main/charts/indexer-tools-v4) — Kubernetes deployment via Helm (recommended for clusters)
+- [k8s/](k8s/) — Raw Kubernetes manifests (Deployment, Service, Ingress, ConfigMap) with Kustomize support
+
+## License
+
+[MIT](LICENSE) © Vincent Taglia

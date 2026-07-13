@@ -78,7 +78,7 @@ EOF
 # Generate nginx config with proxy locations
 cat > "$NGINX_CONF" <<EOF
 server {
-    listen 80;
+    listen 8080;
     server_name _;
 
     root /usr/share/nginx/html;

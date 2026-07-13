@@ -3,6 +3,8 @@ import { computed, ref } from 'vue'
 
 // PrimeVue components
 import InputNumber from 'primevue/inputnumber'
+import InputGroup from 'primevue/inputgroup'
+import InputGroupAddon from 'primevue/inputgroupaddon'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
 
@@ -109,7 +111,6 @@ const selectedRawSubgraphs = computed(() => {
 })
 
 const targetApr = computed(() => filterStore.subgraphFilters.targetApr)
-const newAllocation = computed(() => String(filterStore.subgraphFilters.newAllocation))
 
 const { computed: selectedSubgraphsList } = useSubgraphComputations({
   subgraphs: selectedRawSubgraphs,
@@ -120,7 +121,6 @@ const { computed: selectedSubgraphsList } = useSubgraphComputations({
   indexingRewardCut: computed(() => indexerQuery.data.value?.indexingRewardCut ?? 0),
   blocksPerDay: computed(() => chainStore.chainConfig.blocksPerDay),
   targetApr,
-  newAllocation,
   closingAllocations: computed(() => wizardStore.closingAllocations),
 })
 
@@ -281,7 +281,6 @@ function applyOptimizedAllocations() {
     networkGRTIssuancePerBlock: metrics.networkGRTIssuancePerBlock,
     blocksPerDay: chainStore.chainConfig.blocksPerDay,
     indexingRewardCut: indexerQuery.data.value?.indexingRewardCut ?? 0,
-    useWaterfall: settingsStore.useWaterfallOptimizer,
     maxAllocationPct: settingsStore.maxAllocationPct,
     maxAllocationGrt: settingsStore.maxAllocationGrt,
     riskyAllocationPct: settingsStore.riskyAllocationPct,
@@ -316,7 +315,6 @@ function applyOptimizedAllocations() {
           <InputNumber
             v-model="wizardStore.minAllocation"
             :min="0"
-            suffix=" GRT"
             :minFractionDigits="0"
             :maxFractionDigits="0"
             class="control-input"
@@ -329,7 +327,6 @@ function applyOptimizedAllocations() {
           <InputNumber
             v-model="wizardStore.minAllocation0Signal"
             :min="0"
-            suffix=" GRT"
             :minFractionDigits="0"
             :maxFractionDigits="0"
             class="control-input"
@@ -421,17 +418,19 @@ function applyOptimizedAllocations() {
 
           <!-- Center: allocation amount input -->
           <div class="card-input">
-            <InputNumber
-              :modelValue="getAmountValue(sg.deployment.ipfsHash)"
-              @update:modelValue="(val: number | null) => handleAmountChange(sg.deployment.ipfsHash, val)"
-              placeholder="GRT amount"
-              class="amount-input"
-              inputClass="compact-input"
-              :min="0"
-              suffix=" GRT"
-              :minFractionDigits="0"
-              :maxFractionDigits="2"
-            />
+            <InputGroup class="amount-input-group">
+              <InputNumber
+                :modelValue="getAmountValue(sg.deployment.ipfsHash)"
+                @update:modelValue="(val: number | null) => handleAmountChange(sg.deployment.ipfsHash, val)"
+                placeholder="Amount"
+                class="amount-input"
+                inputClass="compact-input"
+                :min="0"
+                :minFractionDigits="0"
+                :maxFractionDigits="2"
+              />
+              <InputGroupAddon>GRT</InputGroupAddon>
+            </InputGroup>
           </div>
 
           <!-- Right: New APR preview + extras -->
@@ -683,7 +682,12 @@ function applyOptimizedAllocations() {
   max-width: 150px;
 }
 
+.amount-input-group {
+  width: 100%;
+}
+
 .amount-input {
+  flex: 1 1 auto;
   max-width: 100%;
 }
 
@@ -694,6 +698,14 @@ function applyOptimizedAllocations() {
 
 .amount-input :deep(input) {
   width: 100%;
+}
+
+/* Compact, muted unit add-on so it reads as a label, not a control */
+.amount-input-group :deep(.p-inputgroupaddon) {
+  padding-inline: 6px;
+  font-size: 0.75rem;
+  color: var(--p-text-muted-color);
+  min-width: auto;
 }
 
 .card-preview {
