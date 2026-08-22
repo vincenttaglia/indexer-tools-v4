@@ -8,8 +8,11 @@ import { createGraphQLClient, fetchQueryFeesDailyDataLatest } from '@/api'
  * The QoS subgraph deployment ID on The Graph's decentralized network.
  * This is the gateway's QoS subgraph which tracks query fee data.
  * QoS data is only available for Arbitrum mainnet.
+ *
+ * The previous "Gateway QoS Oracle" subgraph (Dtr9rET…) stopped receiving
+ * oracle posts on 2026-07-01; this one tracks the feed's new on-chain anchor.
  */
-const QOS_SUBGRAPH_ID = 'Dtr9rETvwokot4BSXaD5tECanXfqfJKcvHuaaEgPDD2D'
+const QOS_SUBGRAPH_ID = 'CnfJ5tC5cfAmt2tUyUaM6vPrtmNYasavkDDn793FkbN3'
 
 /**
  * Builds the QoS subgraph URL with the user's API key.
